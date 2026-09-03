@@ -1,0 +1,21 @@
+Arquitecta — Mecanismo de detección de deriva arquitectónica
+Copyright (c) 2026 Juan José Medicis Zambrano
+
+Este producto incluye software desarrollado como prototipo del trabajo de grado
+"Mecanismo de detección automática de deriva arquitectónica mediante el uso de
+Fitness Functions y análisis estático de grafos de dependencia: un enfoque de
+gobernanza continua para PyMES de software", presentado a la Maestría en
+Ingeniería de Software de la Pontificia Universidad Javeriana Cali.
+
+El código fuente del prototipo (directorio prototipo/) se distribuye bajo la
+Apache License, Version 2.0. Una copia de la licencia se encuentra en el
+archivo LICENSE-CODE de este repositorio.
+
+El documento del trabajo de grado, sus figuras, tablas y resultados
+(directorio Maestria_PlantillaProyectoGrado/) NO se distribuyen bajo la Apache
+License, sino bajo Creative Commons Atribución-NoComercial-SinDerivadas 4.0
+Internacional (CC BY-NC-ND 4.0). Véase el archivo LICENSE.
+
+Este repositorio redistribuye componentes de terceros que conservan sus propias
+licencias y titulares de derechos. El detalle completo, con su procedencia y
+condiciones, está en el archivo TERCEROS.md.

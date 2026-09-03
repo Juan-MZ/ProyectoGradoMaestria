@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+#  Artefactos generados. Todo lo que aparece aquí puede reconstruirse:
+#  el documento con Maestria_PlantillaProyectoGrado/compilar.bat|.sh y el
+#  prototipo con prototipo/build.bat|.sh.
+# ---------------------------------------------------------------------------
+
+# --- LaTeX: archivos auxiliares -------------------------------------------
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.maf
+*.mtc
+*.mtc[0-9]*
+*.out
+*.run.xml
+*.bcf
+*.synctex.gz
+*.tdo
+*.toc
+Maestria_PlantillaProyectoGrado/out/
+
+# El PDF compilado SÍ se versiona: es el entregable del trabajo de grado.
+!Maestria_PlantillaProyectoGrado/main.pdf
+
+# --- Java: compilación y evidencia generada -------------------------------
+prototipo/out/
+prototipo/target/
+prototipo/resultados/
+*.class
+
+# Listas temporales que crean los scripts de compilación
+prototipo/_fuentes.txt
+prototipo/_core.txt
+prototipo/_caso.txt
+prototipo/_caso_alt.txt
+
+# --- Entorno local ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp

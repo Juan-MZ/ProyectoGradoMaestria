@@ -1,0 +1,55 @@
+\section{Riesgos éticos}
+Este capítulo aborda las consideraciones éticas que rodearon el desarrollo y la evaluación del mecanismo. Aunque el proyecto no involucró sujetos humanos ni datos personales, la naturaleza de su artefacto —un instrumento que emite juicios sobre la calidad estructural del código— obligó a examinar con cuidado los usos posibles de sus resultados y las responsabilidades que de ellos se derivan. La exposición conserva la estructura comprometida en el anteproyecto: primero los principios que orientaron el diseño, después los cinco riesgos identificados con el tratamiento asignado a cada uno, y por último el estado en que quedaron tras la ejecución del proyecto.
+
+\section{Principios orientadores}
+El desarrollo y la evaluación del mecanismo se rigieron por cuatro principios.
+
+El primero fue la \textbf{privacidad por diseño}: el mecanismo opera sobre el código compilado y de manera local, sin transmitir, almacenar ni exponer información fuera del entorno de quien lo ejecuta. El segundo fue la \textbf{transparencia del diagnóstico}: toda clasificación emitida se acompaña de la evidencia concreta que la sustenta, de modo que el resultado sea auditable. El tercero fue la \textbf{supervisión humana}: el instrumento se concibió como un apoyo a la decisión, nunca como un reemplazo del juicio de los profesionales. El cuarto fue el \textbf{uso proporcional de las métricas}: las mediciones se limitaron a propiedades estructurales del código y se evitaron inferencias sobre el desempeño de personas o equipos.
+
+\section{Riesgos identificados y tratamiento aplicado}
+Siguiendo la lógica de gestión de riesgos adoptada en el anteproyecto, cada situación recibió uno de cuatro tratamientos posibles —evitarla, mitigarla, transferirla o aceptarla de forma controlada—, y a continuación se describe cómo se materializó ese tratamiento durante la ejecución.
+
+\begin{itemize}
+    \item \textbf{Riesgo sobre información sensible. Tratamiento: evitarlo.} El análisis estático requiere acceso al código, por lo que la respuesta adecuada consistió en impedir desde el inicio todo escenario innecesario de exposición. El prototipo se ejecuta íntegramente en local, sin servicios externos ni telemetría, y los artefactos que genera contienen únicamente relaciones estructurales y métricas agregadas. La evaluación se realizó sobre sistemas sintéticos construidos para el proyecto y sobre el propio prototipo, de modo que en ningún momento se procesó código de terceros ni información sujeta a confidencialidad.
+
+    \item \textbf{Riesgo de sesgo algorítmico y opacidad del diagnóstico. Tratamiento: mitigarlo.} Para evitar decisiones de refactorización basadas en umbrales arbitrarios o interpretaciones erróneas, las reglas se mantuvieron explícitas, versionadas y trazables: residen en un archivo de configuración legible, y cada hallazgo declara la regla activada, la evidencia estructural encontrada —hasta el método y la línea que originan la dependencia— y la severidad asignada. La Tasa de Conformidad se calcula como un cociente explícito que cualquier miembro del equipo puede rehacer a mano, y no mediante un modelo cuyo resultado no pudiera reconstruirse. La validación se apoyó, además, en una matriz de comportamiento esperado fijada antes de la ejecución y sometida a revisión humana.
+
+    \item \textbf{Riesgo de impacto sociotécnico en los equipos. Tratamiento: mitigarlo.} Para reducir la posibilidad de que la gobernanza automatizada se perciba como vigilancia punitiva, el mecanismo mide exclusivamente propiedades de paquetes y no atribuye hallazgos a personas: ni el modelo de datos ni el reporte contemplan la noción de autor. El instrumento se propone como soporte para conversaciones técnicas, retrospectivas arquitectónicas y priorización de refactorización, no como insumo de evaluación individual.
+
+    \item \textbf{Riesgo de formalismo vacío. Tratamiento: aceptarlo de forma controlada.} Siempre existirá la posibilidad de que una métrica de conformidad se use de manera mecánica y sin reflexión contextual. Ese riesgo no puede eliminarse, por lo que se aceptó de forma controlada y se redujo su impacto por dos vías. La primera es que el reporte declara siempre su propio alcance —qué reglas se evaluaron, qué umbrales se aplicaron, qué paquetes quedaron fuera de la estratificación y qué aspectos no cubre el diagnóstico—, advirtiendo de forma expresa que un veredicto \textit{aceptable} significa que no se hallaron incumplimientos de esas reglas y no que el sistema carezca de problemas estructurales. La segunda es la configurabilidad de las reglas y los umbrales, que obliga a cada organización a decidir explícitamente qué considera admisible en lugar de heredar un criterio ajeno.
+
+    \item \textbf{Riesgo de sobreinterpretación de la Tasa de Conformidad. Tratamiento: transferirlo parcialmente a la decisión humana responsable.} La CR representa únicamente el cumplimiento de las reglas configuradas dentro del alcance del prototipo. La evaluación aportó evidencia concreta de por qué esta advertencia no era retórica: en dos de los escenarios evaluados, la métrica clasificó como aceptable un sistema que contenía una violación real, precisamente porque una proporción diluye los incumplimientos localizados. El hallazgo confirma que la cifra no puede leerse como veredicto absoluto y que la decisión final sobre priorización de refactorización o aceptación del riesgo corresponde al responsable técnico y no a la herramienta. En respuesta, el mecanismo incorporó la severidad del peor hallazgo como criterio complementario y advierte de forma explícita en el reporte cuando ese criterio ha endurecido el veredicto que la métrica habría emitido por sí sola, de modo que la discrepancia entre ambas lecturas quede a la vista de quien decide.
+\end{itemize}
+
+La tabla~\ref{tab:riesgos} sintetiza los cinco riesgos, su tratamiento y el estado en que quedaron al cierre del proyecto.
+
+\begin{table}[H]
+\centering
+\caption{Riesgos éticos, tratamiento aplicado y estado al cierre del proyecto.}
+\label{tab:riesgos}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.1cm}p{1.9cm}Xp{1.9cm}}
+\toprule
+\textbf{Riesgo} & \textbf{Tratamiento} & \textbf{Control materializado} & \textbf{Estado} \\
+\midrule
+Información sensible & Evitar & Ejecución local sin servicios externos; evaluación sobre sistemas propios y sintéticos. & Controlado \\
+\midrule
+Sesgo y opacidad del diagnóstico & Mitigar & Reglas explícitas y versionadas; evidencia hasta la línea de código; métrica reconstruible a mano. & Controlado \\
+\midrule
+Impacto sociotécnico en los equipos & Mitigar & El modelo de datos no contempla la noción de autor; los hallazgos se atribuyen a paquetes. & Controlado \\
+\midrule
+Formalismo vacío & Aceptar de forma controlada & Declaración de alcance en todo reporte; umbrales y reglas de decisión configurables. & Residual \\
+\midrule
+Sobreinterpretación de la CR & Transferir a la decisión humana & Severidad como criterio complementario; aviso explícito cuando ambos criterios discrepan; declaración de exclusiones. & Residual \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Riesgos residuales}
+Dos riesgos permanecen activos en un nivel residual y conviene declararlo sin atenuantes.
+
+El primero es el formalismo vacío. Ningún control técnico impide que una organización convierta la Tasa de Conformidad en un objetivo por sí mismo y persiga el número en lugar de la propiedad que representa. Las salvaguardas incorporadas —la declaración de alcance y la configurabilidad— reducen la probabilidad de que ello ocurra por desconocimiento, pero no por decisión deliberada.
+
+El segundo es la interpretación indebida de los resultados en contextos arquitectónicos distintos del evaluado. El autoanálisis del prototipo mostró un caso concreto: la regla de concentración señala como problemáticos a componentes que concentran dependencias por diseño, como una raíz de composición. En un sistema real, un hallazgo así podría desencadenar una refactorización innecesaria si se acatara sin criterio. La mitigación disponible es la que el proyecto ya adopta —transparencia del diagnóstico y recomendación explícita de supervisión humana—, y la solución de fondo, el registro de excepciones justificadas, queda planteada como trabajo futuro.
+
+Ambos riesgos se consideran aceptables en el estado actual del proyecto, dado que el artefacto se entrega como prototipo de investigación y no como producto de adopción industrial. No se identificaron conflictos de interés ni implicaciones éticas no previstas durante la ejecución.

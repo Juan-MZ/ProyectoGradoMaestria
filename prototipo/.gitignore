@@ -1,0 +1,13 @@
+# Artefactos de compilación
+out/
+target/
+
+# Evidencia generada por el experimento (reproducible con experimento.bat/.sh)
+resultados/
+
+# Archivos temporales de los scripts de compilación
+_fuentes.txt
+_core.txt
+_caso.txt
+_caso_alt.txt
+_sources.txt

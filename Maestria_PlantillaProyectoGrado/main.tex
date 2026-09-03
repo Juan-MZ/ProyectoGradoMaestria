@@ -1,0 +1,176 @@
+%% Formato para la presentaci\'on de  proyectos de grado. 
+%% Maestría en Ingeniería de Software
+%% Pontificia Universidad Javeriana
+%% Elaborado por Angela Villota y Luisa Rincón
+%% Inspirado en Formato elaborado para carrera de Ing de Sistemas
+%% V 1.0 Abril - 2022
+
+\documentclass[11pt,twoside]{thesis}
+\usepackage{enumerate}
+\usepackage{longtable}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+
+% Holgura adicional en la última pasada de justificación: evita que los
+% identificadores largos en tipografía monoespaciada y los incisos con raya
+% desborden el margen derecho.
+\emergencystretch=3em
+
+%%%%%%%%%%%%%%%%
+% ESTILO DE LAS FIGURAS TIKZ
+%%%%%%%%%%%%%%%%
+\definecolor{colModulo}{HTML}{E8EEF7}
+\definecolor{colBorde}{HTML}{3B5C8F}
+\definecolor{colAlerta}{HTML}{C0392B}
+\definecolor{colAviso}{HTML}{B7791F}
+\definecolor{colFondoAviso}{HTML}{FDF3DC}
+\definecolor{colFondoAlerta}{HTML}{FBE4E2}
+
+\tikzset{
+  modulo/.style   = {draw=colBorde, fill=colModulo, rounded corners=2pt,
+                     align=center, inner sep=5pt, font=\small},
+  artefacto/.style= {draw=colBorde, fill=white, align=center,
+                     inner sep=5pt, font=\small},
+  paquete/.style  = {draw=colBorde, fill=white, rounded corners=2pt,
+                     align=center, inner sep=4pt, font=\footnotesize},
+  infractor/.style= {draw=colAlerta, fill=colFondoAlerta, rounded corners=2pt,
+                     align=center, inner sep=4pt, font=\footnotesize},
+  concentrado/.style = {draw=colAviso, fill=colFondoAviso, rounded corners=2pt,
+                     align=center, inner sep=4pt, font=\footnotesize},
+  flujo/.style    = {-{Stealth[length=2mm]}, draw=colBorde, thick},
+  dep/.style      = {-{Stealth[length=1.8mm]}, draw=colBorde!80},
+  depmala/.style  = {-{Stealth[length=1.8mm]}, draw=colAlerta, very thick},
+}
+
+%%%%%%%%%%%%%%%%
+% TITULO DEL PROYECTO
+%%%%%%%%%%%%%%%%
+\titulo{Mecanismo de detección automática de deriva arquitectónica mediante el uso de \textit{Fitness Functions} y análisis estático de grafos de dependencia: un enfoque de gobernanza continua para PyMES de software}
+
+%%%%%%%
+% AUTORES
+%%%%%%%
+% TODO ENTREGA: reemplazar el código por el número de estudiante real.
+\autorA{[CÓDIGO ESTUDIANTE]}{Juan José Medicis Zambrano}
+
+%%%%%%%
+% FECHA DE ENTREGA
+%%%%%%%
+% TODO ENTREGA: ajustar el día exacto de radicación si difiere.
+\fecha{septiembre de 2026}
+
+\directorproyecto{MsC}{Juan Camilo Parra Martinez}
+\directorcarrera{Ph.D.}{Luisa Rincón}
+
+\include{format}
+\makeindex
+
+\begin{document}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%
+% PARA LAS CARTAS
+%%%%%%%%%%%%%%%%%%
+\makecoverletter
+
+
+%%%%%%%%%%%%%%%%%%
+% FICHA RESUMEN
+%%%%%%%%%%%%%%%%%%
+\newpage{\ } 
+\input{src/00-ficha_resumen}
+
+%%%%%%%%%%%%%%%%%%
+% AGRADECIMIENTOS
+%%%%%%%%%%%%%%%%%%
+%\input{src/00-agradecimientos}    	ELIMINAR PARA ENVIAR A LA UNIVERSIDAD
+
+%%%%%%%%%%%%%%%%%%
+% ABSTRACT
+%%%%%%%%%%%%%%%%%%
+\input{src/0-abstract.tex}
+
+%%%%%%%%%%%%%%%%%
+%%%% TABLE OF CONTENTS
+%%%% AND PREABLE
+%%%%%%%%%%%%%%%%%
+  
+\newpage{\ } 
+\thispagestyle{empty} 
+\tableofcontents 
+\listoffigures   \listoftables   \mainmatter
+
+\dominitoc
+\cleardoublepage
+
+%%%%%%%%%%%%%%%%%%%%%%
+% INTRODUCCION
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Introducción}
+\input{src/1-introduccion.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPCION DEL PROBLEMA
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Marco de referencia}
+\input{src/2-marco}
+
+%%%%%%%%%%%%%%%%%%%%%%
+% DESARROLLO DEL PROYECTO
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Desarrollo del Proyecto}
+\input{src/3-desarrollo.tex}
+
+%%% Agregue aquí tantos capitulos como necesite
+
+%%%%%%%%%%%%%%%%%%%%%%
+% Evaluación
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Evaluación}
+\input{src/4-evaluacion}
+
+%%%%%%%%%%%%%%%%%%%%%%
+% CONCLUSIONES
+%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Conclusiones}
+\input{src/5-conclusiones.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RIESGOS ÉTICOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Riesgos éticos}
+\input{src/6-riesgos_eticos.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BIBLIOGRAFIA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{apalike}
+\bibliography{referencias}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ANEXOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+\renewcommand{\appendixname}{Anexo}
+\chapter{Reproducción del experimento}
+\input{src/A-anexos.tex}
+
+%%%%%%%%%%%%%%%%
+% GENERAL INDEX
+%%%%%%%%%%%%%%%%
+%\printindex
+
+\end{document}
+\endinput

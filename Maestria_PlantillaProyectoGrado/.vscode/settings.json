@@ -1,0 +1,59 @@
+{
+    // Compilación vía Docker (misma estrategia que el anteproyecto), pero con
+    // BIBTEX en lugar de BIBER: este documento usa natbib + \bibliographystyle{apalike},
+    // no biblatex. Ejecutar biber aquí no produciría bibliografía.
+    "latex-workshop.docker.enabled": false,
+    "latex-workshop.docker.image.latex": "xucheng/texlive-full",
+    "latex-workshop.latex.outDir": "%DIR%",
+    "latex-workshop.latex.recipe.default": "lastUsed",
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "pdflatex -> bibtex -> pdflatex x2",
+            "tools": [
+                "pdflatex",
+                "bibtex",
+                "pdflatex",
+                "pdflatex"
+            ]
+        },
+        {
+            "name": "pdflatex (rápido, sin bibliografía)",
+            "tools": [
+                "pdflatex"
+            ]
+        }
+    ],
+    "latex-workshop.latex.tools": [
+        {
+            "name": "pdflatex",
+            "command": "docker",
+            "env": {},
+            "args": [
+                "run", "--rm",
+                "-v", "%DIR%:/workdir",
+                "-w", "/workdir",
+                "xucheng/texlive-full",
+                "pdflatex",
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOCFILE%"
+            ]
+        },
+        {
+            "name": "bibtex",
+            "command": "docker",
+            "env": {},
+            "args": [
+                "run", "--rm",
+                "-v", "%DIR%:/workdir",
+                "-w", "/workdir",
+                "xucheng/texlive-full",
+                "bibtex",
+                "%DOCFILE%"
+            ]
+        }
+    ],
+    "latex-workshop.latex.autoBuild.run": "never",
+    "latex-workshop.view.pdf.viewer": "tab"
+}

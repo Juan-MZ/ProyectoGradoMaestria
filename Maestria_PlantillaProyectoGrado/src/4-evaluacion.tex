@@ -1,0 +1,234 @@
+%%%%%%%%%%%%%%%%%%%%
+% EVALUACIÓN
+%%%%%%%%%%%%%%%%%%%%
+
+Este capítulo presenta la evaluación del mecanismo. Se describe primero el diseño del experimento y la matriz de validación que fija de antemano lo que debía observarse; se exponen después los resultados obtenidos sobre los cinco escenarios; se analiza a continuación un hallazgo que obligó a refinar el criterio de clasificación, y se cierra contrastando los resultados con los indicadores comprometidos en la metodología y examinando las amenazas a la validez de la evidencia producida.
+
+\section{Diseño de la evaluación}
+La evaluación se planteó como un experimento controlado de caso único, la modalidad que la investigación en diseño reserva para demostrar la viabilidad de un artefacto antes de someterlo a validación en campo \citep{Hevner2004, Peffers2007}. Su propósito fue determinar si el mecanismo construido detecta las derivas arquitectónicas que se le presentan y si clasifica de forma coherente el estado de conformidad del sistema evaluado.
+
+La hipótesis de trabajo fue que, al aplicar el mecanismo sobre una implementación de referencia y sobre versiones deliberadamente alteradas, la primera obtendría una conformidad plena sin hallazgos, mientras que cada versión alterada activaría la \textit{Fitness Function} correspondiente a la deriva inducida y vería descender su Tasa de Conformidad.
+
+Como variable independiente se manipuló la presencia y el tipo de deriva en el código, según los cinco escenarios descritos en el capítulo anterior. Las variables dependientes observadas fueron cuatro: los hallazgos reportados por cada \textit{Fitness Function}, la Tasa de Conformidad resultante, el estado arquitectónico asignado y la evidencia estructural asociada a cada hallazgo. Todas las demás condiciones se mantuvieron constantes ---el catálogo de reglas de la sección~\ref{sec:catalogo}, los umbrales, la versión del prototipo y el entorno de ejecución---, de modo que las diferencias observadas puedan atribuirse a la variable manipulada y no a variaciones del procedimiento \citep{Wohlin2012}.
+
+La incorporación de los tres escenarios de deriva aislada (C1, C2 y C3) constituye la decisión de diseño más relevante de esta evaluación. Un único escenario que acumulase las tres derivas permitiría comprobar que el mecanismo reacciona, pero no cuánto aporta cada regla a esa reacción ni si el instrumento advertiría una desviación que llegara sola, que es el caso que una PyME encontraría en la práctica. Aislar las derivas convierte el experimento en una prueba de sensibilidad por dimensión y no en una simple comprobación de funcionamiento.
+
+\subsection{Matriz de validación}
+Antes de ejecutar el experimento se fijó la matriz de validación de la tabla~\ref{tab:matrizEsperada}, que declara para cada escenario qué reglas debían activarse y cuáles debían permanecer en silencio. Establecerla de antemano cumple una función metodológica precisa: impide que el resultado observado se reinterprete después como el esperado, y convierte los falsos negativos y los falsos positivos en desviaciones verificables y no en apreciaciones.
+
+\begin{table}[H]
+\centering
+\caption{Matriz de validación: comportamiento esperado de cada \textit{Fitness Function} por escenario.}
+\label{tab:matrizEsperada}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{2.6cm}cccX}
+\toprule
+\textbf{Escenario} & \textbf{FF1} & \textbf{FF2} & \textbf{FF3} & \textbf{Justificación del comportamiento esperado} \\
+\midrule
+C0 · base & --- & --- & --- & La implementación respeta la matriz de adyacencias, es acíclica y ningún paquete supera el umbral. \\
+\midrule
+C1 · capas & $\checkmark$ & --- & --- & El salto \texttt{presentacion} $\rightarrow$ \texttt{persistencia} no está autorizado, pero no invierte el flujo ni cierra ciclos. \\
+\midrule
+C2 · ciclo & --- & $\checkmark$ & --- & El ciclo queda contenido dentro de la capa de negocio, de modo que la estratificación no se vulnera. \\
+\midrule
+C3 · concentración & --- & --- & $\checkmark$ & El paquete \texttt{util} no pertenece a ninguna capa y no es destino de ninguna dependencia. \\
+\midrule
+C4 · combinado & $\checkmark$ & $\checkmark$ & $\checkmark$ & Las tres derivas actúan simultáneamente sobre el mismo sistema. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Criterios de éxito y procedimiento}
+Para juzgar el objetivo específico OBJ4 se estableció un criterio cuantitativo fijado en el anteproyecto: el mecanismo debía detectar al menos el $80\%$ de las derivas inducidas. Con seis derivas repartidas entre los cuatro escenarios alterados, el criterio exigía detectar al menos cinco. Se añadió una segunda condición, de signo contrario y de igual importancia: la implementación de referencia no debía producir ningún hallazgo, pues un instrumento que alarma sin motivo resulta tan inútil como uno que calla ante el problema.
+
+El procedimiento se ejecutó íntegramente en un entorno de desarrollo local, sin dependencias de servicios externos, en coherencia con RNF2. Cada ejecución recibió los mismos dos insumos ---el directorio de clases compiladas y el archivo de configuración--- y se automatizó en un guion único que recorre los cinco escenarios y deposita la evidencia en archivos verificables: el reporte legible, la evidencia estructurada en JSON, el grafo en formato DOT y los hallazgos tabulados en CSV. Las ejecuciones se repitieron para comprobar que el resultado fuese idéntico, verificando así el requisito de reproducibilidad. El anexo~\ref{anexo:repro} detalla los pasos necesarios para reproducir el experimento completo.
+
+\section{Resultados de la evaluación}
+La tabla~\ref{tab:resultados} resume el resultado agregado sobre los cinco escenarios, con los valores de la Tasa de Conformidad calculados según la ecuación~\ref{eq:cr} y el estado arquitectónico deducido de sus umbrales.
+
+\begin{table}[H]
+\centering
+\caption{Resultados agregados del mecanismo sobre los cinco escenarios.}
+\label{tab:resultados}
+\small
+\begin{tabular}{lrrrrrl}
+\toprule
+\textbf{Escenario} & \textbf{Paq.} & \textbf{Dep.} & \textbf{Verif.} & \textbf{Incum.} & \textbf{CR} & \textbf{Estado según CR} \\
+\midrule
+C0 · base            & 4 & 5  & 10 & 0 & $100{,}00\%$ & Aceptable \\
+C1 · capas           & 4 & 6  & 11 & 1 & $90{,}91\%$  & Aceptable \\
+C2 · ciclo           & 5 & 8  & 12 & 2 & $83{,}33\%$  & En observación \\
+C3 · concentración   & 5 & 9  & 12 & 1 & $91{,}67\%$  & Aceptable \\
+C4 · combinado       & 5 & 11 & 14 & 6 & $57{,}14\%$  & No conforme \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Contraste con la matriz de validación}
+La tabla~\ref{tab:matrizObservada} contrasta el comportamiento esperado con el efectivamente observado. La coincidencia es completa: en los cinco escenarios se activaron exactamente las reglas previstas, sin omisiones ni activaciones espurias.
+
+\begin{table}[H]
+\centering
+\caption{Contraste entre el comportamiento esperado y el observado. Cada celda indica el número de hallazgos reportados por la regla.}
+\label{tab:matrizObservada}
+\small
+\begin{tabular}{lcccccccl}
+\toprule
+& \multicolumn{3}{c}{\textbf{Esperado}} & \multicolumn{3}{c}{\textbf{Observado}} & & \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Escenario} & FF1 & FF2 & FF3 & FF1 & FF2 & FF3 & \textbf{Total} & \textbf{Veredicto} \\
+\midrule
+C0 · base          & --- & --- & --- & 0 & 0 & 0 & 0 & Coincide \\
+C1 · capas         & $\checkmark$ & --- & --- & 1 & 0 & 0 & 1 & Coincide \\
+C2 · ciclo         & --- & $\checkmark$ & --- & 0 & 1 & 0 & 1 & Coincide \\
+C3 · concentración & --- & --- & $\checkmark$ & 0 & 0 & 1 & 1 & Coincide \\
+C4 · combinado     & $\checkmark$ & $\checkmark$ & $\checkmark$ & 2 & 1 & 1 & 4 & Coincide \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En C4, la \textit{Fitness Function} de integridad de capas reportó dos hallazgos ---las dependencias indebidas de \texttt{persistencia} hacia \texttt{negocio} y hacia \texttt{presentacion}--- porque el escenario introduce dos aristas prohibidas y cada una constituye una violación independiente. La tabla~\ref{tab:violaciones} detalla los hallazgos de ese escenario.
+
+\begin{table}[H]
+\centering
+\caption{Hallazgos detectados en el escenario combinado (C4).}
+\label{tab:violaciones}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.1cm}Xp{1.5cm}}
+\toprule
+\textbf{\textit{Fitness Function}} & \textbf{Hallazgo} & \textbf{Severidad} \\
+\midrule
+Integridad de capas & Dependencia no permitida \texttt{persistencia} $\rightarrow$ \texttt{negocio} & Mayor \\
+\midrule
+Integridad de capas & Dependencia no permitida \texttt{persistencia} $\rightarrow$ \texttt{presentacion} & Mayor \\
+\midrule
+Ausencia de ciclos & Ciclo entre \texttt{presentacion}, \texttt{negocio} y \texttt{persistencia} & Crítica \\
+\midrule
+Concentración & \texttt{com.caso.util} concentra cuatro dependencias salientes (umbral: 3) & Mayor \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Conviene aclarar una asimetría que la tabla podría ocultar: C4 reporta cuatro hallazgos pero seis incumplimientos. La diferencia procede de FF2, que cuenta un incumplimiento por cada paquete atrapado en el ciclo ---tres, en este caso--- aunque los agrupe en un único hallazgo legible. La decisión es deliberada: la penalización debe crecer con la extensión del enredo, mientras que el reporte debe presentar el ciclo como el problema único que en realidad es.
+
+\subsection{Sensibilidad por dimensión}
+Los escenarios aislados permiten observar el comportamiento de cada regla por separado. La tabla~\ref{tab:sensibilidad} muestra la conformidad local de cada \textit{Fitness Function}, es decir, la proporción de sus propias verificaciones que el sistema superó.
+
+\begin{table}[H]
+\centering
+\caption{Conformidad local por \textit{Fitness Function} en cada escenario (verificaciones superadas sobre verificaciones realizadas).}
+\label{tab:sensibilidad}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Escenario} & \textbf{FF1 — Capas} & \textbf{FF2 — Ciclos} & \textbf{FF3 — Concentración} \\
+\midrule
+C0 · base          & $2/2$ ($100\%$) & $4/4$ ($100\%$) & $4/4$ ($100\%$) \\
+C1 · capas         & $2/3$ ($66{,}7\%$) & $4/4$ ($100\%$) & $4/4$ ($100\%$) \\
+C2 · ciclo         & $2/2$ ($100\%$) & $3/5$ ($60{,}0\%$) & $5/5$ ($100\%$) \\
+C3 · concentración & $2/2$ ($100\%$) & $5/5$ ($100\%$) & $4/5$ ($80{,}0\%$) \\
+C4 · combinado     & $2/4$ ($50{,}0\%$) & $2/5$ ($40{,}0\%$) & $4/5$ ($80{,}0\%$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La lectura por filas confirma el aislamiento buscado: en cada escenario de deriva única solo desciende la conformidad de la regla correspondiente, mientras las otras dos permanecen en el $100\%$. La lectura por columnas revela algo más sutil: la conformidad local reacciona con claridad ---FF2 cae al $60\%$ en C2, FF1 al $66{,}7\%$ en C1---, mucho más de lo que reacciona la CR global de esos mismos escenarios. Esa discrepancia entre la señal local y la global es la que motiva el análisis de la sección siguiente.
+
+\subsection{Trazabilidad del cálculo}
+El valor del $57{,}14\%$ obtenido en C4 no es una puntuación opaca: corresponde al cociente entre las ocho verificaciones que el sistema superó y las catorce que las tres reglas ejecutaron. Cada incumplimiento resta directamente a ese cociente, de modo que la cifra final puede reconstruirse a mano a partir de la tabla~\ref{tab:sensibilidad}. Esta propiedad de trazabilidad es, en sí misma, un resultado relevante: un equipo de desarrollo puede explicar con precisión por qué su proyecto obtuvo una determinada tasa, lo que convierte el diagnóstico en un insumo negociable y no en un veredicto inapelable.
+
+La evidencia acompaña a cada hallazgo hasta su origen. En C1, por ejemplo, el reporte no se limita a señalar la arista infractora: identifica el campo, el constructor y el método del controlador que la producen, con el archivo y la línea correspondientes. Esa precisión, incorporada durante la evaluación como requisito RF6, transforma el diagnóstico en una lista de intervenciones concretas.
+
+\section{Un hallazgo sobre la métrica: la dilución de las violaciones localizadas}
+\label{sec:dilucion}
+Los escenarios aislados produjeron un resultado que el diseño experimental original no habría revelado. En C1 y en C3 el mecanismo detectó correctamente la deriva inducida ---FF1 y FF3 reportaron su hallazgo con la evidencia correspondiente---, pero la Tasa de Conformidad se mantuvo en $90{,}91\%$ y $91{,}67\%$ respectivamente, por encima del umbral del $85\%$. En consecuencia, el estado arquitectónico asignado fue \textit{aceptable} en ambos casos, pese a existir una violación real y documentada.
+
+No se trata de un defecto de implementación sino de una consecuencia matemática de la formulación proporcional anticipada en la sección~\ref{sec:operacionalizacion}: una violación aislada representa una fracción pequeña del total de verificaciones, y esa fracción se reduce conforme el sistema crece. En los escenarios evaluados, con once o doce verificaciones, un incumplimiento apenas mueve la métrica nueve puntos. En un sistema de doscientos paquetes, el mismo incumplimiento la movería menos de un punto. La CR mide con fidelidad la \textbf{extensión} del deterioro, pero es estructuralmente ciega a su \textbf{gravedad}.
+
+La consecuencia práctica es seria para el propósito del proyecto. Un instrumento pensado como señal temprana debería alertar precisamente cuando la primera desviación aparece, que es cuando corregirla resulta barata; sin embargo, el criterio basado solo en la CR guarda silencio hasta que las desviaciones se acumulan. El riesgo se agrava porque el veredicto \textit{aceptable} podría interpretarse como ausencia de problemas, y no como lo que realmente significa.
+
+Merece subrayarse que este riesgo no era desconocido: el anteproyecto lo había anticipado al identificar la sobreinterpretación de la CR como uno de los riesgos éticos del proyecto y al advertir que la métrica «no debe reemplazar el juicio técnico». Lo que la evaluación aporta no es la intuición del riesgo, sino la medida de su magnitud y una respuesta verificable.
+
+\section{Refinamiento del artefacto}
+La investigación en diseño prescribe que los resultados de la evaluación retroalimenten el artefacto en un nuevo ciclo, en lugar de limitarse a describir sus carencias \citep{Hevner2004, Peffers2007}. Siguiendo ese principio se introdujo un segundo criterio de clasificación, complementario y no sustitutivo del primero.
+
+El razonamiento es el siguiente. La Tasa de Conformidad responde a la pregunta «¿qué proporción del sistema incumple?»; la severidad del peor hallazgo responde a «¿qué tan grave es lo que incumple?». Ambas preguntas son legítimas y ninguna subsume a la otra: un sistema puede tener muchas violaciones leves o una sola crítica, y esos dos estados requieren respuestas distintas. El refinamiento consiste en evaluar las dos y adoptar como veredicto el más restrictivo, según la correspondencia siguiente:
+
+\begin{itemize}
+    \item una violación \textbf{crítica} ---un ciclo de dependencia--- exige el estado \textit{no conforme};
+    \item una violación \textbf{mayor} ---una ruptura de capas o una concentración excesiva--- exige, al menos, el estado \textit{en observación};
+    \item la ausencia de hallazgos permite el estado \textit{aceptable}.
+\end{itemize}
+
+Dos precisiones delimitan el alcance de este cambio. La primera es que \textbf{la Tasa de Conformidad no se modifica}: se sigue calculando igual, se sigue interpretando con los umbrales del $85\%$ y el $70\%$, y se sigue reportando siempre, de modo que la formulación aprobada en el anteproyecto permanece intacta y verificable. La segunda es que el criterio es \textbf{configurable}: el modo \texttt{cr} reproduce el comportamiento original y el modo \texttt{cr+severidad} aplica el refinamiento, lo que permite comparar ambos sobre la misma evidencia en lugar de sustituir uno por otro sin posibilidad de contraste. El reporte, además, advierte de forma explícita cuando la severidad ha endurecido el veredicto que la CR habría emitido por sí sola.
+
+La tabla~\ref{tab:refinamiento} muestra el resultado de reejecutar el experimento completo bajo ambos criterios.
+
+\begin{table}[H]
+\centering
+\caption{Clasificación de los cinco escenarios bajo ambos criterios. La columna «esperado» recoge el estado que el escenario merece según las derivas efectivamente inducidas.}
+\label{tab:refinamiento}
+\footnotesize
+\begin{tabular}{lrlll}
+\toprule
+\textbf{Escenario} & \textbf{CR} & \textbf{Modo \texttt{cr}} & \textbf{Modo \texttt{cr+severidad}} & \textbf{Esperado} \\
+\midrule
+C0 · base          & $100{,}00\%$ & Aceptable      & Aceptable      & Aceptable \\
+C1 · capas         & $90{,}91\%$  & Aceptable      & En observación & En observación o peor \\
+C2 · ciclo         & $83{,}33\%$  & En observación & No conforme    & No conforme \\
+C3 · concentración & $91{,}67\%$  & Aceptable      & En observación & En observación o peor \\
+C4 · combinado     & $57{,}14\%$  & No conforme    & No conforme    & No conforme \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El criterio original clasifica correctamente tres de los cinco escenarios; el refinado, los cinco. La mejora se concentra, como era de esperar, en los escenarios de deriva aislada, que son justamente aquellos en los que un mecanismo de detección temprana debe demostrar su valor. Obsérvese, además, que el refinamiento solo puede endurecer el veredicto y nunca relajarlo, propiedad que la batería de pruebas verifica de forma explícita: incorporar la severidad no puede hacer que un sistema problemático parezca sano.
+
+Queda pendiente una discusión que el refinamiento abre y no cierra. Que un único ciclo baste para declarar un sistema \textit{no conforme} es una posición defendible ---los ciclos son la estructura más dañina de las tres--- pero también exigente para un sistema legado que arrastre varios. Por esa razón el criterio se dejó configurable y no impuesto: cada organización debe decidir cuánta severidad tolera, del mismo modo que decide sus umbrales. Lo que el mecanismo garantiza es que esa decisión quede declarada y sea auditable, no que sea la misma para todos.
+
+\section{Contraste con los indicadores de la metodología}
+La metodología aprobada en el anteproyecto definió cuatro indicadores para juzgar el desempeño del mecanismo. Contrastar los resultados con cada uno de ellos es lo que convierte un experimento en una evaluación con criterios explícitos, en lugar de una demostración de que el prototipo «funciona». La tabla~\ref{tab:indicadores} resume esa correspondencia.
+
+\begin{table}[H]
+\centering
+\caption{Contraste entre los indicadores metodológicos y los resultados observados.}
+\label{tab:indicadores}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.2cm}XX}
+\toprule
+\textbf{Indicador} & \textbf{Definición} & \textbf{Resultado observado} \\
+\midrule
+Cobertura de detección &
+Proporción de derivas inducidas que el mecanismo identifica. &
+Detectó las seis derivas repartidas entre los cuatro escenarios alterados: cobertura del $100\%$, superior al criterio de éxito del $80\%$ fijado para OBJ4. \\
+\midrule
+Falsos positivos en la línea base &
+Verificación de que el mecanismo no marque como anómalo un estado estructural esperado. &
+C0 obtuvo conformidad plena y cero hallazgos. Ninguna regla se activó fuera de los escenarios previstos por la matriz de validación, de modo que tampoco hubo falsos positivos en los escenarios alterados. \\
+\midrule
+Variación de la Tasa de Conformidad &
+Comprobación de que la métrica sea sensible a la degradación introducida. &
+La CR descendió en los cuatro escenarios alterados, de forma monótona respecto del número de incumplimientos ($100\% \rightarrow 91{,}67\% \rightarrow 90{,}91\% \rightarrow 83{,}33\% \rightarrow 57{,}14\%$). Es sensible, pero su magnitud resultó insuficiente para clasificar correctamente las derivas aisladas, lo que motivó el refinamiento de la sección anterior. \\
+\midrule
+Capacidad explicativa del reporte &
+Presencia de la regla violada, su ubicación y evidencia estructural suficiente para interpretación humana. &
+Cada hallazgo asocia la regla, los paquetes implicados, la severidad y la evidencia hasta el método y la línea que originan la dependencia; los ciclos incluyen su ruta concreta. El reporte declara además reglas, umbrales, paquetes sin capa y exclusiones del diagnóstico. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Este contraste cumple una doble función. Por un lado, demuestra que el experimento se juzgó contra los mismos criterios que el anteproyecto había comprometido, sin introducir criterios a posteriori. Por otro, muestra que el trabajo no se limitó a confirmar lo que ya se esperaba: el tercer indicador reveló una limitación real de la métrica, y esa limitación se atendió dentro del alcance aprobado en lugar de posponerse como trabajo futuro.
+
+\section{Amenazas a la validez}
+Toda evaluación empírica debe examinar con honestidad los límites de la evidencia que produce. El análisis sigue la clasificación habitual en investigación empírica en ingeniería de software \citep{Wohlin2012, RunesonHost2009}.
+
+\paragraph{Validez interna.} La principal amenaza proviene de la naturaleza sintética de los escenarios: al haber sido las derivas introducidas por el propio investigador, existe el riesgo de que el mecanismo se haya ajustado, aun de forma no intencional, a las particularidades de esos casos. Se aplicaron tres contenciones. Primera, las reglas se mantuvieron genéricas y se declararon por configuración, de modo que no codifican conocimiento del caso alterado; el mismo binario evaluó los cinco escenarios y el propio prototipo, con configuraciones distintas. Segunda, la matriz de validación se fijó antes de ejecutar el experimento, lo que impide reinterpretar a posteriori lo observado. Tercera, el comportamiento esperado se codificó además en la batería de pruebas, que verifica los valores de la CR sobre grafos construidos a mano, con independencia de la extracción por \textit{bytecode}: si la herramienta de análisis estático produjera un grafo distinto del previsto, la discrepancia se manifestaría en lugar de pasar inadvertida. Una amenaza que no se logra contener por completo es que el refinamiento de la clasificación se diseñó \textit{después} de observar el comportamiento de C1 y C3; aunque su formulación es independiente de esos escenarios ---no menciona capas, ciclos ni concentración, sino solo severidades---, su validación sobre los mismos casos que lo motivaron no constituye evidencia independiente.
+
+\paragraph{Validez externa.} La generalización está limitada por el tamaño y la artificialidad de los escenarios. Cinco paquetes y once dependencias distan mucho de un sistema industrial, y los resultados demuestran la viabilidad del enfoque sin autorizar a extrapolar su desempeño a proyectos con arquitecturas heterogéneas, múltiples lenguajes o volúmenes de código muy superiores. El autoanálisis del prototipo ---seis paquetes, catorce dependencias, veintiséis verificaciones--- aporta un segundo sistema real, aunque igualmente pequeño y desarrollado por el mismo autor. Hay, además, un efecto que el tamaño reducido oculta: la dilución descrita en la sección~\ref{sec:dilucion} se agrava con la escala, de modo que en sistemas grandes cabe esperar que el criterio basado solo en la CR sea aún menos discriminante que lo observado aquí. La generalización exige una validación sobre repositorios industriales, que se plantea como trabajo futuro.
+
+\paragraph{Validez de constructo.} La pregunta es si las variables observadas representan adecuadamente el fenómeno que se pretende medir. Operacionalizar la deriva arquitectónica en solo tres dimensiones es, necesariamente, una aproximación parcial de un fenómeno complejo: un sistema puede obtener una CR del $100\%$ y padecer derivas que el catálogo no cubre, razón por la cual el reporte declara explícitamente qué quedó fuera del diagnóstico. A ello se suma una limitación específica de FF3 que el autoanálisis puso de manifiesto: al operar solo sobre la topología, la regla no distingue un componente dios de un concentrador legítimo, como una raíz de composición o una fachada, y por tanto su umbral no es un valor universal sino un parámetro que cada organización debe calibrar. Por último, la asignación de paquetes a capas se resuelve por prefijo y en el orden en que las capas se declaran, lo que exige cuidado cuando una capa es prefijo de otra.
+
+\paragraph{Validez de conclusión.} Las conclusiones se apoyan en la transparencia del cálculo: al ser la CR un cociente explícito y reproducible, cualquier afirmación puede auditarse reconstruyendo el diagnóstico paso a paso, y la evidencia se conserva en formatos verificables por terceros. No obstante, el carácter determinista del experimento ---cinco escenarios, una configuración, un sistema--- impide todo tratamiento estadístico. Los resultados deben leerse como evidencia de viabilidad y de sensibilidad por dimensión, no como una estimación de desempeño generalizable.
+
+\section{Resumen del capítulo}
+Este capítulo presentó el diseño de la evaluación, concebido como un experimento controlado con una matriz de validación fijada de antemano y con criterios de éxito explícitos. El mecanismo detectó las seis derivas inducidas en los cuatro escenarios alterados, sin producir un solo hallazgo sobre la implementación de referencia, superando así el criterio del $80\%$ comprometido para OBJ4. Los escenarios de deriva aislada revelaron, además, que la Tasa de Conformidad ---al ser una proporción no ponderada--- diluye las violaciones localizadas y puede clasificar como aceptable un sistema con una desviación real. Ese hallazgo motivó un refinamiento del criterio de clasificación que incorpora la severidad del peor hallazgo sin alterar el cálculo de la métrica, y que clasifica correctamente los cinco escenarios. El capítulo cerró examinando las amenazas a la validez de la evidencia producida, entre las que destaca la artificialidad de los escenarios y el hecho de que el refinamiento se validara sobre los mismos casos que lo motivaron.
