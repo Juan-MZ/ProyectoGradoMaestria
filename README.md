@@ -6,7 +6,7 @@ Functions* y análisis estático de grafos de dependencia.**
 [![Documento: CC BY-NC-ND 4.0](https://img.shields.io/badge/documento-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![Código: Apache 2.0](https://img.shields.io/badge/c%C3%B3digo-Apache%202.0-blue.svg)](LICENSE-CODE)
 [![Java 17+](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net/)
-[![Pruebas: 96](https://img.shields.io/badge/pruebas-96%20superadas-brightgreen.svg)](prototipo/src/test/java)
+[![Pruebas: 136](https://img.shields.io/badge/pruebas-136%20superadas-brightgreen.svg)](prototipo/src/test/java)
 
 Trabajo de grado para optar al título de **Magíster en Ingeniería de Software**
 de la Pontificia Universidad Javeriana Cali.
@@ -108,7 +108,7 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
 │
 └── prototipo/                         Arquitecta: el mecanismo construido
     ├── src/main/java/                 Núcleo (config, grafo, reglas, motor, reporte)
-    ├── src/test/java/                 Batería de 96 comprobaciones
+    ├── src/test/java/                 Batería de 136 comprobaciones
     ├── caso-estudio*/                 Los cinco escenarios del experimento
     ├── lib/                           ArchUnit y SLF4J (ver TERCEROS.md)
     ├── rules.properties               Catálogo de reglas del caso de estudio
@@ -143,7 +143,7 @@ Requiere **JDK 17 o superior**. Maven es opcional: las dependencias están en
 ```bash
 cd prototipo
 ./build.sh         # compila núcleo, pruebas y los cinco escenarios
-./test.sh          # 96 comprobaciones sobre el núcleo lógico
+./test.sh          # 136 comprobaciones sobre el núcleo lógico
 ./experimento.sh   # experimento completo; evidencia en resultados/
 ```
 

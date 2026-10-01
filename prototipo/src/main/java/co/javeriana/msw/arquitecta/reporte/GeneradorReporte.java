@@ -1,8 +1,5 @@
 package co.javeriana.msw.arquitecta.reporte;
 
-import java.util.List;
-import java.util.Locale;
-
 import co.javeriana.msw.arquitecta.config.ConfiguracionReglas;
 import co.javeriana.msw.arquitecta.grafo.GrafoDependencias;
 import co.javeriana.msw.arquitecta.motor.Resultado;
@@ -10,14 +7,18 @@ import co.javeriana.msw.arquitecta.reglas.Regla;
 import co.javeriana.msw.arquitecta.reglas.ResultadoRegla;
 import co.javeriana.msw.arquitecta.reglas.Violacion;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.OptionalDouble;
+
 /**
  * Genera el reporte textual de conformidad.
  *
  * <p>El reporte no se limita al veredicto: declara qué reglas se evaluaron, qué
- * umbrales se aplicaron, qué paquetes entraron en el análisis y qué quedó
- * deliberadamente fuera de él. Esa declaración de alcance es lo que impide que la
- * Tasa de Conformidad se lea como un juicio absoluto sobre la calidad del
- * sistema.</p>
+ * umbrales se aplicaron, qué paquetes entraron en el análisis, qué exenciones se
+ * concedieron y qué quedó deliberadamente fuera de él. Esa declaración de alcance
+ * es lo que impide que la Tasa de Conformidad se lea como un juicio absoluto
+ * sobre la calidad del sistema.</p>
  */
 public final class GeneradorReporte {
 
@@ -29,6 +30,12 @@ public final class GeneradorReporte {
 
     public static String generar(Resultado resultado, GrafoDependencias grafo,
             List<Regla> reglas, ConfiguracionReglas config, String etiqueta) {
+        return generar(resultado, grafo, reglas, config, etiqueta, OptionalDouble.empty());
+    }
+
+    public static String generar(Resultado resultado, GrafoDependencias grafo,
+            List<Regla> reglas, ConfiguracionReglas config, String etiqueta,
+            OptionalDouble crAnterior) {
 
         StringBuilder sb = new StringBuilder();
         String regla = "=".repeat(ANCHO);
@@ -46,6 +53,10 @@ public final class GeneradorReporte {
         sb.append(fila("Verificaciones", Integer.toString(resultado.verificaciones())));
         sb.append(fila("Incumplimientos", Integer.toString(resultado.incumplimientos())));
         sb.append(fila("Tasa de Conformidad", porcentaje(resultado.conformidad())));
+        if (crAnterior.isPresent()) {
+            sb.append(fila("Tendencia",
+                    Historico.describirTendencia(resultado.conformidad(), crAnterior.getAsDouble())));
+        }
         sb.append(sub).append('\n');
         sb.append(fila("Estado según CR", resultado.estadoPorCR().etiqueta()));
         sb.append(fila("Severidad máxima",
@@ -92,9 +103,10 @@ public final class GeneradorReporte {
     }
 
     /**
-     * Declaración de alcance del diagnóstico: qué se evaluó, con qué parámetros y
-     * qué quedó fuera. Sin esta sección el reporte invitaría a extrapolar el
-     * veredicto más allá de lo que las reglas realmente comprobaron.
+     * Declaración de alcance del diagnóstico: qué se evaluó, con qué parámetros,
+     * qué exenciones se concedieron y qué quedó fuera. Sin esta sección el reporte
+     * invitaría a extrapolar el veredicto más allá de lo que las reglas realmente
+     * comprobaron.
      */
     private static String alcance(Resultado resultado, GrafoDependencias grafo,
             List<Regla> reglas, ConfiguracionReglas config) {
@@ -112,6 +124,25 @@ public final class GeneradorReporte {
         for (Regla r : reglas) {
             sb.append("      · ").append(r.nombre())
               .append(" — verificación por: ").append(r.unidadVerificacion()).append('\n');
+        }
+
+        if (config.tieneExenciones()) {
+            sb.append("  Exenciones declaradas :\n");
+            if (!config.exclusiones().isEmpty()) {
+                sb.append("      · Fuera del grafo (no forman parte del sistema evaluado):\n");
+                for (String prefijo : config.exclusiones()) {
+                    sb.append("            ").append(prefijo).append('\n');
+                }
+            }
+            if (!config.compartidos().isEmpty()) {
+                sb.append("      · Núcleo compartido (exento de ciclos y de concentración,\n");
+                sb.append("        por concentrar dependencias en razón de su papel):\n");
+                for (String prefijo : config.compartidos()) {
+                    sb.append("            ").append(prefijo).append('\n');
+                }
+            }
+        } else {
+            sb.append("  Exenciones declaradas : ninguna\n");
         }
 
         List<String> sinCapa = grafo.nodos().stream()

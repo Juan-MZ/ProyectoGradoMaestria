@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Grafo dirigido en el que cada nodo es un paquete y cada arista representa una
@@ -99,6 +100,39 @@ public class GrafoDependencias {
             }
         }
         return total;
+    }
+
+    /**
+     * Devuelve una vista del grafo restringida a los nodos que satisfacen el
+     * predicado, conservando la evidencia de las aristas supervivientes.
+     *
+     * <p>Sirve para que una regla evalúe solo la parte del sistema que le
+     * concierne ---por ejemplo, ignorando los paquetes exentos por su papel
+     * arquitectónico--- sin que ello altere el grafo que ven las demás reglas ni
+     * el que se exporta como evidencia.</p>
+     */
+    public GrafoDependencias filtrar(Predicate<String> incluir) {
+        GrafoDependencias vista = new GrafoDependencias();
+        for (String nodo : nodos) {
+            if (incluir.test(nodo)) {
+                vista.agregarNodo(nodo);
+            }
+        }
+        for (String origen : nodos) {
+            if (!incluir.test(origen)) {
+                continue;
+            }
+            for (String destino : destinosDe(origen)) {
+                if (incluir.test(destino)) {
+                    vista.dependencias.get(origen).add(destino);
+                    Set<String> detalles = evidencias.get(clave(origen, destino));
+                    if (detalles != null) {
+                        vista.evidencias.put(clave(origen, destino), new LinkedHashSet<>(detalles));
+                    }
+                }
+            }
+        }
+        return vista;
     }
 
     /** Aristas del grafo como pares ordenados origen-destino, en orden de inserción. */

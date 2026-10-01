@@ -71,14 +71,45 @@ public final class CargadorConfiguracion {
             permitidos.put(capa.nombre(), destinos);
         }
 
+        List<String> exclusiones = lista(props.getProperty("excluir", ""));
+        List<String> compartidos = lista(props.getProperty("rol.compartido", ""));
+        validarExenciones(raiz, exclusiones, "excluir");
+        validarExenciones(raiz, compartidos, "rol.compartido");
+        for (String compartido : compartidos) {
+            if (exclusiones.contains(compartido)) {
+                throw new IllegalArgumentException("El paquete '" + compartido
+                        + "' figura a la vez en 'excluir' y en 'rol.compartido'; son tratamientos"
+                        + " incompatibles: el primero lo saca del análisis y el segundo lo mantiene"
+                        + " dentro con exenciones.");
+            }
+        }
+
         return new ConfiguracionReglas(
                 raiz,
                 capas,
                 permitidos,
+                exclusiones,
+                compartidos,
                 entero(props, "umbral.concentracion", UMBRAL_CONCENTRACION_POR_DEFECTO),
                 decimal(props, "umbral.cr.aceptable", UMBRAL_ACEPTABLE_POR_DEFECTO),
                 decimal(props, "umbral.cr.observacion", UMBRAL_OBSERVACION_POR_DEFECTO),
                 ModoClasificacion.desde(props.getProperty("clasificacion.modo")));
+    }
+
+    /**
+     * Una exención que no cuelga de la raíz de análisis no puede tener efecto,
+     * porque el grafo nunca contendrá ese paquete. Casi siempre es una errata, y
+     * fallar es preferible a aplicar en silencio una excepción que el usuario
+     * cree activa.
+     */
+    private static void validarExenciones(String raiz, List<String> prefijos, String propiedad) {
+        for (String prefijo : prefijos) {
+            if (!prefijo.equals(raiz) && !prefijo.startsWith(raiz + ".")) {
+                throw new IllegalArgumentException("La propiedad '" + propiedad + "' declara '" + prefijo
+                        + "', que no pertenece a la raíz de análisis '" + raiz + "' y por tanto no"
+                        + " tendría ningún efecto.");
+            }
+        }
     }
 
     private static List<String> lista(String csv) {

@@ -54,6 +54,7 @@ java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `--etiqueta <nombre>`     | Nombra el escenario en el reporte y en los archivos de evidencia.                                                                 |
 | `--salida <directorio>`   | Escribe reporte (`.txt`), evidencia estructurada (`.json`), grafo (`.dot`), hallazgos (`.csv`) y agrega una fila a `resumen.csv`. |
+| `--historico <csv>`       | Compara con la última corrida registrada para la misma etiqueta y reporta la variación. Si se omite y hay `--salida`, usa el `resumen.csv` de ese directorio. |
 | `--modo cr\|cr+severidad` | Sobrescribe el modo de clasificación declarado en la configuración.                                                               |
 | `--fallar-si <estado>`    | Devuelve código de salida 2 si el veredicto alcanza esa gravedad (afordancia para uso futuro en integración continua).            |
 | `--catalogo`              | Imprime el catálogo de _Fitness Functions_ derivado de la implementación vigente y termina.                                       |
@@ -73,6 +74,8 @@ capa.persistencia=com.caso.persistencia
 permitido.presentacion=negocio
 permitido.negocio=persistencia
 permitido.persistencia=
+excluir=
+rol.compartido=
 umbral.concentracion=3
 umbral.cr.aceptable=85
 umbral.cr.observacion=70
@@ -86,6 +89,35 @@ estratificación, no puede afirmarse que la vulneren.
 > **Orden de declaración.** La asignación de paquetes a capas se resuelve por
 > prefijo, en el orden en que las capas aparecen en `capas`. Si una capa es
 > prefijo de otra, debe declararse después de la más específica.
+
+### Exenciones
+
+Un catálogo que no admita excepciones obliga a elegir entre tolerar falsos
+positivos o apagar la regla entera. Se distinguen dos situaciones, y el reporte
+enumera ambas para que la excepción quede registrada y sea auditable.
+
+| Clave            | Para qué                                                                                                         | Alcance                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `excluir`        | Código que **no forma parte** del sistema evaluado aunque el empaquetado lo sitúe bajo la misma raíz: dependencias vendorizadas, código generado. Lo saca del grafo. | El paquete **y todos sus subpaquetes**.                   |
+| `rol.compartido` | Paquetes que **sí forman parte** del sistema pero cuyo papel —núcleo de anotaciones, raíz de composición, fachada— hace que concentren dependencias por diseño. Quedan exentos de las reglas de ciclos y de concentración, pero siguen en el grafo y en la evidencia. | **Exacto**, no se hereda a los subpaquetes.               |
+
+La asimetría es deliberada. Excluir código ajeno es siempre una cuestión de
+subárbol; un papel arquitectónico, en cambio, lo desempeña un paquete concreto, y
+propagarlo hacia abajo eximiría al sistema entero cada vez que el núcleo
+compartido resultara ser la raíz, que es el caso más frecuente.
+
+### Tendencia
+
+El valor absoluto de la CR padece un efecto de dilución: al ser una proporción,
+una violación aislada pesa cada vez menos conforme crece el sistema. Su
+**variación** no sufre ese problema, porque se mide contra el propio sistema y no
+contra un umbral universal. Conservando el `resumen.csv` entre corridas, el
+reporte añade la comparación automáticamente:
+
+```
+  Tasa de Conformidad     : 86.41%
+  Tendencia               : +4.10 pp respecto de la corrida anterior (82.31%) · mejora
+```
 
 ## Interpretación del resultado
 
@@ -149,15 +181,45 @@ java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
      out\arquitecta-core rules-arquitecta.properties --etiqueta Arquitecta-autoanalisis
 ```
 
-Resultado: 6 paquetes, 14 dependencias, 26 verificaciones, 0 incumplimientos →
+Resultado: 6 paquetes, 14 dependencias, 24 verificaciones, 0 incumplimientos →
 **CR 100 % · Aceptable**. La arquitectura interna del prototipo satisface las
 mismas reglas que exige a los sistemas que evalúa.
 
-Con el umbral de concentración calibrado en 3 en lugar de 5, el autoanálisis
-señala la raíz de composición (`Ce = 5`) y el módulo de reporte (`Ce = 4`). Ambos
-son concentradores legítimos por su papel arquitectónico, no derivas: el caso
-ilustra que el umbral debe calibrarse según el sistema y que la regla, al operar
-solo sobre la topología, es ciega al rol que cada paquete desempeña.
+La configuración declara la raíz de composición como núcleo compartido
+(`rol.compartido`), porque depende de los cinco módulos que ensambla por
+definición del patrón, no por deterioro. Declararlo permite mantener el umbral
+estricto en lugar de relajarlo para todo el sistema, que es lo que ocultaría
+concentraciones reales en los demás paquetes. Bajándolo a 3 aparece el módulo de
+reporte (`Ce = 4`), que depende de los cuatro que debe representar: el caso
+ilustra que el umbral no es universal y que cada sistema obliga a decidir dónde
+está su techo razonable.
+
+## Sobre código real: ArchUnit 1.3.0
+
+El mecanismo se aplicó sobre una biblioteca de terceros —923 clases propias en 22
+paquetes— declarando como hipótesis la estratificación `base ← core ← lang ←
+library`. El análisis completo tarda **1,2 segundos**.
+
+|                          | Sin exenciones | Con exenciones declaradas |
+| ------------------------ | -------------: | ------------------------: |
+| Paquetes                 |             43 |                        22 |
+| Dependencias             |            222 |                       107 |
+| Integridad de capas      |          61/61 |                     61/61 |
+| Ciclos (mayor)           |    12 incumpl. |  9 incumpl. (7 → 4 paq.)  |
+| Concentración            |    14 marcados |                 5 marcados |
+| **Tasa de Conformidad**  |      82,31 %   |                  86,41 %  |
+
+ArchUnit empaqueta Guava y ASM bajo su propio prefijo: sin exenciones, casi la
+mitad del grafo es código que no le pertenece. Declararlas elimina **9 de los 14**
+hallazgos de concentración y reduce el ciclo mayor de 7 paquetes a 4, porque el
+paquete de anotaciones al que todo referencia actuaba como puente entre módulos
+que entre sí no se alcanzan.
+
+Dos lecturas importan. La primera: la regla de capas dio **61/61 en ambas
+configuraciones**, de modo que la hipótesis sobre su arquitectura era correcta y
+la regla no produjo un solo falso positivo. La segunda: los tres ciclos
+**sobreviven** a las exenciones, que es como debe ser — el objetivo era retirar el
+ruido, no silenciar los hallazgos.
 
 ## Evidencia generada
 
@@ -180,10 +242,11 @@ Los archivos `.dot` pueden renderizarse con Graphviz:
 
 ## Pruebas
 
-`test.bat` ejecuta 96 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
-carga de configuración, las tres reglas, el motor, los cinco escenarios y los
-exportadores, incluidos los casos límite (grafo vacío, umbrales en su frontera
-exacta, configuraciones inválidas). La batería se construyó **sin dependencias
+`test.bat` ejecuta 136 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+carga de configuración, las tres reglas, el motor, las exenciones, los cinco
+escenarios, los exportadores y la comparación entre corridas, incluidos los casos
+límite (grafo vacío, umbrales en su frontera exacta, configuraciones inválidas,
+exenciones que no cuelgan de la raíz). La batería se construyó **sin dependencias
 externas**, en coherencia con el requisito de ligereza del propio mecanismo, y
 devuelve código de salida distinto de cero si alguna comprobación falla.
 

@@ -10,6 +10,7 @@ import co.javeriana.msw.arquitecta.grafo.Tarjan;
 import co.javeriana.msw.arquitecta.motor.EstadoArquitectonico;
 import co.javeriana.msw.arquitecta.motor.MotorConformidad;
 import co.javeriana.msw.arquitecta.motor.Resultado;
+import co.javeriana.msw.arquitecta.reglas.Exenciones;
 import co.javeriana.msw.arquitecta.reglas.Regla;
 import co.javeriana.msw.arquitecta.reglas.ReglaCiclos;
 import co.javeriana.msw.arquitecta.reglas.ReglaConcentracion;
@@ -18,6 +19,7 @@ import co.javeriana.msw.arquitecta.reglas.ResultadoRegla;
 import co.javeriana.msw.arquitecta.reglas.Violacion;
 import co.javeriana.msw.arquitecta.reporte.ExportadorCsv;
 import co.javeriana.msw.arquitecta.reporte.ExportadorJson;
+import co.javeriana.msw.arquitecta.reporte.Historico;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,8 +49,10 @@ public final class PruebasArquitecta {
         pruebasReglaCiclos(v);
         pruebasReglaConcentracion(v);
         pruebasMotor(v);
+        pruebasExenciones(v);
         pruebasEscenarios(v);
         pruebasExportadores(v);
+        pruebasHistorico(v);
 
         System.exit(v.resumen());
     }
@@ -78,6 +82,14 @@ public final class PruebasArquitecta {
         v.comprueba("una arista inexistente no tiene evidencia", g.evidenciaDe("b", "a").isEmpty());
         v.comprueba("los destinos son de solo lectura",
                 esInmutable(() -> g.destinosDe("a").add("z")));
+
+        GrafoDependencias filtrado = g.filtrar(n -> !n.equals("c"));
+        v.igual("el filtrado retira el nodo excluido", 2, filtrado.nodos().size());
+        v.comprueba("el filtrado retira sus aristas", !filtrado.existeNodo("c"));
+        v.igual("el filtrado conserva las aristas supervivientes", 1, filtrado.cantidadAristas());
+        v.comprueba("el filtrado conserva la evidencia",
+                filtrado.evidenciaDe("a", "b").contains("Field <A.b> has type <B> in (A.java:12)"));
+        v.igual("el grafo original no se altera al filtrar", 3, g.nodos().size());
     }
 
     private static void pruebasTarjan(Verificador v) {
@@ -163,6 +175,36 @@ public final class PruebasArquitecta {
                 new Capa("negocio", List.of("com.caso.negocio")).contiene("com.caso.negocio.sub"));
         v.comprueba("una capa no reclama paquetes ajenos",
                 !new Capa("negocio", List.of("com.caso.negocio")).contiene("com.caso.dominio"));
+        v.comprueba("una capa respeta la frontera del separador",
+                !new Capa("negocio", List.of("com.caso.negocio")).contiene("com.caso.negociador"));
+        v.comprueba("una capa reconoce el paquete exacto",
+                new Capa("negocio", List.of("com.caso.negocio")).contiene("com.caso.negocio"));
+
+        ConfiguracionReglas exenta = cargar(
+                "raiz=com.caso\n"
+                + "excluir=com.caso.generado,com.caso.vendor\n"
+                + "rol.compartido=com.caso.anotaciones\n");
+        v.igual("las exclusiones se leen en orden",
+                List.of("com.caso.generado", "com.caso.vendor"), exenta.exclusiones());
+        v.comprueba("un paquete excluido se reconoce", exenta.excluido("com.caso.vendor.lib"));
+        v.comprueba("la exclusion respeta la frontera del separador",
+                !exenta.excluido("com.caso.vendorizado"));
+        v.comprueba("un nucleo compartido se reconoce", exenta.esCompartido("com.caso.anotaciones"));
+        v.comprueba("un paquete corriente no es compartido", !exenta.esCompartido("com.caso.negocio"));
+        v.comprueba("el rol compartido no se hereda a los subpaquetes",
+                !exenta.esCompartido("com.caso.anotaciones.internas"));
+        v.comprueba("se detecta que hay exenciones", exenta.tieneExenciones());
+        v.comprueba("sin exenciones declaradas no hay exenciones", !configPorDefecto().tieneExenciones());
+
+        v.rechaza("una exencion fuera de la raiz se rechaza",
+                IllegalArgumentException.class,
+                () -> cargarSinIO("raiz=com.caso\nexcluir=org.otro\n"));
+        v.rechaza("un rol compartido fuera de la raiz se rechaza",
+                IllegalArgumentException.class,
+                () -> cargarSinIO("raiz=com.caso\nrol.compartido=org.otro\n"));
+        v.rechaza("un paquete excluido y compartido a la vez se rechaza",
+                IllegalArgumentException.class,
+                () -> cargarSinIO("raiz=com.caso\nexcluir=com.caso.x\nrol.compartido=com.caso.x\n"));
     }
 
     // --------------------------------------------------------------- reglas
@@ -282,6 +324,62 @@ public final class PruebasArquitecta {
                 () -> new ResultadoRegla("r", 1, 5, List.of()));
     }
 
+    // ------------------------------------------------------------ exenciones
+
+    private static void pruebasExenciones(Verificador v) {
+        v.grupo("Exenciones por papel arquitectonico");
+
+        // Un nucleo de anotaciones al que todo referencia y que referencia de vuelta:
+        // une en un mismo componente a paquetes que entre si no se alcanzan.
+        GrafoDependencias g = new GrafoDependencias();
+        g.agregarArista("com.caso.a", "com.caso.nucleo");
+        g.agregarArista("com.caso.b", "com.caso.nucleo");
+        g.agregarArista("com.caso.nucleo", "com.caso.a");
+        g.agregarArista("com.caso.nucleo", "com.caso.b");
+
+        ResultadoRegla sinExencion = new ReglaCiclos().evaluar(g);
+        v.igual("sin exencion, el nucleo arrastra a todos al mismo ciclo",
+                3, sinExencion.incumplimientos());
+
+        Exenciones nucleo = new Exenciones(List.of("com.caso.nucleo"));
+        ResultadoRegla conExencion = new ReglaCiclos(nucleo).evaluar(g);
+        v.igual("al eximir el nucleo desaparece el ciclo artificial",
+                0, conExencion.incumplimientos());
+        v.igual("las verificaciones excluyen el paquete exento",
+                2, conExencion.verificaciones());
+
+        // Un ciclo real entre dos paquetes debe seguir detectandose pese a la exencion.
+        g.agregarArista("com.caso.a", "com.caso.b");
+        g.agregarArista("com.caso.b", "com.caso.a");
+        v.igual("un ciclo real sobrevive a la exencion",
+                2, new ReglaCiclos(nucleo).evaluar(g).incumplimientos());
+
+        // Concentracion: la raiz de composicion depende de todo por diseno.
+        GrafoDependencias h = new GrafoDependencias();
+        for (String destino : List.of("uno", "dos", "tres", "cuatro")) {
+            h.agregarArista("com.caso.raiz", "com.caso." + destino);
+        }
+        v.igual("sin exencion, la raiz de composicion se marca",
+                1, new ReglaConcentracion(3).evaluar(h).incumplimientos());
+
+        Exenciones raiz = new Exenciones(List.of("com.caso.raiz"));
+        ResultadoRegla exenta = new ReglaConcentracion(3, raiz).evaluar(h);
+        v.igual("al eximirla deja de marcarse", 0, exenta.incumplimientos());
+        v.igual("y deja de contarse como verificacion", 4, exenta.verificaciones());
+
+        v.comprueba("una exencion vacia no altera el resultado",
+                new ReglaConcentracion(3, Exenciones.NINGUNA).evaluar(h).incumplimientos() == 1);
+
+        Exenciones util = new Exenciones(List.of("com.caso.util"));
+        v.comprueba("la exencion cubre el paquete exacto", util.cubre("com.caso.util"));
+        v.comprueba("la exencion no absorbe paquetes de nombre parecido",
+                !util.cubre("com.caso.utilidades"));
+        v.comprueba("la exencion NO se hereda a los subpaquetes",
+                !util.cubre("com.caso.util.io"));
+        v.comprueba("eximir la raiz no eximiria al sistema entero",
+                !new Exenciones(List.of("com.caso")).cubre("com.caso.negocio"));
+    }
+
     // ------------------------------------------------------------ escenarios
 
     private static void pruebasEscenarios(Verificador v) {
@@ -375,6 +473,53 @@ public final class PruebasArquitecta {
         return new Resultado(0.0, EstadoArquitectonico.NO_CONFORME, Violacion.Severidad.MAYOR,
                 EstadoArquitectonico.EN_OBSERVACION, EstadoArquitectonico.NO_CONFORME,
                 ModoClasificacion.CR_SEVERIDAD, List.of(regla), 1, 1, 85.0, 70.0);
+    }
+
+    // ------------------------------------------------------------- historico
+
+    private static void pruebasHistorico(Verificador v) throws IOException {
+        v.grupo("Tendencia entre corridas");
+
+        Path csv = Files.createTempFile("resumen", ".csv");
+        try {
+            Files.writeString(csv, ExportadorCsv.CABECERA_RESUMEN + "\n"
+                    + "C0-base,4,5,10,0,100.00,Aceptable,,Aceptable,Aceptable\n"
+                    + "C4,5,11,14,6,57.14,No conforme,Crítica,No conforme,No conforme\n"
+                    + "C4,5,11,14,4,71.43,En observación,Mayor,En observación,En observación\n");
+
+            v.igual("se recupera la ultima CR del escenario",
+                    71.43, Historico.crAnterior(csv, "C4").getAsDouble(), 0.001);
+            v.igual("cada escenario tiene su propia historia",
+                    100.00, Historico.crAnterior(csv, "C0-base").getAsDouble(), 0.001);
+            v.comprueba("un escenario sin historia no devuelve valor",
+                    Historico.crAnterior(csv, "inexistente").isEmpty());
+            v.comprueba("un archivo inexistente no devuelve valor",
+                    Historico.crAnterior(Path.of("no-existe.csv"), "C4").isEmpty());
+            v.comprueba("un archivo nulo no rompe",
+                    Historico.crAnterior(null, "C4").isEmpty());
+
+            v.comprueba("una mejora se describe como tal",
+                    Historico.describirTendencia(88.35, 80.67).contains("mejora"));
+            v.comprueba("un deterioro se describe como tal",
+                    Historico.describirTendencia(70.0, 90.0).contains("deterioro"));
+            v.comprueba("la ausencia de cambio se describe como tal",
+                    Historico.describirTendencia(85.0, 85.0).contains("sin cambio"));
+            v.comprueba("la mejora lleva signo explicito",
+                    Historico.describirTendencia(88.35, 80.67).contains("+7.68 pp"));
+        } finally {
+            Files.deleteIfExists(csv);
+        }
+
+        // Una fila con coma dentro del nombre no debe desplazar las columnas.
+        Path conComa = Files.createTempFile("resumen", ".csv");
+        try {
+            Files.writeString(conComa, ExportadorCsv.CABECERA_RESUMEN + "\n"
+                    + "\"C1, capas\",4,6,11,1,90.91,Aceptable,Mayor,En observación,En observación\n");
+            v.igual("un escenario entrecomillado se lee correctamente",
+                    90.91, Historico.crAnterior(conComa, "C1, capas").getAsDouble(), 0.001);
+        } finally {
+            Files.deleteIfExists(conComa);
+        }
     }
 
     // ------------------------------------------------------------ auxiliares
