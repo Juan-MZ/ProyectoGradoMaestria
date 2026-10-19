@@ -126,7 +126,7 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
 ```
 ├── Maestria_PlantillaProyectoGrado/   Documento del trabajo de grado (LaTeX)
 │   ├── main.tex                       Raíz del documento
-│   ├── main.pdf                       PDF compilado (103 páginas)
+│   ├── main.pdf                       PDF compilado (101 páginas)
 │   ├── src/                           Capítulos y anexo
 │   ├── referencias.bib                Bibliografía (39 entradas)
 │   ├── compilar.bat / .sh             Compilación vía Docker

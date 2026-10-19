@@ -415,7 +415,7 @@ El requisito RF6 no figuraba en la formulación inicial: se incorporó durante l
 \label{sec:diseno}
 El prototipo se organizó en módulos con responsabilidades separadas, de modo que cada paso del proceso pudiera desarrollarse y verificarse de forma independiente. La figura~\ref{fig:modulos} muestra los cinco módulos del núcleo ---uno por paso del proceso---, los que lo ponen al alcance del usuario ---un servicio de análisis, una interfaz gráfica y un asistente opcional---, la raíz de composición que los ensambla y el sentido en que fluyen sus dependencias.
 
-\begin{figure}[H]
+\begin{figure}[tbp]
 \centering
 \begin{tikzpicture}[node distance=7mm and 14mm]
   \node[modulo] (app) {\texttt{arquitecta}\\\small raíz de composición};
