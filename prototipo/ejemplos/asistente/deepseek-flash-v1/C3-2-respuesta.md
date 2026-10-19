@@ -1,0 +1,3 @@
+# C3 · repetición 2 · deepseek-flash
+
+Reconozco una arquitectura en capas alrededor de `com.caso`: presentación → negocio → persistencia → dominio, con dominio como modelo estable y sin dependencias salientes. La matriz permite que presentación use el modelo de dominio y que negocio use persistencia; no declaro `util` como capa para no legitimar sus dependencias hacia todas las capas. El paquete `com.caso.util` (Ce=4, Ca=0) es el principal candidato a deriva: depende incluso de presentación y no recibe dependencias. Fijo el umbral en 3 porque los paquetes estratificados no superan Ce=2 y así solo se señala `util`. Dudas: si `util` es realmente transversal o lógica mal ubicada, y si presentación debe acceder directamente al dominio.

@@ -1,0 +1,3 @@
+# C3 · repetición 1 · deepseek-flash
+
+Reconozco una arquitectura en capas: presentación → negocio → persistencia → dominio, con el dominio como núcleo inferior usado por todas las capas. Las dependencias entre esas cuatro capas respetan la estratificación. La excepción es `com.caso.util`: sin capa, con `Ca=0` y `Ce=4`, depende de las cuatro capas, por lo que no parece una utilidad transversal sino un paquete que conoce todo el sistema. Propongo umbral 2, el máximo de los paquetes sanos, para que `util` quede señalado sin eximirlo. Dudas: el rol previsto de `util` y si presentación debe usar el dominio directamente.

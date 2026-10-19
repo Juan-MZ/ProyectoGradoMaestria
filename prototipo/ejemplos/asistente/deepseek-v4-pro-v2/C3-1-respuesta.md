@@ -1,0 +1,3 @@
+# C3 · repetición 1 · deepseek-v4-pro
+
+Reconozco una arquitectura en capas con dominio y utilidades como bases: presentación → negocio → persistencia → dominio, y utilidades como capa base que las demás pueden usar. El perfil muestra dos derivas: presentación depende directamente de dominio y utilidades depende de todas las capas (incluida presentación), invirtiendo su rol de base. Propongo umbral 3 porque los paquetes sanos tienen Ce≤2 y así util (Ce=4) queda señalado por concentración. Dudas: si presentación puede usar dominio directamente y si util debe ser base reutilizable o código a excluir.

@@ -7,7 +7,7 @@ rem    arquitecta                      abre la aplicacion
 rem    arquitecta <carpeta|jar>        la abre con ese proyecto
 rem    arquitecta analizar <proyecto> [reglas] [opciones]
 rem                                    analisis por consola
-rem    arquitecta compilar | pruebas | experimento | figuras
+rem    arquitecta compilar | pruebas | experimento | figuras | sistemas
 rem    arquitecta ayuda
 rem
 rem  Con doble clic abre la aplicacion. Compila por su cuenta la
@@ -25,6 +25,7 @@ if /i "%~1"=="compilar"    goto :compilar
 if /i "%~1"=="pruebas"     goto :guion
 if /i "%~1"=="experimento" goto :guion
 if /i "%~1"=="figuras"     goto :guion
+if /i "%~1"=="sistemas"    goto :guion
 if /i "%~1"=="preparar"    goto :actualizar
 
 call :actualizar
@@ -132,6 +133,7 @@ echo    arquitecta preparar              compila solo si el codigo cambio
 echo    arquitecta pruebas               ejecuta la bateria de pruebas
 echo    arquitecta experimento           reproduce el experimento (resultados\)
 echo    arquitecta figuras               regenera figuras y capturas
+echo    arquitecta sistemas              inyecta derivas en 4 sistemas reales y mide su deteccion
 echo.
 echo  El proyecto puede indicarse por su carpeta raiz (Maven, Gradle, IntelliJ,
 echo  Eclipse), por su directorio de clases o por su archivo .jar.

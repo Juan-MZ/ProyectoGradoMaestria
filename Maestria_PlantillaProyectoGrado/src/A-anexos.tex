@@ -12,7 +12,7 @@ La biblioteca se distribuye junto al repositorio, de modo que la compilación y 
 prototipo/
   arquitecta.bat / .sh        lanzador unico (aplicacion y tareas)
   src/main/java/              nucleo, servicio, interfaz y asistente
-  src/test/java/              bateria de pruebas (234 comprobaciones)
+  src/test/java/              bateria de pruebas (262 comprobaciones)
   lib/                        ArchUnit 1.3.0 y slf4j-api
   caso-estudio/
     c0-base/                  escenario C0 (linea base)
@@ -24,6 +24,8 @@ prototipo/
   ejemplos/
     autoanalisis/             catalogo para el autoanalisis
     archunit/                 configuraciones de la seccion 4.6
+    sistemas/                 catalogos y resultados de la seccion 4.7
+    asistente/                exploracion del asistente (anexo B)
     graficos/                 grafos en SVG generados por la herramienta
     interfaz/                 capturas de la interfaz grafica
   scripts/                    guiones que invoca el lanzador
@@ -34,8 +36,9 @@ prototipo/
 \section{Pasos para reproducir el experimento}
 \begin{enumerate}
     \item \textbf{Compilar.} Ejecutar \texttt{arquitecta compilar} (\texttt{./arquitecta.sh compilar} en macOS o Linux). El guion compila el núcleo y la batería de pruebas en \texttt{out/}, empaqueta la herramienta en \texttt{out/arquitecta.jar} y compila cada escenario en su \texttt{target/classes}. El paso es opcional: los siguientes compilan por su cuenta si hace falta.
-    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{arquitecta pruebas}. La batería debe reportar 234 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
+    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{arquitecta pruebas}. La batería debe reportar 262 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
     \item \textbf{Ejecutar el experimento.} Ejecutar \texttt{arquitecta experimento}. El guion imprime el catálogo de reglas, recorre los cinco escenarios bajo los dos modos de clasificación y deposita la evidencia en \texttt{resultados/}.
+    \item \textbf{Validación sobre sistemas reales (opcional).} Ejecutar \texttt{arquitecta sistemas}. El guion descarga de Maven Central los tres \texttt{.jar} necesarios, verifica su suma SHA-1, inyecta las derivas descritas en la sección~\ref{sec:sistemas} y escribe la tabla de resultados y la ubicación de cada deriva en \texttt{ejemplos/sistemas/}. Requiere conexión la primera vez.
     \item \textbf{Contrastar.} Comparar el archivo \texttt{resultados/modo-cr/resumen.csv} con la tabla~\ref{tab:resultados} y el archivo \texttt{resultados/modo-cr-severidad/resumen.csv} con la tabla~\ref{tab:refinamiento}.
 \end{enumerate}
 

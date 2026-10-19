@@ -37,7 +37,77 @@ public final class ResolutorProyecto {
     private ResolutorProyecto() {
     }
 
+    /**
+     * Versión de Java más reciente cuyo código compilado reconoce la biblioteca de
+     * extracción (ArchUnit 1.3.0). Los archivos de versiones posteriores no se
+     * rechazan: se omiten sin aviso, de modo que un análisis sobre ellos quedaría
+     * incompleto ---o vacío--- sin que nada lo advirtiera.
+     */
+    public static final int VERSION_JAVA_MAXIMA = 23;
+
+    /**
+     * Localiza el código compilado del proyecto y comprueba que la biblioteca de
+     * extracción puede leerlo por completo.
+     */
     public static Origen resolver(Path seleccion) throws ErrorAnalisis {
+        Origen origen = localizar(seleccion);
+        int version = versionJava(origen.ruta());
+        if (version > VERSION_JAVA_MAXIMA) {
+            throw new ErrorAnalisis("Hay clases compiladas para Java " + version + ", y la biblioteca de extracción"
+                    + " solo reconoce hasta Java " + VERSION_JAVA_MAXIMA + ": las clases más recientes se omitirían y el"
+                    + " diagnóstico quedaría incompleto. Compile el proyecto con una versión de destino igual o"
+                    + " anterior (por ejemplo, --release 21, o <maven.compiler.release>21</maven.compiler.release>"
+                    + " en Maven) y vuelva a analizarlo.");
+        }
+        return origen;
+    }
+
+    /**
+     * Versión de Java más alta entre las clases de la ruta, leída de la cabecera de
+     * cada archivo {@code .class} (versión principal menos 44); 0 si no hay clases.
+     */
+    static int versionJava(Path ruta) {
+        int maxima = 0;
+        try {
+            if (Files.isRegularFile(ruta)) {
+                try (java.util.jar.JarFile jar = new java.util.jar.JarFile(ruta.toFile())) {
+                    var entradas = jar.entries();
+                    while (entradas.hasMoreElements()) {
+                        var e = entradas.nextElement();
+                        // Las clases de META-INF/versions son variantes opcionales de un
+                        // .jar multiversión: la JVM las ignora si no las necesita.
+                        if (e.getName().endsWith(".class") && !e.getName().startsWith("META-INF/")) {
+                            try (java.io.InputStream in = jar.getInputStream(e)) {
+                                maxima = Math.max(maxima, version(in.readNBytes(8)));
+                            }
+                        }
+                    }
+                }
+            } else {
+                try (Stream<Path> archivos = Files.walk(ruta, PROFUNDIDAD)) {
+                    for (Path p : (Iterable<Path>) archivos::iterator) {
+                        if (p.toString().endsWith(".class") && Files.isRegularFile(p)) {
+                            try (java.io.InputStream in = Files.newInputStream(p)) {
+                                maxima = Math.max(maxima, version(in.readNBytes(8)));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException | UncheckedIOException e) {
+            // Si no puede leerse la cabecera, el importador informará del problema.
+        }
+        return maxima;
+    }
+
+    private static int version(byte[] cabecera) {
+        if (cabecera.length < 8 || (cabecera[0] & 0xFF) != 0xCA || (cabecera[1] & 0xFF) != 0xFE) {
+            return 0;
+        }
+        return (((cabecera[6] & 0xFF) << 8) | (cabecera[7] & 0xFF)) - 44;
+    }
+
+    private static Origen localizar(Path seleccion) throws ErrorAnalisis {
         if (seleccion == null) {
             throw new ErrorAnalisis("No se ha indicado ningún proyecto para analizar.");
         }

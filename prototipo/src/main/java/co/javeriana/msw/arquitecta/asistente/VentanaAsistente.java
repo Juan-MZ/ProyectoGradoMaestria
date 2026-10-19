@@ -523,6 +523,9 @@ public final class VentanaAsistente extends JDialog {
     private void aplicarRespuesta(Conversacion.Respuesta r) {
         agregarAsistente(r.explicacion(), r.propuesta());
         if (r.propuesta() != null) {
+            for (String aviso : Revision.avisos(r.propuesta(), perfil)) {
+                agregarAviso(aviso);
+            }
             editor.setText(r.propuesta().aCatalogo(perfil.nombre(), configuracion().modelo()));
             editor.setCaretPosition(0);
             if (Asistencia.validar(editor.getText()).isEmpty()) {
@@ -677,6 +680,13 @@ public final class VentanaAsistente extends JDialog {
         }
         sb.append("</div>");
         transcripcion.add(sb.toString());
+        refrescarTranscripcion();
+    }
+
+    /** Advertencia de la herramienta, no del modelo: resultado de una comprobación determinista. */
+    private void agregarAviso(String texto) {
+        transcripcion.add("<div style='margin:2px 0 10px 0; padding:8px 10px; background:#FDF3DC; color:#7A4F0E'>"
+                + "<b>Revisión de la herramienta:</b> " + html(texto) + "</div>");
         refrescarTranscripcion();
     }
 

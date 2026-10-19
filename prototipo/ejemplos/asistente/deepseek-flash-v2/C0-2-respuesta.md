@@ -1,0 +1,3 @@
+# C0 · repetición 2 · deepseek-flash
+
+Reconozco una arquitectura en capas clásica con un núcleo de dominio compartido: `presentacion` depende de `negocio`, `negocio` de `persistencia`, y `dominio` es usado por las tres capas (Ca=3, Ce=0). Declaro `dominio` como capa inferior para hacer explícitas las dependencias permitidas hacia él. Dudas: si `presentacion -> dominio` es intencional (entidades como DTO) o debería canalizarse solo por `negocio`; y si la dirección `negocio -> persistencia` es la prevista o prefieren invertirla con interfaces. El umbral 3 surge del mayor Ce sano observado (2) con un margen. No propongo exenciones ni derivas probables con este catálogo.

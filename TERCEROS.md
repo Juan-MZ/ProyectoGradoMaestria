@@ -121,6 +121,15 @@ su requisito de ligereza (RNF2).
 
 ---
 
+### Sistemas analizados en la validación (no se redistribuyen)
+
+La validación de la sección 4.7 analiza Apache Commons Lang 3.14.0, Jackson
+Databind 2.17.2 y Guava 33.2.1, las tres bajo Apache License 2.0. **Sus `.jar` no
+forman parte del repositorio**: `arquitecta sistemas` los descarga de Maven Central
+en `prototipo/out/` (excluido del control de versiones) y verifica su SHA-1. Solo
+se versionan los catálogos y los resultados del análisis, que son obra propia y
+describen la estructura de esos sistemas sin reproducir su código.
+
 ## 5. Imagen de compilación del documento
 
 El documento se compila con la imagen de contenedor `xucheng/texlive-full`, que

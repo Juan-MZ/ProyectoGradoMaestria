@@ -23,7 +23,7 @@ clasificación del estado arquitectónico.
 | `…arquitecta.motor`   | Agrega las verificaciones, calcula la CR y clasifica el estado por CR, por severidad y en su combinación.                                                                                                                                |
 | `…arquitecta.reporte` | Reporte textual con declaración de alcance, catálogo ejecutable y exportadores a JSON, CSV y DOT.                                                                                                                                        |
 | `…arquitecta.servicio` | Fachada del análisis que comparten la línea de comandos y la interfaz gráfica: reconoce la carpeta de un proyecto Maven, Gradle, IntelliJ o Eclipse (o un `.jar`), carga el catálogo o infiere una configuración mínima y ejecuta el pipeline completo. |
-| `…arquitecta.asistente` | Asistente opcional que, con un modelo de lenguaje (Claude, OpenAI o uno local con Ollama o LM Studio), propone el catálogo de reglas de un proyecto que no lo tiene. Se acopla a la interfaz sin que esta dependa de él. |
+| `…arquitecta.asistente` | Asistente opcional que, con un modelo de lenguaje (Claude, OpenAI, DeepSeek o uno local con Ollama o LM Studio), propone el catálogo de reglas de un proyecto que no lo tiene. Se acopla a la interfaz sin que esta dependa de él. |
 | `…arquitecta.interfaz` | Interfaz gráfica de escritorio (Swing, incluida en el JDK): selección del proyecto, indicadores, grafo interactivo, hallazgos con su evidencia y exportación. Solo presenta: pide el análisis al servicio y dibuja su resultado. |
 
 La arquitectura interna es estrictamente acíclica y estratificada; el propio
@@ -73,9 +73,10 @@ arquitecta                         REM abre la aplicacion
 arquitecta C:\ruta\al\proyecto      REM la abre con ese proyecto (carpeta o .jar)
 arquitecta analizar <proyecto> [reglas] [opciones]   REM analisis por consola
 arquitecta compilar                REM compila nucleo, pruebas, arquitecta.jar y escenarios
-arquitecta pruebas                 REM bateria de pruebas (234 comprobaciones)
+arquitecta pruebas                 REM bateria de pruebas (262 comprobaciones)
 arquitecta experimento             REM experimento completo; evidencia en resultados\
 arquitecta figuras                 REM regenera los grafos y capturas de la monografia
+arquitecta sistemas                REM inyecta derivas en 4 sistemas reales y mide su deteccion
 arquitecta ayuda
 ```
 
@@ -180,6 +181,7 @@ acordar el catálogo.
 | --- | --- | --- |
 | Anthropic · Claude | `https://api.anthropic.com` (modelo `claude-opus-5-5`) | `ANTHROPIC_API_KEY` o la indicada |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` o la indicada |
+| DeepSeek | `https://api.deepseek.com` (modelo `deepseek-v4-pro`; también `deepseek-flash`) | `DEEPSEEK_API_KEY` o la indicada |
 | Ollama (local) | `http://localhost:11434/v1` | no requiere |
 | LM Studio (local) | `http://localhost:1234/v1` | no requiere |
 | Otro compatible con OpenAI | la que se indique | opcional |
@@ -193,6 +195,13 @@ _Recordar la clave en este equipo_.
 número de clases, hasta ocho nombres de clase por paquete y las dependencias entre
 paquetes. Nunca el código fuente. _Ver el perfil que se envía_ muestra el texto
 exacto antes de enviarlo. Con Ollama o LM Studio no sale nada del equipo.
+
+**Evaluación con un modelo real.** Con DeepSeek, en 60 propuestas sobre el caso de
+estudio y sin darle contexto, ningún catálogo legitimó una deriva de capas ni un
+ciclo, pero el umbral de concentración resultó inestable y una vez ocultó la deriva
+inducida. Por eso la herramienta revisa cada propuesta con una regla fija y avisa
+cuando el umbral deja sin señalar al paquete que más concentra. Datos, catálogos y
+cómo repetirlo: [ejemplos/asistente/](ejemplos/asistente/README.md).
 
 El asistente no añade dependencias: usa el cliente HTTP del propio JDK. Sus
 pruebas no consultan ningún modelo real, sino un servidor local que imita las API.
@@ -409,6 +418,16 @@ módulos con que trabajan: el caso
 ilustra que el umbral no es universal y que cada sistema obliga a decidir dónde
 está su techo razonable.
 
+## Validación en entorno controlado sobre sistemas reales
+
+`arquitecta sistemas` inyecta derivas conocidas —una de cada familia y después las
+tres juntas— en cuatro bibliotecas reales (Commons Lang, Jackson Databind, ArchUnit
+y Guava; de 403 a 2 017 clases) y mide si el mecanismo las detecta: **22 de 22
+detectadas, ningún hallazgo que no se inyectara**, en menos de un segundo por
+sistema. En Guava, una deriva aislada deja la CR por encima del 97 % —«Aceptable»
+para la CR sola— y el criterio con severidad la señala. Detalle, catálogos y datos:
+[ejemplos/sistemas/](ejemplos/sistemas/README.md).
+
 ## Sobre código real: ArchUnit 1.3.0
 
 El mecanismo se aplicó sobre una biblioteca de terceros —923 clases propias en 22
@@ -469,7 +488,7 @@ procesarse además con Graphviz si se prefiere.
 
 ## Pruebas
 
-`arquitecta pruebas` ejecuta 234 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+`arquitecta pruebas` ejecuta 262 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
 carga de configuración, las tres reglas, el motor, las exenciones, los cinco
 escenarios, los exportadores, la disposición gráfica, la comparación entre
 corridas, el servicio de análisis (reconocimiento de proyectos Maven y Gradle,

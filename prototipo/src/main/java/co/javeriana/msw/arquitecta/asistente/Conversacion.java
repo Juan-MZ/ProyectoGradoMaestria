@@ -99,7 +99,6 @@ public final class Conversacion {
     /** Separa la explicación del bloque JSON con el catálogo y lo interpreta. */
     static Respuesta interpretar(String texto) {
         String json = null;
-        String explicacion = texto;
         Matcher m = BLOQUE_JSON.matcher(texto);
         int inicio = -1;
         int fin = -1;
@@ -120,7 +119,7 @@ public final class Conversacion {
         if (json == null) {
             return new Respuesta(texto.strip(), null, null);
         }
-        explicacion = (texto.substring(0, inicio) + texto.substring(fin)).strip();
+        String explicacion = (texto.substring(0, inicio) + texto.substring(fin)).strip();
         try {
             return new Respuesta(explicacion, Propuesta.desdeJson(Json.leer(json)), null);
         } catch (IllegalArgumentException e) {
@@ -159,7 +158,13 @@ public final class Conversacion {
                 - "permitido" indica de qué otras capas puede depender cada capa; dentro de una misma \
                 capa siempre se permite. Una capa con la lista vacía no puede depender de ninguna otra.
                 - "umbral_concentracion": entero; se señala el paquete cuyas dependencias salientes (Ce) \
-                lo superen. Propóngalo a partir de la distribución de Ce del perfil y justifíquelo.
+                lo superen. Propóngalo a partir del Ce de los paquetes que parecen sanos y justifíquelo. \
+                No lo eleve para dejar de señalar un paquete concreto: eso ocultaría la deriva. Si cree \
+                que la concentración de un paquete es legítima por su papel, propóngalo como exención \
+                "compartido", justificada, para que quede registrada; si no, debe quedar señalado.
+                - Un paquete de entidades del dominio que usan todas las capas suele ser un núcleo \
+                compartido: déjelo sin capa o, si lo declara como capa inferior, permita que dependan \
+                de él las capas que lo usan por diseño. Si duda de si un uso es previsto, pregúntelo.
                 - Exenciones, con moderación y siempre justificadas: "compartido" para un paquete del \
                 sistema que concentra dependencias por su papel (raíz de composición, fachada, núcleo \
                 de anotaciones); queda exento de ciclos y concentración, solo ese paquete exacto. \

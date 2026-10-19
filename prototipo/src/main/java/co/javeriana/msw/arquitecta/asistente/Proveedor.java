@@ -4,7 +4,7 @@ package co.javeriana.msw.arquitecta.asistente;
  * Servicios de modelos de lenguaje con que puede trabajar el asistente.
  *
  * <p>Se distinguen por el protocolo que hablan ---el de Anthropic o el de OpenAI,
- * que también implementan Ollama, LM Studio y muchos otros--- y por si el modelo
+ * que también implementan DeepSeek, Ollama, LM Studio y muchos otros--- y por si el modelo
  * se ejecuta en el propio equipo. Un modelo local es la opción para quien no
  * pueda enviar la estructura de su sistema a un tercero.</p>
  */
@@ -13,6 +13,8 @@ public enum Proveedor {
     ANTHROPIC("Anthropic · Claude", Protocolo.ANTHROPIC, "https://api.anthropic.com",
             "claude-opus-5-5", true, false, "ANTHROPIC_API_KEY"),
     OPENAI("OpenAI", Protocolo.OPENAI, "https://api.openai.com/v1", "", true, false, "OPENAI_API_KEY"),
+    DEEPSEEK("DeepSeek", Protocolo.OPENAI, "https://api.deepseek.com", "deepseek-v4-pro", true, false,
+            "DEEPSEEK_API_KEY"),
     OLLAMA("Ollama · modelo local", Protocolo.OPENAI, "http://localhost:11434/v1", "", false, true, null),
     LM_STUDIO("LM Studio · modelo local", Protocolo.OPENAI, "http://localhost:1234/v1", "", false, true, null),
     COMPATIBLE("Otro servicio compatible con OpenAI", Protocolo.OPENAI, "", "", false, false, null);

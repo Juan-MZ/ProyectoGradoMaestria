@@ -1,0 +1,53 @@
+\label{anexo:asistente}
+
+Este anexo documenta una exploración del asistente de catálogo descrito en la sección~\ref{sec:usos} con un modelo de lenguaje real. Se incluye como complemento y \textbf{no forma parte del experimento controlado}: el asistente es una ayuda para redactar el catálogo, ajena al mecanismo que el capítulo~\ref{cap:evaluacion} evalúa, y la exploración no persigue ninguno de los objetivos específicos.
+
+\section{Pregunta y procedimiento}
+La pregunta que interesa no es si el catálogo propuesto coincide palabra por palabra con el de referencia, sino si es \textbf{seguro adoptarlo}. El riesgo propio de un asistente es que, al describir el código que ve, tome como prevista una deriva que ya existe y la legitime, de modo que la herramienta deje de detectarla. El caso de estudio permite medirlo, porque en los escenarios C1 a C4 las derivas inducidas están presentes en el código que el asistente recibe.
+
+Para cada escenario, el asistente propuso un catálogo \textbf{sin ningún contexto}: solo con el perfil estructural del código, el escenario más desfavorable, en el que no cuenta con la intención del equipo. Cada propuesta se validó con el cargador de la herramienta y se previsualizó sobre el propio escenario, y se registró si los hallazgos seguían incluyendo las derivas inducidas de la matriz de validación (tabla~\ref{tab:matrizEsperada}). Se usó el proveedor DeepSeek con dos modelos, \texttt{deepseek-v4-pro} y \texttt{deepseek-flash}, con tres repeticiones por escenario y modelo, y con dos versiones de las instrucciones del asistente: las iniciales y una segunda que se redactó tras observar los resultados de la primera. En total se obtuvieron 60 propuestas, el 19 de octubre de 2026.
+
+\section{Resultados}
+La tabla~\ref{tab:asistente} resume las cuatro series. Las 21 derivas inducidas de cada serie son las siete de la matriz de validación repetidas tres veces.
+
+\begin{table}[H]
+\centering
+\caption{Exploración del asistente de catálogo: 5 escenarios × 3 repeticiones por serie, sin contexto.}
+\label{tab:asistente}
+\footnotesize
+\begin{tabularx}{\textwidth}{Xcccc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Instrucciones iniciales}} & \multicolumn{2}{c}{\textbf{Segunda versión}} \\
+& \textbf{v4-pro} & \textbf{flash} & \textbf{v4-pro} & \textbf{flash} \\
+\midrule
+Catálogos válidos & 15/15 & 15/15 & 15/15 & 15/15 \\
+Estratificación prevista bien declarada & 15/15 & 15/15 & 15/15 & 15/15 \\
+Derivas inducidas que siguen detectándose & 21/21 & 21/21 & 20/21 & 21/21 \\
+Corridas con hallazgos sobre la línea base (C0) & 1/3 & 1/3 & 0/3 & 0/3 \\
+Corridas con algún hallazgo adicional & 7/15 & 5/15 & 4/15 & 4/15 \\
+Umbral de concentración propuesto & 2--6 & 2--5 & 2--6 & 2--5 \\
+Mediana de tiempo por propuesta & 44\,s & 12\,s & 50\,s & 11\,s \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+De la tabla se desprenden cuatro observaciones.
+
+La primera es la más importante: \textbf{ningún catálogo legitimó una deriva de capas ni un ciclo}. En las 60 propuestas, el asistente declaró la estratificación prevista ---presentación, negocio y persistencia en capas distintas, con las dependencias descendentes permitidas y las ascendentes prohibidas--- y señaló como deriva probable las dependencias que la invertían, en lugar de permitirlas.
+
+La segunda es que \textbf{el umbral de concentración es inestable}. El valor propuesto varió entre 2 y 6 para un mismo escenario, y en una corrida de la segunda serie de \texttt{deepseek-v4-pro} sobre C4 el modelo lo fijó en 6, por encima del acoplamiento del paquete \texttt{util} ($Ce = 4$), con lo que la deriva de concentración inducida dejó de detectarse. El mismo comportamiento había aparecido en una consulta exploratoria previa a la serie, y la segunda versión de las instrucciones, que pide expresamente no elevar el umbral para dejar de señalar un paquete, no lo evitó.
+
+La tercera son los \textbf{hallazgos sobre la línea base}. En una de cada tres corridas de la primera serie, el modelo declaró \texttt{dominio} como capa sin permitir que la presentación lo usara, lo que produjo un hallazgo sobre un código sano. La segunda versión de las instrucciones, que pide tratar las entidades del dominio como un núcleo compartido, los eliminó; como efecto secundario, inclinó los umbrales hacia valores bajos que señalan la presentación de C1 ($Ce = 3$). Esos hallazgos adicionales no ocultan ninguna deriva, pero muestran que cada instrucción desplaza el comportamiento del modelo sin fijarlo.
+
+La cuarta se sigue de las anteriores: \textbf{lo que no puede garantizarse con instrucciones debe comprobarse con reglas}. Por eso la herramienta añade a cada propuesta una revisión determinista: si el umbral deja sin señalar al paquete más acoplado y este destaca sobre el resto sin estar exento, lo advierte antes de que la persona adopte el catálogo. Aplicada a posteriori a las 60 propuestas, la revisión advirtió en la corrida que ocultaba la deriva y en otras 18 en que el paquete más acoplado superaba al siguiente en una sola dependencia. Su función, por tanto, es llamar la atención sobre una decisión que conviene revisar, no emitir un veredicto, en coherencia con el principio de supervisión humana del capítulo~\ref{cap:riesgos}.
+
+\section{Alcance de la exploración}
+Los resultados deben leerse con cautela. Proceden de un único caso, pequeño y sintético, cuyas derivas son evidentes en la estructura de paquetes; la segunda versión de las instrucciones se redactó a la vista de los resultados de la primera sobre ese mismo caso, de modo que su mejora no puede generalizarse; se empleó un solo proveedor; y los modelos no son deterministas, por lo que otra ejecución arrojará cifras distintas. Sobre todo, la exploración no mide lo que de verdad importa para la adopción: cuánto se parecen las propuestas a los catálogos que declararían los arquitectos de sistemas reales, que es la línea de trabajo futuro planteada en el capítulo de conclusiones.
+
+La evidencia completa ---el catálogo propuesto y la explicación del modelo en cada corrida, y la tabla de resultados--- se conserva en \texttt{prototipo/ejemplos/asistente/}, y la exploración se repite con:
+
+\begin{verbatim}
+java -cp "out\arquitecta-core;out\arquitecta-test;lib\*" ^
+     co.javeriana.msw.arquitecta.asistente.EvaluacionAsistente ^
+     3 etiqueta [modelo]
+\end{verbatim}

@@ -7,7 +7,7 @@
 #    ./arquitecta.sh <carpeta|jar>        la abre con ese proyecto
 #    ./arquitecta.sh analizar <proyecto> [reglas] [opciones]
 #                                         analisis por consola
-#    ./arquitecta.sh compilar | pruebas | experimento | figuras
+#    ./arquitecta.sh compilar | pruebas | experimento | figuras | sistemas
 #    ./arquitecta.sh ayuda
 #
 #  Compila por su cuenta la primera vez y cada vez que cambia el
@@ -34,6 +34,7 @@ ayuda() {
    ./arquitecta.sh pruebas              ejecuta la bateria de pruebas
    ./arquitecta.sh experimento          reproduce el experimento (resultados/)
    ./arquitecta.sh figuras              regenera figuras y capturas
+   ./arquitecta.sh sistemas             inyecta derivas en 4 sistemas reales y mide su deteccion
 
  El proyecto puede indicarse por su carpeta raiz (Maven, Gradle, IntelliJ,
  Eclipse), por su directorio de clases o por su archivo .jar.
@@ -63,7 +64,7 @@ case "${1:-}" in
         bash "$RAIZ/scripts/compilar.sh" ;;
     preparar)
         actualizar ;;
-    pruebas|experimento|figuras)
+    pruebas|experimento|figuras|sistemas)
         actualizar
         bash "$RAIZ/scripts/$1.sh" ;;
     "")

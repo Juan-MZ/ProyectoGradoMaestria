@@ -1,0 +1,16 @@
+escenario,repeticion,modelo,valido,segundos,capas,estratificacion_correcta,umbral,exenciones,derivas_inducidas,derivas_detectadas,derivas_ocultas,hallazgos_adicionales,derivas_senaladas,preguntas,cr_propuesta,cr_experimento
+C0,1,deepseek-v4-pro,si,24.61,presentacion|negocio|persistencia|dominio,si,5,,0,0,"","",0,1,100.00,100.0
+C0,2,deepseek-v4-pro,si,44.78,presentacion|negocio|persistencia,si,6,,0,0,"","",1,1,100.00,100.0
+C0,3,deepseek-v4-pro,si,28.89,presentacion|negocio|persistencia|dominio,si,3,,0,0,"","Integridad presentacion->dominio",1,1,92.31,100.0
+C1,1,deepseek-v4-pro,si,24.44,presentacion|negocio|persistencia|dominio,si,5,,1,1,"","Integridad presentacion->dominio",2,1,85.71,90.91
+C1,2,deepseek-v4-pro,si,12.82,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",1,1,92.86,90.91
+C1,3,deepseek-v4-pro,si,46.96,presentacion|negocio|persistencia|dominio,si,2,,1,1,"","Concentración presentacion",1,1,85.71,90.91
+C2,1,deepseek-v4-pro,si,33.29,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",1,2,87.50,83.33
+C2,2,deepseek-v4-pro,si,60.45,presentacion|negocio|persistencia|dominio,si,5,,1,1,"","",1,2,87.50,83.33
+C2,3,deepseek-v4-pro,si,48.87,presentacion|negocio|persistencia,si,4,,1,1,"","",1,2,83.33,83.33
+C3,1,deepseek-v4-pro,si,43.36,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","Integridad presentacion->dominio",4,2,86.67,91.67
+C3,2,deepseek-v4-pro,si,51.63,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","Integridad presentacion->dominio",5,3,86.67,91.67
+C3,3,deepseek-v4-pro,si,44.23,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","",4,2,93.33,91.67
+C4,1,deepseek-v4-pro,si,59.48,presentacion|negocio|persistencia|dominio|utilidades,si,3,,4,4,"","Integridad presentacion->dominio; Integridad util->dominio; Integridad util->negocio; Integridad util->persistencia; Integridad util->presentacion",7,2,47.62,57.14
+C4,2,deepseek-v4-pro,si,36.32,presentacion|negocio|persistencia|dominio,si,3,,4,4,"","",3,2,64.71,57.14
+C4,3,deepseek-v4-pro,si,91.37,presentacion|negocio|persistencia|dominio|utilidades,si,3,,4,4,"","Integridad presentacion->dominio; Integridad util->dominio; Integridad util->negocio; Integridad util->persistencia; Integridad util->presentacion",4,2,47.62,57.14

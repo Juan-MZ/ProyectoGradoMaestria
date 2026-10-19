@@ -1,0 +1,3 @@
+# C3 · repetición 3 · deepseek-flash
+
+**Lectura del perfil.** El proyecto es un caso mínimo de estratificación en capas: `presentacion → negocio → persistencia → dominio`, con `dominio` como núcleo estable (Ce=0, Ca=4) y sin ciclos actuales. Lo que no encaja es `util` (Ce=4): depende de las cuatro capas, incluida `presentacion`, cuando un paquete de utilidades se espera que sea *dependido*, no *dependiente*; por eso lo dejo **sin capa** (fuera de FF1) y a la vista de FF3, en lugar de darle una capa baja que legalizaría la inversión o una exención `compartido` que ocultaría el acoplamiento. La duda principal es si `util` es de verdad un contenedor de utilidades transversales o una fachada/raíz de composición disfrazada, y si `presentacion → dominio` es intencional.

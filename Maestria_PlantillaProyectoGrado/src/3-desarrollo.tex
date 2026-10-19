@@ -2,97 +2,103 @@
 % DESARROLLO DEL PROYECTO
 %%%%%%%%%%%%%%%%%%%%
 
-Este capítulo describe la construcción del mecanismo de detección de deriva arquitectónica, desde su concepción hasta su materialización como prototipo de software. Se presentan la descripción de la propuesta, los requisitos que la delimitan, el diseño de alto nivel, el catálogo de \textit{Fitness Functions} que constituye el núcleo normativo del instrumento y, por último, los detalles de la implementación realizada en Java junto con los escenarios que sirvieron para evaluarla.
+Este capítulo describe el mecanismo de detección de deriva arquitectónica en dos partes. La primera explica el \textbf{proceso}: qué entidades intervienen y cómo se relacionan, de dónde proceden las \textit{Fitness Functions} y por qué se eligieron, cómo declara una persona la arquitectura prevista de su sistema, con qué reglas se extrae el grafo de dependencias, cómo se combinan esos elementos para obtener la deriva, en qué unidades se expresa y cómo se interpreta. La segunda describe el \textbf{prototipo} que instrumenta ese proceso, que es el medio y no el fin del trabajo. En términos de la metodología, el capítulo recoge las cuatro primeras fases del proyecto ---la delimitación del caso de estudio y del catálogo de reglas, el diseño técnico, la construcción del componente de extracción y la del motor de validación---; la quinta, la evaluación, ocupa el capítulo siguiente.
 
-\section{Descripción de la propuesta}
-El mecanismo propuesto recibe como entrada el código de un sistema Java y produce como salida un diagnóstico sobre su conformidad arquitectónica. Su propósito es ofrecer a los equipos de las PyMES una señal objetiva, reproducible y de bajo costo sobre el estado estructural de sus proyectos, sin exigirles documentación arquitectónica ni conocimientos especializados en verificación. Los usuarios objetivo son, por tanto, los desarrolladores, los líderes técnicos y los arquitectos de organizaciones pequeñas, que necesitan detectar tempranamente las desviaciones antes de que se conviertan en deuda difícil de revertir.
+%======================================================================
+\section*{Parte I. El proceso de detección}
+\addcontentsline{toc}{section}{Parte I. El proceso de detección}
+%======================================================================
 
-La lógica del instrumento es sencilla y se resume en tres pasos encadenados. Primero, un componente de análisis estático recorre el código compilado y construye un grafo dirigido en el que los nodos son paquetes y las aristas representan dependencias entre ellos. Segundo, un conjunto de tres \textit{Fitness Functions} evalúa sobre ese grafo otras tantas dimensiones: la integridad de las capas, la ausencia de ciclos y el control de la concentración de dependencias salientes. Tercero, un motor de validación agrega los resultados en una Tasa de Conformidad (\textit{CR}) y clasifica el estado del sistema en uno de tres niveles: \textit{aceptable}, \textit{en observación} o \textit{no conforme}. La figura~\ref{fig:pipeline} representa esa secuencia y los insumos que la alimentan.
+\section{Visión general del proceso}
+\label{sec:proceso}
+La deriva arquitectónica es la divergencia entre la arquitectura prevista de un sistema y la que su código materializa \citep{PerryWolf1992, SanMartin}. Para detectarla de forma automática hay que convertir esa definición en una comparación ejecutable, y eso exige disponer de los dos términos de la comparación: la \textbf{arquitectura prevista}, que solo puede declarar quien diseña el sistema, y la \textbf{arquitectura implementada}, que puede extraerse del código sin intervención humana. El mecanismo representa la primera como un \textit{catálogo de reglas} y la segunda como un \textit{grafo de dependencias entre paquetes}, y los compara mediante tres \textit{Fitness Functions}: verificaciones objetivas que expresan, cada una, una propiedad estructural que el sistema debe preservar \citep{FordParsonsKua2017}. La tabla~\ref{tab:entidades} resume las entidades que intervienen.
+
+\begin{table}[H]
+\centering
+\caption{Entidades del proceso de detección.}
+\label{tab:entidades}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.0cm}X>{\raggedright\arraybackslash}p{3.2cm}}
+\toprule
+\textbf{Entidad} & \textbf{Qué representa} & \textbf{Origen} \\
+\midrule
+Código compilado & La arquitectura implementada, tal como existe. & El sistema analizado. \\
+Catálogo de reglas & La arquitectura prevista: capas, dependencias admitidas, umbral y exenciones. & La persona que diseña el sistema (sección~\ref{sec:declaracion}). \\
+Grafo de dependencias & Los paquetes del sistema y las dependencias entre ellos, con su evidencia. & Extracción automática (sección~\ref{sec:extraccion}). \\
+\textit{Fitness Function} & Una propiedad estructural verificable: integridad de capas, ausencia de ciclos, concentración acotada. & Catálogo fijo del mecanismo (sección~\ref{sec:seleccion}). \\
+Verificación & Cada comprobación atómica que una regla realiza sobre una arista o un paquete. & Evaluación (sección~\ref{sec:evaluacion}). \\
+Hallazgo & Un incumplimiento, con su ubicación, su evidencia y su severidad. & Evaluación. \\
+Tasa de Conformidad & Proporción de verificaciones superadas. & Agregación (sección~\ref{sec:operacionalizacion}). \\
+Estado arquitectónico & Clasificación en \textit{aceptable}, \textit{en observación} o \textit{no conforme}. & Agregación. \\
+Tendencia & Variación de la CR respecto del análisis anterior del mismo sistema. & Historial de análisis. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Estas entidades se encadenan en seis pasos (figura~\ref{fig:pipeline}). Dos de ellos corresponden a la persona y cuatro al mecanismo. La persona \textbf{declara} la arquitectura prevista (P1) y, al final, \textbf{interpreta} el diagnóstico y decide qué hacer con él (P6). El mecanismo \textbf{extrae} el grafo del código (P2), \textbf{asigna} cada paquete a la capa que el catálogo le atribuye (P3), \textbf{evalúa} las tres reglas sobre el grafo, produciendo verificaciones y hallazgos con su evidencia (P4), y \textbf{agrega} los resultados en una Tasa de Conformidad, una severidad máxima y un estado (P5). La deriva es, por tanto, el conjunto de hallazgos de P4: las dependencias y estructuras del código que contradicen lo declarado en P1 o las propiedades que toda arquitectura debe preservar. P5 la resume en cifras, y P6 la convierte en decisiones.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=9mm and 11mm]
-  \node[artefacto] (codigo) {Código compilado\\\textit{(bytecode)}};
-  \node[modulo, right=of codigo] (extraccion) {Extracción\\\small ArchUnit};
-  \node[modulo, right=of extraccion] (grafo) {Grafo de\\dependencias};
-  \node[modulo, right=of grafo] (motor) {Motor de\\conformidad};
-  \node[artefacto, right=of motor] (reporte) {Reporte,\\CR y estado};
+\adjustbox{max width=\linewidth}{%
+\begin{tikzpicture}[font=\small]
+  \node[artefacto, minimum width=27mm] (persona1) at (0, 2.7) {\textbf{P1} Declarar la\\arquitectura prevista\\\scriptsize (persona)};
+  \node[modulo, minimum width=22mm] (catalogo) at (3.4, 2.7) {Catálogo\\de reglas};
+  \node[artefacto, minimum width=22mm] (codigo) at (0, 0.9) {Código\\compilado};
+  \node[modulo, minimum width=22mm] (p2) at (3.4, 0.9) {\textbf{P2} Extraer\\el grafo};
+  \node[modulo, minimum width=22mm] (grafo) at (6.4, 0.9) {Grafo de\\dependencias};
+  \node[modulo, minimum width=22mm] (p3) at (9.4, 0.9) {\textbf{P3} Asignar\\capas};
+  \node[modulo, minimum width=26mm] (p4) at (12.6, 0.9) {\textbf{P4} Evaluar las\\\textit{Fitness Functions}};
+  \node[modulo, minimum width=26mm] (p5) at (12.6, -1.0) {\textbf{P5} Agregar\\CR, severidad, estado};
+  \node[artefacto, minimum width=24mm] (p6) at (7.9, -1.0) {\textbf{P6} Interpretar\\y decidir\\\scriptsize (persona)};
 
-  \node[artefacto, below=14mm of grafo] (config) {Catálogo de reglas\\\small\texttt{rules.properties}};
-  \node[modulo, below=14mm of motor] (ff) {Tres\\\textit{Fitness Functions}};
-
-  \draw[flujo] (codigo) -- (extraccion);
-  \draw[flujo] (extraccion) -- (grafo);
-  \draw[flujo] (grafo) -- (motor);
-  \draw[flujo] (motor) -- (reporte);
-  \draw[flujo] (config) -- (ff);
-  \draw[flujo] (config.west) -- ++(-1.3,0) |- (extraccion.west);
-  \draw[flujo] (ff) -- (motor);
-\end{tikzpicture}
-\caption{Flujo del mecanismo de detección de deriva arquitectónica. El catálogo de reglas es un insumo externo: determina qué se considera admisible sin alterar el código del motor.}
+  \draw[flujo] (persona1) -- (catalogo);
+  \draw[flujo] (codigo) -- (p2);
+  \draw[flujo] (catalogo) -- (p2);
+  \draw[flujo] (p2) -- (grafo);
+  \draw[flujo] (grafo) -- (p3);
+  \draw[flujo] (catalogo) -| (p3);
+  \draw[flujo] (p3) -- (p4);
+  \draw[flujo] (p4) -- node[right, font=\scriptsize]{hallazgos} (p5);
+  \draw[flujo] (p5) -- (p6);
+  \draw[flujo, dashed] (p6.south) -- ++(0, -0.45) -| node[pos=0.25, above, font=\scriptsize]{corregir el código} (codigo.south);
+  \draw[flujo, dashed] ([xshift=-4mm]p6.south) -- ++(0, -0.95) -| node[pos=0.22, below, font=\scriptsize]{actualizar la intención declarada} (-1.9, 2.7) -- (persona1.west);
+\end{tikzpicture}}
+\caption{Proceso de detección de deriva arquitectónica. El catálogo interviene en la extracción ---delimita qué paquetes forman el sistema--- y en la asignación de capas. Las flechas discontinuas son las dos salidas de una decisión: corregir el código, cuando el hallazgo es deriva, o actualizar la intención declarada, cuando la arquitectura cambió de forma deliberada.}
 \label{fig:pipeline}
 \end{figure}
 
-\section{Requisitos}
-La definición del mecanismo se apoyó en un conjunto de requisitos funcionales y no funcionales que orientaron tanto el diseño como la implementación.
+El proceso no termina en P6: se repite en cada iteración del desarrollo, y la comparación entre una ejecución y la anterior ---la tendencia--- es la que revela si la deriva avanza o se contiene. Las secciones siguientes desarrollan cada paso.
 
-\textbf{Requisitos funcionales:}
-\begin{itemize}
-    \item \textbf{RF1.} Construir un grafo de dependencias entre paquetes a partir del código compilado, descartando las clases de prueba y las dependencias externas al sistema analizado.
-    \item \textbf{RF2.} Verificar la integridad de capas: toda dependencia entre capas debe respetar las adyacencias permitidas que se declaren en la configuración.
-    \item \textbf{RF3.} Detectar dependencias cíclicas entre paquetes mediante componentes fuertemente conexos.
-    \item \textbf{RF4.} Medir la concentración de dependencias salientes de cada paquete y reportar como violación aquella que supere un umbral configurable.
-    \item \textbf{RF5.} Agregar los resultados de las verificaciones en una Tasa de Conformidad y clasificar el estado arquitectónico del sistema, emitiendo un reporte legible.
-    \item \textbf{RF6.} Acompañar cada hallazgo de la evidencia estructural que lo origina, hasta el nivel de la referencia concreta entre clases, y declarar en el reporte el alcance del diagnóstico emitido.
-    \item \textbf{RF7.} Representar gráficamente el grafo de dependencias, ordenado según la estratificación declarada y con los hallazgos resaltados, en un formato que pueda consultarse sin instalar herramientas adicionales.
-    \item \textbf{RF8.} Ofrecer una interfaz gráfica desde la cual seleccionar el proyecto a analizar ---la carpeta tal como la deja su herramienta de construcción, o su archivo empaquetado--- y consultar el diagnóstico, el grafo y la evidencia sin recurrir a la línea de comandos.
-    \item \textbf{RF9.} Asistir, de forma opcional, la redacción del catálogo de reglas de un proyecto que no lo tiene, proponiendo sus parámetros con la justificación de cada decisión y dejando la adopción en manos de la persona.
-\end{itemize}
+\section{Origen y selección de las \textit{Fitness Functions}}
+\label{sec:seleccion}
+Las \textit{Fitness Functions} del mecanismo no son una elección arbitraria ni una configuración del usuario: proceden de lo que la literatura identifica como manifestaciones estructurales de la deriva, y su selección quedó acotada por el primer objetivo específico del anteproyecto, que fijó tres familias ---violaciones de capas, ciclos de dependencia y concentración excesiva de dependencias salientes---. Esta sección reconstruye ese razonamiento.
 
-\textbf{Requisitos no funcionales:}
-\begin{itemize}
-    \item \textbf{RNF1.} Configurabilidad: las capas, las adyacencias permitidas, las exenciones, los umbrales y el criterio de clasificación deben poder declararse en un archivo externo sin modificar el código, y toda exención aplicada debe quedar registrada en el reporte.
-    \item \textbf{RNF2.} Ligereza: el mecanismo debe poder ejecutarse en un entorno de desarrollo convencional, sin infraestructura adicional ni dependencias de servicios externos.
-    \item \textbf{RNF3.} Interpretabilidad: el reporte resultante debe ser comprensible para un profesional sin formación específica en verificación arquitectónica.
-    \item \textbf{RNF4.} Reproducibilidad: ante la misma entrada, el mecanismo debe producir el mismo diagnóstico, y debe poder emitirlo en un formato verificable por otras herramientas.
-\end{itemize}
+\paragraph{Dónde se manifiesta la deriva.} \citet{PerryWolf1992} distinguen la deriva ---la insensibilidad progresiva a la arquitectura prevista--- de la erosión, su violación directa, y ambas se manifiestan en la estructura de dependencias del código. La literatura ofrece dos maneras complementarias de detectarlas. La primera es la \textbf{verificación de conformidad}: comparar las dependencias del código con un modelo de alto nivel declarado por las personas. Es la idea de los modelos de reflexión de \citet{Murphy2001}, que identifican como \textit{divergencias} las dependencias presentes en el código y ausentes del modelo, y la de los enfoques de verificación de conformidad comparados por \citet{KnodelPopescu2007} y revisados en la encuesta sobre control de la erosión de \citet{DeSilva2012}, que coinciden en que las reglas de dependencia entre módulos o capas son el control más extendido. La segunda es la detección de \textbf{\textit{smells} arquitectónicos}: estructuras que degradan el sistema con independencia de su intención. \citet{Sas2019} estudian la evolución de los tres \textit{smells} de inestabilidad más investigados ---la dependencia cíclica, la dependencia concentradora (\textit{hub-like}) y la dependencia inestable---, y \citet{SasAvgeriou} los emplean como base de un índice de deuda técnica arquitectónica. Finalmente, los principios de diseño de paquetes de \citet{Martin2003} ---dependencias acíclicas, dependencias estables y abstracciones estables--- y sus métricas de acoplamiento ofrecen el vocabulario cuantitativo con que se expresan esas estructuras.
 
-El requisito RF6 no figuraba en la formulación inicial: se incorporó durante la evaluación, al constatar que la capacidad explicativa era el único indicador con margen de mejora. Su origen se documenta en el capítulo siguiente, pues ilustra el carácter iterativo que la metodología de diseño prescribe \citep{Peffers2007}. Tampoco figuraban RF7, RF8 y RF9, que responden a una misma constatación posterior: un diagnóstico correcto aporta poco si quien debe leerlo necesita, para obtenerlo, conocer la línea de comandos, la disposición interna de su herramienta de construcción o el formato del catálogo. Los tres sirven a RNF3 sin alterar el núcleo del mecanismo.
+\paragraph{Criterios de selección.} De esas fuentes se derivan candidatas, que se contrastaron con cinco criterios coherentes con el propósito y el alcance del trabajo: (C1) que la literatura las asocie a la deriva o a la erosión; (C2) que puedan verificarse estáticamente sobre un grafo de paquetes, sin ejecutar el sistema; (C3) que su criterio de incumplimiento sea objetivo y explicable a un profesional sin formación específica; (C4) que su configuración sea barata para una PyME; y (C5) que, juntas, cubran dimensiones distintas, incluyendo al menos una que dependa de la intención declarada y otras que no dependan de ella. La tabla~\ref{tab:candidatas} recoge el contraste.
 
-\section{Diseño de la propuesta}
-El diseño se organizó en torno a una arquitectura de módulos con responsabilidades separadas, de modo que cada etapa del proceso pudiera desarrollarse y verificarse de forma independiente. La figura~\ref{fig:modulos} muestra los cinco módulos del núcleo, los que lo ponen al alcance del usuario ---un servicio de análisis, una interfaz gráfica y un asistente opcional---, la raíz de composición que los ensambla y el sentido en el que fluyen sus dependencias.
-
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\begin{tikzpicture}[node distance=7mm and 14mm]
-  \node[modulo] (app) {\texttt{arquitecta}\\\small raíz de composición};
-  \node[modulo, below=of app] (asistente) {\texttt{asistente}\\\small asistente de catálogo};
-  \node[modulo, below=of asistente] (interfaz) {\texttt{interfaz}\\\small interfaz gráfica};
-  \node[modulo, below=of interfaz] (servicio) {\texttt{servicio}\\\small fachada del análisis};
-  \node[modulo, below=of servicio] (reporte) {\texttt{reporte}\\\small reporte y exportadores};
-  \node[modulo, below=of reporte] (motor) {\texttt{motor}\\\small agregación y clasificación};
-  \node[modulo, below=of motor] (reglas) {\texttt{reglas}\\\small \textit{Fitness Functions}};
-  \node[modulo, below left=10mm and 6mm of reglas] (grafoM) {\texttt{grafo}\\\small estructura y Tarjan};
-  \node[modulo, below right=10mm and 6mm of reglas] (configM) {\texttt{config}\\\small catálogo de reglas};
+\caption{Candidatas a \textit{Fitness Function} y decisión de selección.}
+\label{tab:candidatas}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{2.6cm}X}
+\toprule
+\textbf{Candidata} & \textbf{Fuente} & \textbf{Decisión y motivo} \\
+\midrule
+Reglas de dependencia entre capas & \citet{Murphy2001, KnodelPopescu2007, DeSilva2012} & \textbf{Incluida (FF1).} Es la única que mide la deriva en sentido estricto ---contra la intención declarada--- y la forma más extendida de verificación de conformidad (C1, C5). \\
+Dependencia cíclica & \citet{Martin2003, Sas2019} & \textbf{Incluida (FF2).} Viola el principio de dependencias acíclicas, es el \textit{smell} más estudiado y su detección es exacta (C1--C4). No requiere parámetros. \\
+Concentración de dependencias salientes & \citet{Martin2003, Sas2019} & \textbf{Incluida (FF3).} Toma de la dependencia concentradora el componente que el anteproyecto fijó ---el acoplamiento eferente $Ce$--- y solo requiere un umbral (C1--C4). \\
+Dependencia inestable & \citet{Martin2003, Sas2019} & \textbf{Excluida.} Exige comparar la inestabilidad relativa de cada par de paquetes; su incumplimiento es menos inmediato de explicar (C3) y su relación con la intención es indirecta. \\
+Distancia a la secuencia principal & \citet{Martin2003} & \textbf{Excluida.} Requiere medir la abstracción de cada paquete y no tiene un umbral de consenso (C3, C4); mide calidad de diseño, no conformidad. \\
+Reglas a nivel de clase y patrones de diseño & \citet{ArchUnit} & \textbf{Excluida.} Cambia la granularidad del análisis y queda fuera del alcance aprobado; se plantea como trabajo futuro. \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-  \draw[dep] (app) -- (asistente);
-  \draw[dep] (asistente) -- (interfaz);
-  \draw[dep] (interfaz) -- (servicio);
-  \draw[dep] (servicio) -- (reporte);
-  \draw[dep] (reporte) -- (motor);
-  \draw[dep] (motor) -- (reglas);
-  \draw[dep] (reglas) -- (grafoM);
-  \draw[dep] (reglas) -- (configM);
-\end{tikzpicture}
-\caption{Módulos del prototipo y sentido de sus dependencias. Se omiten, por legibilidad, las aristas que saltan niveles ---de la raíz a la interfaz y al servicio, del asistente al servicio, de la interfaz al reporte o hacia \texttt{grafo} y \texttt{config}---; ningún módulo depende de otro situado por encima de él, de modo que el grafo interno es acíclico. La interfaz, además, no accede a \texttt{grafo} ni a \texttt{config}: solo presenta lo que el servicio le entrega.}
-\label{fig:modulos}
-\end{figure}
+Las tres reglas seleccionadas se complementan de una forma que conviene subrayar. FF1 es \textbf{prescriptiva}: solo tiene sentido respecto de una arquitectura declarada, y es la que detecta la deriva propiamente dicha. FF2 y FF3 son \textbf{intrínsecas}: señalan estructuras perjudiciales en cualquier arquitectura, y por eso pueden evaluarse incluso sin catálogo. Las tres son, en la taxonomía de \citet{FordParsonsKua2017}, funciones atómicas ---evalúan una sola dimensión--- de ejecución desencadenada, y la Tasa de Conformidad que las agrega constituye una lectura holística sobre ellas.
 
-El módulo de \textit{configuración} carga y representa el catálogo de reglas (raíz de paquetes, capas, adyacencias permitidas, umbrales y modo de clasificación). El módulo de \textit{grafo} construye y almacena la estructura de dependencias, calcula los componentes fuertemente conexos mediante el algoritmo de Tarjan \citep{Tarjan1972} y reconstruye la ruta concreta de cada ciclo. El módulo de \textit{reglas} encapsula las tres \textit{Fitness Functions}, cada una de las cuales define sus criterios de verificación y de incumplimiento. El módulo \textit{motor} agrega los resultados y produce la clasificación. El módulo de \textit{reporte} traduce el diagnóstico a un formato legible y a formatos verificables por otras herramientas. Por encima del núcleo, el módulo de \textit{servicio} actúa como fachada: localiza el código compilado del proyecto elegido, carga su catálogo y encadena las etapas anteriores, de modo que la línea de comandos y la interfaz gráfica comparten un único camino de análisis y no pueden discrepar. El módulo de \textit{interfaz} presenta ese resultado de forma interactiva. Por último, el módulo \textit{asistente} ayuda a redactar el catálogo con un modelo de lenguaje; se acopla a la interfaz a través de un punto de extensión, de modo que ni la interfaz ni el núcleo dependen de él.
-
-\section{Catálogo de \textit{Fitness Functions}}
-\label{sec:catalogo}
-El primer objetivo específico exigía formular un catálogo acotado de \textit{Fitness Functions} en el que cada regla dejara explícita su racionalidad, la evidencia que espera encontrar y el criterio con el que declara un incumplimiento. La tabla~\ref{tab:catalogo} recoge ese catálogo, que constituye el núcleo normativo del mecanismo: define, en términos verificables, qué se considera una arquitectura sana dentro del alcance del proyecto.
+\paragraph{El catálogo resultante.}\label{sec:catalogo} La tabla~\ref{tab:catalogo} formaliza cada regla con los campos que exigía el primer objetivo específico ---racionalidad, evidencia esperada y criterio de incumplimiento--- y con los que la evaluación necesita: la propiedad que protege, la unidad sobre la que verifica, su severidad, su parámetro y su respaldo bibliográfico.
 
 \begin{table}[tbp]
 \centering
@@ -131,64 +137,22 @@ Valores de $Ce$ y $Ca$, umbral aplicado y lista de paquetes destino. \\
 \textbf{Severidad} & Mayor & Crítica & Mayor \\
 \midrule
 \textbf{Parámetro} & Matriz \texttt{permitido.*} & Ninguno & \texttt{umbral.concentracion} \\
+\midrule
+\textbf{Respaldo} &
+Violación de la arquitectura prevista \citep{PerryWolf1992}; divergencias en los modelos de reflexión \citep{Murphy2001}; reglas de dependencia en la verificación de conformidad \citep{KnodelPopescu2007, DeSilva2012}. &
+Principio de dependencias acíclicas \citep{Martin2003}; dependencia cíclica como \textit{smell} arquitectónico \citep{Sas2019}; detección exacta mediante componentes fuertemente conexos \citep{Tarjan1972}. &
+Acoplamiento eferente $Ce$ \citep{Martin2003}; dependencia concentradora (\textit{hub-like}) como \textit{smell} arquitectónico \citep{Sas2019}. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Este catálogo no vive únicamente en el documento. Cada regla se autodescribe en el código mediante los métodos que declaran su propiedad, su racionalidad, su unidad de verificación, su criterio de incumplimiento y su severidad, y el prototipo puede imprimirlo bajo demanda con la opción \texttt{-{}-catalogo}. La decisión persigue un fin concreto: impedir que el catálogo publicado y el efectivamente aplicado diverjan con el tiempo, que es precisamente la clase de deriva que el proyecto combate.
+La severidad responde a cuánto compromete cada incumplimiento la capacidad de cambiar el sistema. Un ciclo es \textbf{crítico} porque funde varios paquetes en una única unidad de cambio: ninguno puede modificarse, probarse ni liberarse por separado, y la estructura tiende a crecer, porque cada paquete que se añade al ciclo arrastra a los demás. Una violación de capas o una concentración son \textbf{mayores}: degradan la separación de responsabilidades, pero de forma localizada ---una arista, un paquete--- y reversible sin reorganizar el resto del sistema. Esa diferencia es la que justifica que, en el criterio de clasificación de la sección~\ref{sec:operacionalizacion}, un solo ciclo baste para declarar un sistema no conforme.
 
-\section{Operacionalización de la Tasa de Conformidad}
-\label{sec:operacionalizacion}
-La Tasa de Conformidad es la pieza que convierte un conjunto de hallazgos dispersos en una señal única, y por ello merece una justificación explícita de cómo se calcula. El anteproyecto la definió como la proporción de reglas cumplidas frente al total de reglas evaluadas. Con un catálogo de tres reglas, esa formulación admite únicamente cuatro valores posibles ---$0\%$, $33\%$, $67\%$ y $100\%$---, lo que la vuelve incapaz de distinguir entre un sistema con una violación de capas y otro con veinte. Se optó, por tanto, por conservar la definición como cociente pero desplazando la unidad de conteo desde la regla hasta la \textbf{verificación atómica}: cada arista entre capas distintas, en el caso de FF1, y cada paquete, en el de FF2 y FF3. Formalmente,
+\section{Declaración de la arquitectura prevista}
+\label{sec:declaracion}
+El catálogo es la única entrada que aporta la persona, y es la que convierte un análisis de estructura en un análisis de deriva: sin él, el mecanismo puede señalar estructuras perjudiciales, pero no desviaciones respecto de una intención. Por eso el catálogo no se deduce del código, sino que se declara.
 
-\begin{equation}
-CR = 100 \times \frac{V - I}{V},
-\label{eq:cr}
-\end{equation}
-
-\noindent donde $V$ es el número total de verificaciones atómicas realizadas por las tres reglas e $I$ el número de las que fallaron. Cuando $V = 0$ ---un sistema sin paquetes analizables--- la CR se define como $100\%$ por convención, pues no existe evidencia de incumplimiento.
-
-Este refinamiento es una precisión de la definición aprobada, no una sustitución: la CR sigue siendo una proporción explícita de cumplimiento, sigue interpretándose con los mismos umbrales del $85\%$ y el $70\%$, y sigue siendo reconstruible a partir de los hallazgos individuales. Lo que gana es resolución, y con ella la posibilidad de que la métrica refleje la magnitud del deterioro y no solo su presencia.
-
-Conviene, no obstante, dejar constancia de las tres limitaciones que la fórmula arrastra, porque condicionan cómo debe leerse cualquier valor que produzca.
-
-\begin{itemize}
-    \item \textbf{Las unidades son heterogéneas.} FF1 cuenta aristas mientras FF2 y FF3 cuentan paquetes, de modo que el peso relativo de cada regla en la CR depende de la topología del sistema. Un sistema con muchas dependencias entre capas y pocos paquetes concede más peso a FF1; uno con muchos paquetes y pocas aristas inter-capa, a FF2 y FF3.
-    \item \textbf{El denominador no es constante entre versiones.} Introducir un paquete nuevo aumenta $V$ aunque no introduzca ninguna violación. Ello implica que la CR de dos versiones de un sistema es comparable solo si se acompaña del conteo de verificaciones, razón por la cual el reporte lo declara siempre.
-    \item \textbf{La proporción diluye las violaciones localizadas.} A medida que crece el sistema, una violación aislada representa una fracción cada vez menor de $V$. En un sistema de quinientos paquetes, un ciclo entre dos de ellos apenas movería la CR. Esta propiedad no es un defecto de implementación sino una consecuencia matemática de toda métrica proporcional, y su alcance real se midió durante la evaluación.
-\end{itemize}
-
-La tercera limitación resultó ser la más relevante y motivó dos respuestas complementarias. La primera afecta a la clasificación y se describe en el capítulo de evaluación, una vez presentada la evidencia que la justifica. La segunda afecta a la lectura misma de la métrica y conviene enunciarla aquí, porque se desprende directamente de la fórmula.
-
-Si el valor absoluto de la CR se diluye con el tamaño del sistema, su \textbf{variación} no lo hace. Un descenso de cuatro puntos entre dos corridas es igual de significativo en un sistema de cinco paquetes que en uno de quinientos, porque se mide contra el propio sistema y no contra un umbral universal: el denominador, que es la fuente de la dilución, es prácticamente el mismo en ambas mediciones. El mecanismo registra por ello cada corrida y, cuando dispone de historia previa para el mismo sistema, acompaña la cifra con su variación en puntos porcentuales:
-
-\begin{verbatim}
-  Tasa de Conformidad     : 86.41%
-  Tendencia               : +4.10 pp respecto de la corrida
-                            anterior (82.31%) - mejora
-\end{verbatim}
-
-\noindent La distinción entre nivel y tendencia no es un adorno. Un sistema grande puede incumplir de forma persistente sin que su CR baje nunca del umbral de aceptación, y en ese régimen el valor absoluto no informa; la serie, en cambio, revela si el deterioro avanza o se contiene. Es la diferencia entre un detector puntual y un indicador prospectivo, y es la forma en que la métrica resulta útil en el escenario de gobernanza continua que motiva el proyecto.
-
-\section{Decisiones de diseño}
-La materialización del mecanismo exigió resolver una serie de decisiones que, aunque técnicas, tienen consecuencias conceptuales.
-
-La primera fue la elección del nivel de granularidad: se optó por construir el grafo a nivel de paquetes y no de clases. Esta decisión sacrifica algo de precisión en favor de dos beneficios: reduce el volumen de aristas, lo que hace el grafo más legible y el diagnóstico más comprensible, y amortigua el ruido que introducen las dependencias internas entre clases de un mismo paquete, que carecen de relevancia arquitectónica.
-
-La segunda fue la elección de la fuente del análisis: se prefirió el \textit{bytecode} compilado al código fuente, porque permite resolver las dependencias de forma completa ---incluidas las referencias implícitas que el compilador materializa--- sin ejecutar el sistema \citep{ArchUnitCodecentric}. Esta preferencia coincide con la de la mayoría de las herramientas de verificación de conformidad revisadas en su momento por \citet{KnodelPopescu2007}.
-
-La tercera, de mayor calado, fue la selección de las tres dimensiones evaluadas. La integridad de capas captura la violación más frecuente y más fácil de comunicar; la ausencia de ciclos ataca una de las estructuras más dañinas para la mantenibilidad, pues un ciclo obliga a modificar varios módulos a la vez; y la concentración de dependencias salientes detecta los componentes que, sin proponérselo, se convierten en el centro gravitacional del sistema. Estas tres dimensiones no agotan el espectro de la deriva, pero ofrecen una cobertura inicial suficiente para demostrar la viabilidad del enfoque, y su elección deliberada mantiene el catálogo acotado, en consonancia con la búsqueda de un instrumento ligero.
-
-La cuarta fue la separación estricta entre la declaración de las reglas y su evaluación. Al externalizar la configuración a un archivo de propiedades, se garantiza que el mismo motor pueda reutilizarse sobre proyectos con arquitecturas distintas sin modificar una sola línea de código, un requisito de configurabilidad que se consideró irrenunciable para la adopción en PyMES. Esta decisión, además, convierte al mecanismo en un instrumento genérico: el conocimiento sobre qué es admisible y qué no reside en la configuración, no en el código.
-
-La quinta afectó al contrato de las reglas. Una primera versión separaba la evaluación en tres operaciones independientes ---obtener los hallazgos, contar las verificaciones y contar los incumplimientos---, lo que abría la puerta a que la cifra que alimenta la CR y la evidencia que la explica procedieran de recorridos distintos y llegaran a discrepar. El contrato definitivo obliga a cada regla a resolver todo en una única pasada y a devolver conteos y hallazgos en un mismo objeto, cuya construcción rechaza combinaciones imposibles. La coherencia entre el número y su justificación deja así de depender de la disciplina del programador y pasa a estar garantizada por el diseño.
-
-La sexta consistió en conservar, junto a cada arista del grafo, la evidencia que la originó. Un diagnóstico que afirma que «persistencia depende de presentación» obliga al equipo a buscar a mano dónde ocurre eso; uno que señala el método y la línea exactos convierte el hallazgo en una tarea accionable. El costo en memoria es proporcional al número de referencias del sistema y resultó despreciable en los escenarios evaluados.
-
-\section{Implementación de la propuesta}
-La implementación se desarrolló en Java, con nivel de lenguaje 17, y se organizó como un proyecto Maven bajo el identificador \texttt{co.javeriana.msw:arquitecta}. Para la construcción del grafo se empleó la biblioteca \textit{ArchUnit} en su versión 1.3.0, que proporciona importadores de \textit{bytecode} capaces de extraer las dependencias entre clases sin ejecutar el sistema \citep{ArchUnit}; el resto de la lógica ---incluidos el algoritmo de detección de ciclos, el motor y los exportadores--- se implementó sin dependencias externas, con el fin de mantener el mecanismo ligero y comprensible, en coherencia con RNF2.
-
-El código se estructuró en los paquetes \texttt{co.javeriana.msw.arquitecta.config}, \texttt{.grafo}, \texttt{.reglas}, \texttt{.motor}, \texttt{.reporte}, \texttt{.servicio}, \texttt{.interfaz} y \texttt{.asistente}, bajo una raíz de composición que los ensambla. En el paquete de configuración, las clases \texttt{Capa} y \texttt{ConfiguracionReglas} modelan respectivamente cada capa arquitectónica y el catálogo completo, mientras que \texttt{CargadorConfiguracion} interpreta un archivo de propiedades y valida su consistencia ---rechaza capas declaradas sin paquetes, adyacencias hacia capas inexistentes, umbrales no numéricos y umbrales invertidos--- antes de que el análisis comience. El formato es el siguiente:
+\paragraph{Qué se declara.} El catálogo es un archivo de propiedades de unas pocas decenas de líneas con seis elementos: la \textbf{raíz} de paquetes que delimita el sistema; las \textbf{capas}, cada una con un nombre y uno o más prefijos de paquete; la \textbf{matriz de dependencias permitidas}, que indica de qué otras capas puede depender cada una; el \textbf{umbral de concentración}; las \textbf{exenciones}; y, opcionalmente, los umbrales de la CR y el criterio de clasificación. El del caso de estudio es el siguiente:
 
 \begin{verbatim}
 raiz=com.caso
@@ -207,23 +171,155 @@ umbral.cr.observacion=70
 clasificacion.modo=cr+severidad
 \end{verbatim}
 
-La asignación de paquetes a capas se resuelve por prefijo, de modo que los subpaquetes heredan la capa de su padre. Los paquetes que no encajan en ningún prefijo declarado ---un dominio compartido, por ejemplo--- quedan deliberadamente fuera de FF1: al no pertenecer a la estratificación, no puede afirmarse que la vulneren.
+\paragraph{Cómo se interpreta.} Cada elemento tiene una semántica precisa, que es la que la persona debe conocer para declarar lo que pretende:
 
-\subsection{Exenciones declaradas}
+\begin{itemize}
+    \item \textbf{Asignación por prefijo.} Un paquete pertenece a la primera capa, en el orden declarado, cuyo prefijo coincide con él o lo contiene; los subpaquetes heredan la capa del prefijo. Si un prefijo contiene a otro, la capa más específica debe declararse antes.
+    \item \textbf{Paquetes sin capa.} Un paquete que no encaja en ningún prefijo ---un dominio compartido, unas utilidades--- queda fuera de FF1: al no pertenecer a la estratificación, no puede afirmarse que la vulnere. Sigue evaluándose con FF2 y FF3.
+    \item \textbf{Matriz explícita y no transitiva.} Las dependencias dentro de una misma capa se admiten siempre; entre capas, solo las declaradas. Que la presentación pueda depender del negocio y el negocio de la persistencia no autoriza a la presentación a depender de la persistencia: eso debe declararse, de modo que la matriz distingue una estratificación estricta de una relajada.
+    \item \textbf{Exenciones.} La propiedad \texttt{excluir} retira del análisis código que \textbf{no forma parte del sistema} aunque el empaquetado lo sitúe bajo la raíz ---bibliotecas embebidas, código generado---, con todos sus subpaquetes. La propiedad \texttt{rol.compartido} señala paquetes que \textbf{sí pertenecen al sistema} pero cuyo papel ---una raíz de composición, una fachada, un núcleo de anotaciones--- hace que concentren dependencias por diseño: permanecen en el grafo, pero quedan exentos de FF2 y FF3. Esta exención es exacta y no se hereda, porque un papel lo desempeña un paquete concreto y no un subárbol; propagarla eximiría al sistema entero cuando el paquete compartido es la raíz, que es el caso más frecuente.
+\end{itemize}
 \label{sec:exenciones}
-Las dos últimas propiedades del ejemplo merecen una explicación aparte, porque responden a un problema que aparece en cuanto el mecanismo se aplica a un sistema que no fue construido para él. Un catálogo que no admita excepciones obliga a elegir entre dos salidas igualmente malas: tolerar falsos positivos hasta que el equipo deje de leer el reporte, o desactivar la regla entera y perder también los hallazgos legítimos. La configuración distingue por ello dos situaciones que, aunque se parecen, son de naturaleza distinta.
 
-La propiedad \texttt{excluir} señala código que \textbf{no forma parte del sistema evaluado} aunque el empaquetado lo sitúe bajo la misma raíz: dependencias vendorizadas, código generado, módulos de terceros embebidos. Esos paquetes se retiran del grafo por completo. La exclusión alcanza al paquete y a todos sus subpaquetes, porque el código ajeno siempre llega en forma de subárbol.
+Las exenciones son la forma en que el anteproyecto previó contener el riesgo de formalismo vacío: mediante un \textit{registro de excepciones justificadas}. Por eso viven en el catálogo, donde son visibles y discutibles, y no en el código de las reglas, y por eso el reporte enumera en su sección de alcance todas las aplicadas. Una excepción declarada puede auditarse; una codificada dentro de la regla, no.
 
-La propiedad \texttt{rol.compartido}, en cambio, señala paquetes que \textbf{sí pertenecen al sistema} pero cuyo papel arquitectónico ---un núcleo de anotaciones, una raíz de composición, una fachada--- hace que concentren dependencias por diseño y no por deterioro. Estos paquetes permanecen en el grafo y en la evidencia, pero quedan exentos de FF2 y FF3. Aquí la coincidencia es exacta y no se hereda a los subpaquetes, y la razón es conceptual: un papel lo desempeña un paquete concreto, no un subárbol. Propagarlo hacia abajo eximiría al sistema entero cada vez que el núcleo compartido resultara ser el paquete raíz, que es precisamente el caso más frecuente.
+\paragraph{Cómo la define el usuario.} La declaración sigue un procedimiento que se apoya en lo que el equipo sabe de su sistema, no en lo que el código hace hoy:
 
-Conviene subrayar qué clase de mecanismo es este. No se trata de una vía para silenciar hallazgos incómodos, sino de la forma en que el anteproyecto había previsto contener el riesgo de formalismo vacío: mediante el \textit{registro de excepciones justificadas}. De ahí que la exención no viva en el código de la regla sino en la configuración, donde es visible y discutible, y que el reporte enumere en su sección de alcance todas las exenciones aplicadas junto con las reglas que cada una afecta. Una excepción declarada y registrada puede auditarse; una codificada dentro de la regla, no.
+\begin{enumerate}
+    \item \textbf{Delimitar el sistema.} Fijar la raíz de paquetes y excluir el código que no es propio.
+    \item \textbf{Identificar las capas de la intención.} Partir de lo que el equipo decidió ---registros de decisiones, convenciones del marco de trabajo, el conocimiento del líder técnico---, no de la estructura actual, que puede contener ya la deriva.
+    \item \textbf{Asignar los paquetes} a cada capa mediante prefijos.
+    \item \textbf{Declarar la matriz empezando por la más estricta} y relajarla solo ante una decisión explícita.
+    \item \textbf{Fijar el umbral de concentración} a partir del acoplamiento de los paquetes que el equipo considera sanos, no por encima del de un paquete concreto para dejar de señalarlo.
+    \item \textbf{Declarar las exenciones} solo con una justificación que quede escrita junto a ellas.
+    \item \textbf{Validar y versionar.} El mecanismo rechaza un catálogo inconsistente ---capas sin paquetes, dependencias hacia capas inexistentes, exenciones fuera de la raíz, umbrales no numéricos o invertidos---; una vez aceptado, se guarda junto al código y se actualiza cuando cambia la intención, no cuando cambia el código.
+\end{enumerate}
 
-En el paquete de grafo, \texttt{GrafoDependencias} representa el grafo dirigido, descarta los autobucles y conserva la evidencia de cada arista; \texttt{ConstructorGrafo} lo puebla a partir del \textit{bytecode} mediante \textit{ArchUnit}, restringiendo el análisis al paquete raíz para que las bibliotecas de terceros no contaminen el diagnóstico; \texttt{Tarjan} calcula los componentes fuertemente conexos; y \texttt{BuscadorCiclos} reconstruye, dentro de cada componente, el recorrido concreto que cierra el ciclo. En el paquete de reglas se definieron la interfaz \texttt{Regla} y sus tres implementaciones, \texttt{ReglaIntegridadCapas}, \texttt{ReglaCiclos} y \texttt{ReglaConcentracion}, que materializan las \textit{Fitness Functions} del catálogo y satisfacen los requisitos RF2, RF3 y RF4. Cada hallazgo se modela mediante la clase \texttt{Violacion}, que distingue la \textit{ubicación} ---los paquetes implicados, que responden a la pregunta «dónde»--- de la \textit{evidencia} ---las referencias entre clases y los valores medidos, que responden a «por qué»---, y le asocia una severidad.
+Ese archivo no contradice el propósito de no depender de documentación externa. Lo que el mecanismo evita es depender de la documentación arquitectónica tradicional ---diagramas y descripciones que se escriben aparte, envejecen sin que nada lo advierta y que las PyMES rara vez mantienen---. El catálogo es otra cosa: una declaración mínima que vive en el repositorio y se verifica en cada ejecución, de modo que no puede quedar desactualizada en silencio. Las tres reglas, además, no dependen de él en la misma medida: FF2 no necesita ningún parámetro, FF3 solo un umbral con valor por defecto, y únicamente FF1 exige declarar capas y dependencias, que son precisamente la intención que el equipo conoce aunque no la haya escrito. Por eso, sin catálogo, el mecanismo aplica una \textbf{configuración mínima} ---infiere la raíz como el prefijo común de los paquetes y evalúa FF2 y FF3--- y advierte que la estratificación no se verificó. Para reducir el esfuerzo de la declaración, el prototipo ofrece además un asistente que propone un catálogo a partir de la estructura del código y que la persona revisa antes de adoptarlo (sección~\ref{sec:usos}).
 
-El motor de validación, implementado en \texttt{MotorConformidad}, aplica la ecuación~\ref{eq:cr} y clasifica el resultado. Los estados posibles se codificaron en el enumerado \texttt{EstadoArquitectonico}, declarado de mejor a peor para que el orden natural permita adoptar el veredicto más restrictivo cuando dos criterios discrepan. El resultado agregado se encapsula en la clase \texttt{Resultado}, que conserva por separado el estado deducido de la CR y el deducido de la severidad, de modo que la procedencia de la clasificación sea siempre auditable. Finalmente, el paquete de reporte convierte ese resultado en un texto estructurado, en dos formatos verificables por otras herramientas ---JSON y CSV--- y en una representación gráfica del grafo que se describe en la sección~\ref{sec:visualizacion}; la clase \texttt{Analisis}, del paquete de servicio, encadena el proceso completo, y \texttt{ArquitectaApp} lo expone desde la línea de comandos o, si se invoca sin argumentos, abre la interfaz gráfica descrita en la sección~\ref{sec:interfaz}. El sistema a analizar puede indicarse como un directorio de clases compiladas, como la carpeta raíz de un proyecto o directamente como un archivo \texttt{.jar}, que es como suele distribuirse. Si el análisis no encuentra ninguna clase bajo la raíz declarada, el mecanismo termina con un error en lugar de emitir un diagnóstico: un grafo vacío obtendría una CR del $100\%$ y sería clasificado como aceptable, de modo que apuntar por descuido al directorio de fuentes en lugar del de clases produciría un falso negativo silencioso.
+\section{Extracción del grafo de dependencias}
+\label{sec:extraccion}
+El segundo término de la comparación, la arquitectura implementada, se obtiene del código mediante análisis estático: sin ejecutar el sistema, se recorre su código compilado y se registra qué clases dependen de cuáles. El resultado se agrega a nivel de paquete y se representa como un grafo dirigido $G = (N, E)$, en el que los nodos $N$ son paquetes y cada arista $(p, q) \in E$ indica que alguna clase de $p$ depende de alguna clase de $q$.
 
-El procedimiento de agregación y clasificación se formaliza en el algoritmo~\ref{alg:conformidad}. Su diseño responde a un principio de transparencia: la Tasa de Conformidad no se calcula como una cifra opaca, sino como el cociente explícito entre las verificaciones superadas y el total, de modo que cualquier resultado pueda reconstruirse a partir de las evidencias individuales que lo sustentan.
+\paragraph{Por qué el código compilado.} Se prefirió el \textit{bytecode} al código fuente porque materializa todas las dependencias que el compilador resolvió ---incluidas las referencias implícitas que el código fuente no escribe de forma literal---, en un formato uniforme y sin necesidad de reconstruir el entorno de compilación \citep{ArchUnitCodecentric}; es también la opción de la mayoría de las herramientas de verificación de conformidad revisadas por \citet{KnodelPopescu2007}. No altera lo que el segundo objetivo específico pide ---extraer el grafo del código del sistema y de los archivos de configuración necesarios---: el \textit{bytecode} es ese mismo código fuente una vez compilado, y el único archivo de configuración que la extracción necesita es el catálogo, del que toma la raíz y las exclusiones. La lectura de las clases se delega en la biblioteca \textit{ArchUnit} \citep{ArchUnit}.
+
+\paragraph{Por qué el paquete.} El grafo se construye a nivel de paquete y no de clase. La decisión sacrifica precisión a cambio de dos beneficios: reduce el número de aristas hasta una escala legible y comprensible, y descarta las dependencias entre clases de un mismo paquete, que carecen de relevancia arquitectónica. Es, además, la granularidad en que se declaran las capas.
+
+\paragraph{Reglas de extracción.} El grafo se construye aplicando siete reglas:
+
+\begin{enumerate}
+    \item[R1.] \textbf{Universo de clases.} Se importan todas las clases del código compilado, salvo las de prueba, que se reconocen por las convenciones de directorio de las herramientas de construcción.
+    \item[R2.] \textbf{Qué es una dependencia.} Una clase depende de otra cuando su \textit{bytecode} la referencia en alguna de las formas de la tabla~\ref{tab:extraccion}. Las formas que el compilador elimina ---una constante que copia en su lugar de uso, una anotación de solo código fuente, una importación o variable que no se usa--- no dejan rastro y no producen dependencia.
+    \item[R3.] \textbf{Agregación.} Existe la arista $(p, q)$ si al menos una clase de $p$ depende de al menos una clase de $q$, con $p \neq q$; las dependencias dentro de un mismo paquete se descartan.
+    \item[R4.] \textbf{Delimitación.} Solo se conservan los paquetes bajo la raíz declarada; las dependencias hacia el JDK o hacia bibliotecas externas se descartan, y los paquetes excluidos se retiran como origen y como destino.
+    \item[R5.] \textbf{Evidencia.} Cada arista conserva las referencias concretas entre clases que la originan, con el miembro y la línea, de modo que todo hallazgo pueda rastrearse hasta el código.
+    \item[R6.] \textbf{Determinismo.} Las clases y sus dependencias se recorren en orden alfabético, para que la misma entrada produzca siempre el mismo grafo y la misma evidencia.
+    \item[R7.] \textbf{Validez.} Si el grafo resulta vacío, o si el código está compilado para una versión de Java que la biblioteca no reconoce ---\textit{ArchUnit} 1.3.0 lee hasta Java 23 y omite sin aviso las clases posteriores---, la extracción se detiene con un error en lugar de producir un diagnóstico: un grafo vacío o incompleto obtendría una conformidad alta sin haber examinado el sistema.
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\caption{Formas de referencia entre clases y su efecto en el grafo, verificadas por la batería de pruebas sobre código compilado.}
+\label{tab:extraccion}
+\footnotesize
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+\textbf{Producen dependencia} & \textbf{No producen dependencia} \\
+\midrule
+Herencia de clase e implementación de interfaz; tipo de un campo, de un parámetro, de retorno y de una excepción declarada; llamada a un método, creación de una instancia y acceso a un campo; anotación conservada en el \textit{bytecode}; argumento de tipo genérico; literal de clase (\texttt{X.class}); comprobación \texttt{instanceof}; tipo de los elementos de un arreglo. &
+Constante de tiempo de compilación, que el compilador copia en su lugar de uso; anotación de solo código fuente; importación o variable local sin uso; conversión de tipo (\textit{cast}), que la versión empleada de la biblioteca no registra. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Del grafo se derivan las dos métricas de acoplamiento que emplea FF3 \citep{Martin2003}: el acoplamiento eferente $Ce(p) = |\{q : (p, q) \in E\}|$, número de paquetes de los que $p$ depende, y el aferente $Ca(p) = |\{q : (q, p) \in E\}|$, número de paquetes que dependen de $p$.
+
+\paragraph{Lo que el grafo no ve.} Las reglas anteriores delimitan también lo que la extracción no puede capturar, y que conviene tener presente al interpretar cualquier resultado: las dependencias que solo existen en tiempo de ejecución ---carga dinámica de clases, reflexión a partir de nombres, configuración externa---, las que el compilador elimina (tabla~\ref{tab:extraccion}) y las que cruzan los límites del sistema delimitado por la raíz.
+
+\section{Evaluación: cómo se obtiene la deriva}
+\label{sec:evaluacion}
+La evaluación combina las tres entidades anteriores: el grafo aporta los hechos, el catálogo la intención y las \textit{Fitness Functions} el criterio con que se comparan. Para expresarlo con precisión, sea $\mathcal{C}$ el conjunto de capas declaradas, $\lambda : N \rightarrow \mathcal{C} \cup \{\bot\}$ la asignación de cada paquete a su capa ---o a ninguna, $\bot$--- según las reglas de la sección~\ref{sec:declaracion}, $P \subseteq \mathcal{C} \times \mathcal{C}$ la matriz de dependencias permitidas, $X \subseteq N$ los paquetes con rol compartido y $u$ el umbral de concentración.
+
+\paragraph{FF1, integridad de capas.} Verifica cada arista que une dos capas declaradas distintas,
+\[ V_1 = \{(p, q) \in E : \lambda(p) \neq \bot,\ \lambda(q) \neq \bot,\ \lambda(p) \neq \lambda(q)\}, \]
+y registra un incumplimiento por cada una cuyo par de capas no está permitido, $(\lambda(p), \lambda(q)) \notin P$. Las aristas dentro de una capa y las que tocan un paquete sin capa no se verifican.
+
+\paragraph{FF2, ausencia de ciclos.} Retira del grafo los paquetes con rol compartido, $G' = G \setminus X$, y calcula sus componentes fuertemente conexos con el algoritmo de \citet{Tarjan1972}. Verifica cada paquete de $G'$ ---de modo que $|V_2| = |N \setminus X|$--- y registra un incumplimiento por cada paquete que pertenece a un componente de más de un elemento. Cada componente da lugar a un único hallazgo, cuya evidencia incluye una ruta concreta que cierra el ciclo.
+
+\paragraph{FF3, concentración de dependencias.} Verifica cada paquete sin rol compartido, $|V_3| = |N \setminus X|$, y registra un incumplimiento por cada uno cuyo acoplamiento eferente, medido sobre el grafo completo, supera el umbral: $Ce(p) > u$.
+
+\paragraph{Un ejemplo completo.} El escenario combinado del caso de estudio (C4, sección~\ref{sec:escenarios}) tiene cinco paquetes y once dependencias, y se evalúa con el catálogo de la sección~\ref{sec:declaracion}. La tabla~\ref{tab:ejemplo} recorre el cálculo. FF1 encuentra cuatro aristas entre capas distintas: las dos descendentes que la matriz permite y las dos que la persistencia dirige hacia el negocio y la presentación, que no lo están. FF2 verifica los cinco paquetes ---no hay exentos--- y encuentra un componente que reúne a los tres de capa: tres incumplimientos, un hallazgo. FF3 verifica los cinco y encuentra que \texttt{util} depende de cuatro paquetes, por encima del umbral de tres. La deriva de C4 son, por tanto, cuatro hallazgos ---dos de capas, un ciclo y una concentración--- que suman seis incumplimientos en catorce verificaciones.
+
+\begin{table}[H]
+\centering
+\caption{Evaluación del escenario C4, paso a paso.}
+\label{tab:ejemplo}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{2.6cm}cccX}
+\toprule
+\textbf{Regla} & \textbf{Verif.} & \textbf{Incumpl.} & \textbf{Hallazgos} & \textbf{Detalle} \\
+\midrule
+FF1 Capas & 4 & 2 & 2 & \texttt{persistencia}$\rightarrow$\texttt{negocio} y \texttt{persistencia}$\rightarrow$\texttt{presentacion}, no permitidas. \\
+FF2 Ciclos & 5 & 3 & 1 & Un componente con \texttt{presentacion}, \texttt{negocio} y \texttt{persistencia}. \\
+FF3 Concentración & 5 & 1 & 1 & \texttt{util}: $Ce = 4 > u = 3$. \\
+\midrule
+\textbf{Total} & \textbf{14} & \textbf{6} & \textbf{4} & $CR = 100 \times (14 - 6) / 14 = 57{,}14\%$; severidad máxima: crítica. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Unidades de medida y agregación}
+\label{sec:operacionalizacion}
+La evaluación produce hallazgos; la agregación los convierte en magnitudes que permitan comparar escenarios, seguir la evolución de un sistema y decidir. La tabla~\ref{tab:unidades} resume las unidades en que se expresa cada resultado.
+
+\begin{table}[H]
+\centering
+\caption{Unidades en que se expresa la deriva.}
+\label{tab:unidades}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{3.3cm}X}
+\toprule
+\textbf{Magnitud} & \textbf{Unidad o escala} & \textbf{Qué expresa} \\
+\midrule
+Verificación & Conteo (aristas o paquetes) & Cada comprobación atómica realizada; es el denominador de la CR. \\
+Incumplimiento & Conteo & Verificaciones no superadas. \\
+Hallazgo & Conteo, con ubicación y evidencia & Cada desviación que debe atenderse; un ciclo es un hallazgo con varios incumplimientos. \\
+Conformidad local & Porcentaje, por regla & Qué dimensión se deteriora. \\
+Tasa de Conformidad (CR) & Porcentaje, de 0 a 100 & Proporción de verificaciones superadas en el sistema. \\
+Severidad & Ordinal: mayor, crítica & Gravedad del peor hallazgo. \\
+Estado & Ordinal: aceptable, en observación, no conforme & Veredicto que resume el diagnóstico. \\
+Tendencia & Puntos porcentuales & Variación de la CR respecto del análisis anterior del mismo sistema. \\
+$Ce$, $Ca$ & Número de paquetes & Acoplamiento de cada paquete; sustenta FF3. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{La Tasa de Conformidad.} Convierte un conjunto de hallazgos dispersos en una señal única. El anteproyecto la definió como la proporción de reglas cumplidas frente al total de reglas evaluadas. Con un catálogo de tres reglas, esa formulación admite únicamente cuatro valores posibles ---$0\%$, $33\%$, $67\%$ y $100\%$---, lo que la vuelve incapaz de distinguir entre un sistema con una violación de capas y otro con veinte. Se conservó la definición como cociente, pero desplazando la unidad de conteo desde la regla hasta la \textbf{verificación atómica} definida en la sección~\ref{sec:evaluacion}:
+
+\begin{equation}
+CR = 100 \times \frac{V - I}{V},
+\label{eq:cr}
+\end{equation}
+
+\noindent donde $V = |V_1| + |V_2| + |V_3|$ es el número total de verificaciones e $I$ el de incumplimientos. Cuando $V = 0$ la CR se define como $100\%$ por convención, aunque la regla R7 impide que ese caso llegue a producirse sobre un sistema real. Este refinamiento es una precisión de la definición aprobada, no una sustitución: la CR sigue siendo una proporción explícita de cumplimiento, se interpreta con los mismos umbrales del $85\%$ y el $70\%$ y es reconstruible a partir de los hallazgos individuales. Lo que gana es resolución.
+
+La fórmula arrastra tres limitaciones que condicionan cómo debe leerse cualquier valor:
+
+\begin{itemize}
+    \item \textbf{Las unidades son heterogéneas.} FF1 cuenta aristas y FF2 y FF3 cuentan paquetes, de modo que el peso relativo de cada regla en la CR depende de la topología del sistema.
+    \item \textbf{El denominador no es constante entre versiones.} Un paquete nuevo aumenta $V$ aunque no introduzca ninguna violación; la CR de dos versiones solo es comparable acompañada del conteo de verificaciones, que el reporte declara siempre.
+    \item \textbf{La proporción diluye las violaciones localizadas.} A medida que crece $V$, una violación aislada pesa cada vez menos. No es un defecto de implementación sino una consecuencia de toda métrica proporcional, y su alcance se midió durante la evaluación.
+\end{itemize}
+
+\paragraph{La tendencia.} Si el valor absoluto de la CR se diluye con el tamaño, su \textbf{variación} no lo hace: un descenso de cuatro puntos entre dos análisis es igual de significativo en un sistema de cinco paquetes que en uno de quinientos, porque se mide contra el propio sistema y con un denominador casi idéntico. El mecanismo registra cada análisis y, cuando dispone de uno anterior del mismo sistema, acompaña la cifra con su variación:
+
+\begin{verbatim}
+  Tasa de Conformidad     : 86.41%
+  Tendencia               : +4.10 pp respecto de la corrida
+                            anterior (82.31%) - mejora
+\end{verbatim}
+
+\paragraph{La clasificación.} El estado se obtiene de dos lecturas. La lectura \textbf{por CR} aplica los umbrales del anteproyecto: aceptable si $CR \geq 85\%$, en observación si $70\% \leq CR < 85\%$ y no conforme si $CR < 70\%$. La lectura \textbf{por severidad} atiende al peor hallazgo: no conforme si hay alguno crítico, en observación si el peor es mayor y aceptable si no hay hallazgos. El criterio combinado adopta la más restrictiva de las dos, de modo que una violación aislada no quede diluida por la proporción; su motivación empírica se expone en el capítulo de evaluación, y el algoritmo~\ref{alg:conformidad} formaliza el procedimiento completo.
 
 \begin{algorithm}[tbp]
 \caption{Cálculo de la Tasa de Conformidad y clasificación del estado.}
@@ -249,73 +345,153 @@ El procedimiento de agregación y clasificación se formaliza en el algoritmo~\r
 \end{algorithmic}
 \end{algorithm}
 
+\section{Interpretación de los resultados}
+\label{sec:interpretacion}
+El diagnóstico se lee de lo general a lo particular. Primero el \textbf{estado}, y si la severidad lo endureció respecto de lo que la CR sola habría dicho. Después la \textbf{conformidad local}, que indica qué dimensión se deteriora. Luego los \textbf{hallazgos}, por severidad, con su evidencia, que señalan dónde actuar. Por último la \textbf{tendencia}, que dice si la situación empeora, y la \textbf{declaración de alcance}, que recuerda qué no se examinó. La tabla~\ref{tab:interpretacion} recoge cómo interpretar cada situación y qué decisiones admite.
+
+\begin{table}[H]
+\centering
+\caption{Guía de interpretación del diagnóstico.}
+\label{tab:interpretacion}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm}XX}
+\toprule
+\textbf{Resultado} & \textbf{Qué significa} & \textbf{Decisiones posibles} \\
+\midrule
+Aceptable, sin hallazgos & El código respeta la intención declarada y no presenta ciclos ni concentraciones en las tres dimensiones evaluadas. & Ninguna; no implica ausencia de otros problemas de calidad. \\
+\midrule
+Hallazgo de FF1 & Una dependencia que la arquitectura prevista prohíbe. & Si es deriva, revertirla o encapsularla tras la capa permitida; si la intención cambió deliberadamente, actualizar el catálogo y registrar la decisión. Nunca relajar la matriz sin registrar por qué. \\
+\midrule
+Hallazgo de FF2 & Paquetes que ya no pueden cambiar por separado. & Romper el ciclo invirtiendo la dependencia, moviendo la clase que lo cierra o extrayendo una abstracción; la ruta indica dónde actuar. Es la prioridad más alta. \\
+\midrule
+Hallazgo de FF3 & Un paquete que acumula responsabilidades de muchos otros. & Repartir sus responsabilidades; si su papel lo justifica ---raíz de composición, fachada---, declararlo como exención justificada. \\
+\midrule
+CR alta y estado endurecido por la severidad & La proporción oculta un hallazgo grave, típicamente un ciclo, en un sistema grande. & Atender el hallazgo aunque la cifra parezca buena. \\
+\midrule
+Descenso de la CR entre análisis & Se introdujo deriva desde el análisis anterior. & Revisar los hallazgos nuevos antes de que se consoliden. \\
+\midrule
+CR baja y estable & Deriva heredada, no reciente. & Priorizar por severidad; vigilar que no crezca. \\
+\midrule
+Sin capas declaradas & FF1 no se evaluó. & No concluir nada sobre la estratificación; declarar el catálogo para hacerlo. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Tan importante como lo que el diagnóstico afirma es lo que no autoriza a concluir. Un veredicto aceptable significa que no se hallaron incumplimientos de estas tres reglas en la estructura de paquetes, no que el sistema carezca de problemas: rendimiento, seguridad, corrección funcional y comportamiento en ejecución quedan fuera, y el reporte lo declara. La CR de dos sistemas distintos no es comparable, porque su denominador depende de la topología de cada uno; tiene sentido comparar un sistema consigo mismo a lo largo del tiempo. Y los hallazgos se atribuyen a paquetes, no a personas: el diagnóstico es un insumo para la decisión técnica, no una medida del desempeño del equipo, en coherencia con los principios del capítulo~\ref{cap:riesgos}.
+
+%======================================================================
+\section*{Parte II. La instrumentación del proceso}
+\addcontentsline{toc}{section}{Parte II. La instrumentación del proceso}
+%======================================================================
+
+El proceso anterior se instrumentó en un prototipo, \textit{Arquitecta}, que automatiza los pasos P2 a P5 y apoya los pasos P1 y P6. Esta parte describe sus requisitos, su arquitectura, su implementación y su verificación, y presenta los escenarios del caso de estudio sobre los que se evaluó.
+
+\section{Requisitos}
+La construcción del prototipo se apoyó en un conjunto de requisitos funcionales y no funcionales.
+
+\textbf{Requisitos funcionales:}
+\begin{itemize}
+    \item \textbf{RF1.} Construir un grafo de dependencias entre paquetes a partir del código compilado, descartando las clases de prueba y las dependencias externas al sistema analizado.
+    \item \textbf{RF2.} Verificar la integridad de capas: toda dependencia entre capas debe respetar las adyacencias permitidas que se declaren en la configuración.
+    \item \textbf{RF3.} Detectar dependencias cíclicas entre paquetes mediante componentes fuertemente conexos.
+    \item \textbf{RF4.} Medir la concentración de dependencias salientes de cada paquete y reportar como violación aquella que supere un umbral configurable.
+    \item \textbf{RF5.} Agregar los resultados de las verificaciones en una Tasa de Conformidad y clasificar el estado arquitectónico del sistema, emitiendo un reporte legible.
+    \item \textbf{RF6.} Acompañar cada hallazgo de la evidencia estructural que lo origina, hasta el nivel de la referencia concreta entre clases, y declarar en el reporte el alcance del diagnóstico emitido.
+    \item \textbf{RF7.} Representar gráficamente el grafo de dependencias, ordenado según la estratificación declarada y con los hallazgos resaltados, en un formato que pueda consultarse sin instalar herramientas adicionales.
+    \item \textbf{RF8.} Ofrecer una interfaz gráfica desde la cual seleccionar el proyecto a analizar ---la carpeta tal como la deja su herramienta de construcción, o su archivo empaquetado--- y consultar el diagnóstico, el grafo y la evidencia sin recurrir a la línea de comandos.
+\end{itemize}
+
+\textbf{Requisitos no funcionales:}
+\begin{itemize}
+    \item \textbf{RNF1.} Configurabilidad: las capas, las adyacencias permitidas, las exenciones, los umbrales y el criterio de clasificación deben poder declararse en un archivo externo sin modificar el código, y toda exención aplicada debe quedar registrada en el reporte.
+    \item \textbf{RNF2.} Ligereza: el mecanismo debe poder ejecutarse en un entorno de desarrollo convencional, sin infraestructura adicional ni dependencias de servicios externos.
+    \item \textbf{RNF3.} Interpretabilidad: el reporte resultante debe ser comprensible para un profesional sin formación específica en verificación arquitectónica.
+    \item \textbf{RNF4.} Reproducibilidad: ante la misma entrada, el mecanismo debe producir el mismo diagnóstico, y debe poder emitirlo en un formato verificable por otras herramientas.
+\end{itemize}
+
+El requisito RF6 no figuraba en la formulación inicial: se incorporó durante la evaluación, al constatar que la capacidad explicativa era el único indicador con margen de mejora, lo que ilustra el carácter iterativo que la metodología de diseño prescribe \citep{Peffers2007}. Tampoco figuraban RF7 y RF8, que responden a una misma constatación posterior: un diagnóstico correcto aporta poco si quien debe leerlo necesita, para obtenerlo, conocer la línea de comandos y la disposición interna de su herramienta de construcción. Ambos sirven a RNF3 sin alterar el proceso.
+
+\section{Arquitectura del prototipo}
+\label{sec:diseno}
+El prototipo se organizó en módulos con responsabilidades separadas, de modo que cada paso del proceso pudiera desarrollarse y verificarse de forma independiente. La figura~\ref{fig:modulos} muestra los cinco módulos del núcleo ---uno por paso del proceso---, los que lo ponen al alcance del usuario ---un servicio de análisis, una interfaz gráfica y un asistente opcional---, la raíz de composición que los ensambla y el sentido en que fluyen sus dependencias.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=7mm and 14mm]
+  \node[modulo] (app) {\texttt{arquitecta}\\\small raíz de composición};
+  \node[modulo, below=of app] (asistente) {\texttt{asistente}\\\small asistente de catálogo};
+  \node[modulo, below=of asistente] (interfaz) {\texttt{interfaz}\\\small interfaz gráfica};
+  \node[modulo, below=of interfaz] (servicio) {\texttt{servicio}\\\small fachada del análisis};
+  \node[modulo, below=of servicio] (reporte) {\texttt{reporte}\\\small reporte y exportadores};
+  \node[modulo, below=of reporte] (motor) {\texttt{motor}\\\small P5: agregación};
+  \node[modulo, below=of motor] (reglas) {\texttt{reglas}\\\small P3--P4: \textit{Fitness Functions}};
+  \node[modulo, below left=10mm and 6mm of reglas] (grafoM) {\texttt{grafo}\\\small P2: extracción};
+  \node[modulo, below right=10mm and 6mm of reglas] (configM) {\texttt{config}\\\small P1: catálogo};
+
+  \draw[dep] (app) -- (asistente);
+  \draw[dep] (asistente) -- (interfaz);
+  \draw[dep] (interfaz) -- (servicio);
+  \draw[dep] (servicio) -- (reporte);
+  \draw[dep] (reporte) -- (motor);
+  \draw[dep] (motor) -- (reglas);
+  \draw[dep] (reglas) -- (grafoM);
+  \draw[dep] (reglas) -- (configM);
+\end{tikzpicture}
+\caption{Módulos del prototipo, el paso del proceso que instrumenta cada uno y el sentido de sus dependencias. Se omiten, por legibilidad, las aristas que saltan niveles; ningún módulo depende de otro situado por encima de él, de modo que el grafo interno es acíclico.}
+\label{fig:modulos}
+\end{figure}
+
+El módulo de \textit{configuración} carga y valida el catálogo (P1). El de \textit{grafo} construye la estructura de dependencias, calcula los componentes fuertemente conexos y reconstruye la ruta de cada ciclo (P2). El de \textit{reglas} asigna los paquetes a capas y evalúa las tres \textit{Fitness Functions} (P3 y P4). El \textit{motor} agrega y clasifica (P5). El de \textit{reporte} traduce el diagnóstico a texto legible, a formatos verificables y a una representación gráfica. Por encima del núcleo, el \textit{servicio} encadena los pasos, de modo que la línea de comandos y la interfaz gráfica comparten un único camino de análisis; la \textit{interfaz} presenta el resultado de forma interactiva, y el \textit{asistente}, opcional, apoya la declaración del catálogo.
+
+\section{Implementación}
+\label{sec:implementacion}
+La implementación se desarrolló en Java, con nivel de lenguaje 17, como un proyecto Maven bajo el identificador \texttt{co.javeriana.msw:arquitecta}. La lectura del \textit{bytecode} se delegó en \textit{ArchUnit} 1.3.0 \citep{ArchUnit}; el resto de la lógica ---la detección de ciclos, el motor, los exportadores, la interfaz--- se implementó sin dependencias externas, en coherencia con RNF2.
+
+Cada paso del proceso tiene una contraparte directa en el código. \texttt{CargadorConfiguracion} interpreta y valida el catálogo antes de que el análisis comience. \texttt{ConstructorGrafo} aplica las reglas de extracción R1 a R6 y puebla \texttt{GrafoDependencias}, que conserva la evidencia de cada arista; \texttt{ResolutorProyecto} localiza el código compilado del proyecto ---reconoce las convenciones de Maven, Gradle, IntelliJ IDEA y Eclipse, o un \texttt{.jar}--- y aplica la regla R7. \texttt{ReglaIntegridadCapas}, \texttt{ReglaCiclos} ---apoyada en \texttt{Tarjan} y \texttt{BuscadorCiclos}--- y \texttt{ReglaConcentracion} implementan las tres \textit{Fitness Functions}; cada hallazgo es una \texttt{Violacion} que distingue la \textit{ubicación} ---los paquetes implicados, que responden a «dónde»--- de la \textit{evidencia} ---las referencias y valores medidos, que responden a «por qué»---. \texttt{MotorConformidad} aplica la ecuación~\ref{eq:cr} y el algoritmo~\ref{alg:conformidad}, y \texttt{Resultado} conserva por separado el estado deducido de la CR y el de la severidad, para que la procedencia de la clasificación sea auditable.
+
+Dos decisiones de implementación protegen la correspondencia entre el proceso y su resultado. La primera es el contrato de las reglas: cada una resuelve sus verificaciones, incumplimientos y hallazgos en una única pasada y los devuelve en un mismo objeto, cuya construcción rechaza combinaciones imposibles; así, la cifra que alimenta la CR y la evidencia que la explica no pueden proceder de recorridos distintos. La segunda es que cada regla se autodescribe ---propiedad, racionalidad, unidad de verificación, criterio y severidad--- y el prototipo imprime el catálogo de la tabla~\ref{tab:catalogo} a partir de su propia implementación, de modo que el catálogo publicado y el aplicado no pueden divergir, que es justamente la clase de deriva que el proyecto combate.
+
 \section{Representación gráfica del grafo}
 \label{sec:visualizacion}
-Un diagnóstico de conformidad se comprende mucho mejor cuando puede verse. Una lista de violaciones dice qué falla; un dibujo del grafo muestra además dónde está cada fallo respecto de la arquitectura que se pretendía, y permite advertir patrones ---un paquete del que todo depende, una capa que concentra los ciclos--- que ninguna tabla hace evidentes. El mecanismo dibuja por ello el grafo que extrae, y lo hace sin delegar en herramientas externas.
+Un diagnóstico de conformidad se comprende mucho mejor cuando puede verse. Una lista de violaciones dice qué falla; un dibujo del grafo muestra además dónde está cada fallo respecto de la arquitectura que se pretendía, y permite advertir patrones ---un paquete del que todo depende, una capa que concentra los ciclos--- que ninguna tabla hace evidentes. El prototipo dibuja por ello el grafo que extrae, y lo hace sin delegar en herramientas externas.
 
 La decisión de no delegar tiene una razón que va más allá de la ligereza. Los algoritmos genéricos de dibujo de grafos dirigidos, como el que implementa Graphviz \citep{Gansner1993}, colocan los nodos según el sentido de las aristas: un nodo se sitúa por encima de aquellos de los que depende. Aplicado a una arquitectura con deriva, ese criterio produce un resultado engañoso, porque precisamente las violaciones ---dependencias que remontan la estratificación--- empujan a las capas inferiores hacia arriba y pueden invertir el orden que el dibujo debería mostrar. En un grafo de conformidad, el orden vertical no debe deducirse de las aristas sino de la arquitectura declarada; y cualquier arista que lo contradiga debe dibujarse como lo que es.
 
 El procedimiento sigue el esquema clásico del dibujo de grafos jerárquicos \citep{Sugiyama1981}, adaptado al dominio en cuatro pasos:
 
 \begin{enumerate}
-    \item \textbf{Asignación de bandas.} Cada capa declarada ocupa una banda horizontal. Su posición se deduce de la matriz de dependencias permitidas y no del orden en que las capas se escribieron en la configuración: una capa que puede depender de otras se sitúa por encima de ellas. En el caso de \textit{ArchUnit}, cuyas capas se declararon de abajo arriba, el dibujo las muestra igualmente en el orden correcto.
+    \item \textbf{Asignación de bandas.} Cada capa declarada ocupa una banda horizontal. Su posición se deduce de la matriz de dependencias permitidas y no del orden en que las capas se escribieron en la configuración: una capa que puede depender de otras se sitúa por encima de ellas.
     \item \textbf{Asignación de filas.} Dentro de cada banda, los paquetes se distribuyen en filas según el camino más largo sobre la condensación del subgrafo de la banda, de modo que también las dependencias internas apunten hacia abajo. Los paquetes de un mismo ciclo comparten fila, y las filas demasiado anchas se parten para conservar la legibilidad.
     \item \textbf{Reducción de cruces.} Cada fila se reordena según el baricentro horizontal de sus vecinos, alternando barridos descendentes y ascendentes.
-    \item \textbf{Columna lateral.} Los paquetes sin capa ---un dominio compartido, un núcleo de anotaciones--- no pertenecen a la estratificación y se colocan en una columna aparte, a la altura media de sus vecinos.
+    \item \textbf{Columna lateral.} Los paquetes sin capa no pertenecen a la estratificación y se colocan en una columna aparte, a la altura media de sus vecinos.
 \end{enumerate}
 
-El trazado de las aristas codifica su significado. Las que descienden van del borde inferior del origen al superior del destino; las que remontan la estratificación rodean los nodos por fuera, de modo que se distinguen a simple vista; las que unen paquetes de una misma fila se dibujan como arcos, por arriba en un sentido y por abajo en el otro, para que una dependencia mutua no se superponga consigo misma. Los extremos de las aristas que entran o salen por un mismo lado de un nodo se reparten a lo largo de ese lado, y los paquetes de los que dependen muchos otros se ensanchan en proporción, de modo que las puntas de flecha no se amontonan y el tamaño mismo del recuadro delata a los concentradores. El color y el trazo completan la lectura: rojo continuo para las violaciones de capas, rojo discontinuo para las aristas de un ciclo, ámbar para la concentración excesiva y gris atenuado para lo que concierne a un núcleo compartido exento.
-
-La misma disposición se emite en tres formatos. El \textbf{SVG} es una imagen autocontenida que cualquier navegador abre sin instalar nada; cada paquete incluye un texto emergente con su nombre completo, su capa, sus acoplamientos y su estado, de modo que el dibujo puede mantenerse compacto sin perder información. El \textbf{TikZ} es la misma figura expresada como código \LaTeX{}, lista para incluirse en un documento. El \textbf{DOT} se conserva por interoperabilidad con Graphviz, pero fija las filas calculadas y declara las aristas ascendentes como aristas que no restringen la posición, de modo que tampoco Graphviz pueda invertir las capas.
-
-El formato TikZ merece un comentario adicional, porque afecta a este mismo documento. Las figuras de grafos que aparecen en él ---las de los escenarios de evaluación y la del sistema externo analizado en el capítulo siguiente--- no se dibujaron a mano: las generó el propio mecanismo a partir del grafo que extrajo. Una figura dibujada a mano puede discrepar del resultado real sin que nada lo delate; una generada por el mecanismo es, por construcción, una representación fiel de lo que este calculó, y puede regenerarse cada vez que el sistema cambia.
+El trazado de las aristas codifica su significado. Las que descienden van del borde inferior del origen al superior del destino; las que remontan la estratificación rodean los nodos por fuera; las que unen paquetes de una misma fila se dibujan como arcos. Los paquetes de los que dependen muchos otros se ensanchan en proporción, de modo que el tamaño mismo del recuadro delata a los concentradores. El color completa la lectura: rojo continuo para las violaciones de capas, rojo discontinuo para las aristas de un ciclo, ámbar para la concentración excesiva y gris atenuado para lo que concierne a un núcleo compartido exento. La misma disposición se emite en SVG, que cualquier navegador abre; en TikZ, lista para incluirse en un documento \LaTeX{}; y en DOT, por interoperabilidad con Graphviz. Las figuras de grafos de este documento no se dibujaron a mano: las generó el propio prototipo a partir del grafo que extrajo, y son por construcción una representación fiel de lo que calculó.
 
 \section{Interfaz gráfica}
 \label{sec:interfaz}
-Los formatos anteriores sirven para documentar y para automatizar, pero presuponen a alguien dispuesto a componer una invocación desde la consola, que sepa además en qué directorio deja su herramienta de construcción las clases compiladas. Para el perfil de PyME que motivó el trabajo esa barrera no es menor: el diagnóstico más útil es el que el líder técnico puede obtener por sí mismo, sin intermediarios. El prototipo incorpora por ello una interfaz gráfica de escritorio (figura~\ref{fig:interfaz}) que ofrece la misma funcionalidad sin esa barrera, en respuesta a RF8.
+Para que el diagnóstico pueda obtenerlo el propio líder técnico, sin componer invocaciones desde la consola, el prototipo incorpora una interfaz gráfica de escritorio (figura~\ref{fig:interfaz}), en respuesta a RF8. Sus tres pasos siguen el proceso: la persona elige la \textbf{carpeta del proyecto} ---la aplicación localiza el código compilado según las convenciones de la herramienta de construcción y, si solo encuentra fuentes, pide compilar---; fija el \textbf{catálogo}, que se carga solo si el proyecto lo trae y que, si falta, se sustituye por la configuración mínima con una advertencia explícita; y elige el \textbf{criterio de clasificación}.
 
 \begin{figure}[tbp]
 \centering
 \includegraphics[width=\linewidth]{figuras/interfaz-grafo.png}
-\caption{Interfaz gráfica del prototipo analizando el escenario combinado (C4), descrito en la sección~\ref{sec:escenarios}. La barra lateral guía los tres pasos ---proyecto, catálogo y criterio de clasificación---; el panel principal muestra los indicadores, la conformidad por regla y el grafo, en el que se ha seleccionado el paquete \texttt{negocio}: lo que no le concierne se atenúa y la ficha de la derecha detalla su capa, sus acoplamientos, sus vecinos y los hallazgos en que interviene.}
+\caption{Interfaz gráfica del prototipo analizando el escenario combinado (C4). La barra lateral guía los tres pasos ---proyecto, catálogo y criterio de clasificación---; el panel principal muestra los indicadores, la conformidad por regla y el grafo, en el que se ha seleccionado el paquete \texttt{negocio}: lo que no le concierne se atenúa y la ficha de la derecha detalla su capa, sus acoplamientos, sus vecinos y los hallazgos en que interviene.}
 \label{fig:interfaz}
 \end{figure}
 
-El análisis se organiza en tres pasos. En el primero, el usuario elige la \textbf{carpeta del proyecto} con un selector o arrastrándola a la ventana. No necesita localizar el directorio de clases: la aplicación reconoce las convenciones de Maven (\texttt{target/classes}), Gradle (\texttt{build/classes/java/main}), IntelliJ IDEA (\texttt{out/production}) y Eclipse (\texttt{bin}), así como el \texttt{.jar} generado por el proyecto o elegido directamente. Si la carpeta solo contiene fuentes, la interfaz lo advierte y pide compilar, por la misma razón por la que la línea de comandos rechaza un grafo vacío: un análisis sin clases sería un falso negativo. En el segundo paso se fija el \textbf{catálogo de reglas}; si el proyecto trae el suyo, se carga sin intervención. Si no lo trae, se aplica una \textbf{configuración mínima}: la raíz de análisis se infiere como el prefijo de paquete común a todas las clases y, a falta de capas declaradas, se evalúan solo FF2 y FF3. La interfaz lo señala de forma explícita, porque la estratificación no puede verificarse sin declararla; la configuración mínima es un punto de partida para un primer diagnóstico, no un sustituto del catálogo. El tercer paso elige el \textbf{criterio de clasificación}, con el combinado de la sección~\ref{sec:operacionalizacion} como opción recomendada.
-
-El resultado se presenta en dos niveles. Arriba, cuatro indicadores ---la Tasa de Conformidad, el estado, el tamaño del sistema y los hallazgos--- y la conformidad local de cada regla. La CR se acompaña de su variación respecto del análisis anterior del mismo proyecto, que la aplicación conserva entre sesiones, y el estado indica si la severidad endureció el veredicto que la CR sola habría emitido; ambas lecturas responden a las limitaciones de la formulación proporcional discutidas en la sección~\ref{sec:operacionalizacion}. Debajo, tres pestañas. La del \textbf{grafo} dibuja la disposición de la sección~\ref{sec:visualizacion} de forma interactiva: admite acercar, desplazar y seleccionar un paquete, lo que atenúa todo lo que no le concierne. La de \textbf{hallazgos} los tabula por severidad y, al elegir uno, muestra su evidencia ---las referencias concretas entre clases--- y lo resalta en el grafo. La del \textbf{reporte} reproduce, sin cambios, el reporte textual de la línea de comandos. Desde la misma ventana puede exportarse la evidencia completa en los formatos descritos en el anexo~\ref{anexo:repro}.
-
-La interfaz no reimplementa ninguna parte del análisis: pide el diagnóstico al servicio y dibuja lo que este le devuelve. De ahí se siguen dos garantías. La primera es la equivalencia de resultados, que la batería de pruebas comprueba de forma explícita: un mismo sistema obtiene idéntico diagnóstico analizado como directorio de clases, como carpeta de un proyecto Maven o como \texttt{.jar}, y cualquiera de esas vías reproduce las cifras del experimento. La segunda es que la separación no depende de la disciplina de quien mantenga el código, porque el catálogo del autoanálisis prohíbe a la interfaz acceder directamente a la configuración y a la extracción; si alguna vez lo hiciera, el propio mecanismo lo señalaría como deriva. La interfaz se construyó con Swing, la biblioteca gráfica incluida en el JDK, de modo que tampoco añade dependencias y RNF2 se mantiene. La aplicación se abre con doble clic sobre el lanzador del prototipo, que lo compila la primera vez y cada vez que su código cambia, y su pantalla de inicio ofrece los cinco escenarios del caso de estudio para analizarlos con un clic: quien quiera contrastar los diagnósticos del capítulo siguiente puede hacerlo sin preparar nada.
-
-\section{Asistente para la definición del catálogo}
-\label{sec:asistente}
-Para un proyecto sin catálogo, la interfaz aplica la configuración mínima, que no puede verificar la estratificación: FF2 no necesita parámetros y FF3 tiene un umbral por defecto, pero FF1 exige declarar qué capas existen y quién puede depender de quién. Esa declaración no puede inferirse del código sin desnaturalizar el diagnóstico. La deriva es precisamente la diferencia entre la arquitectura prevista y la implementada; un catálogo deducido de la implementación tomaría como referencia la arquitectura que el código tiene hoy, legitimaría la deriva acumulada y garantizaría que nunca se detectara. Es el mismo principio de los modelos de reflexión de \citet{Murphy2001}: el código se contrasta con un modelo que declaran las personas. Tampoco existe un estándar del que derivar las reglas de un sistema concreto: \citet{FordParsonsKua2017} presentan las \textit{Fitness Functions} como verificaciones que cada equipo define para las propiedades que le importan.
-
-Lo que sí puede hacerse es abaratar esa declaración. El prototipo incorpora con ese fin un asistente opcional (figura~\ref{fig:asistente}) que conversa con un modelo de lenguaje para proponer el catálogo, en respuesta a RF9. Su diseño parte de tres restricciones. La primera es que \textbf{no define reglas}: las tres \textit{Fitness Functions} son las de la herramienta, y el asistente solo propone sus parámetros ---capas y paquetes, dependencias permitidas, umbral de concentración y exenciones---, justificando cada decisión y formulando como preguntas lo que no puede saber. La segunda es que \textbf{no legitima la deriva}: sus instrucciones le exigen declarar la arquitectura prevista, de modo que una dependencia existente que contradiga la estratificación plausible no se permite, sino que se señala como deriva probable. La tercera es que \textbf{no decide}: la propuesta llega a un editor donde la persona la corrige, se valida con el mismo cargador que un catálogo escrito a mano y se previsualiza sobre el código antes de adoptarse. Cada justificación queda como comentario junto a la decisión que explica, de modo que el catálogo resultante es también el registro de por qué se declaró así, en la línea de los \textit{Architecture Decision Records} \citep{ADR}.
-
-\begin{figure}[tbp]
-\centering
-\includegraphics[width=\linewidth]{figuras/interfaz-asistente.png}
-\caption{Asistente de catálogo sobre el escenario C4. A la izquierda, la configuración del modelo y lo que se envía; en el centro, la conversación, con la deriva probable y las preguntas para la persona; a la derecha, el catálogo propuesto, editable y validado, y su previsualización sobre el código, que reproduce el diagnóstico de la tabla~\ref{tab:resultados}. La respuesta del modelo se simuló para la captura.}
-\label{fig:asistente}
-\end{figure}
-
-El intercambio con el modelo se apoya en un \textbf{perfil estructural} del proyecto: los nombres de los paquetes, el número de clases de cada uno, hasta ocho nombres de clase por paquete ---que suelen delatar su papel--- y las dependencias entre paquetes. Nunca se envía el código fuente, y la persona puede ver el texto exacto antes de enviarlo. El asistente admite el servicio de Anthropic, el de OpenAI y cualquier servicio compatible con este último, lo que incluye modelos que se ejecutan en el propio equipo mediante Ollama o LM Studio; con estos, nada sale del equipo. La configuración se gestiona desde la misma ventana, y la clave de acceso solo se conserva si la persona lo pide. El cliente usa el soporte HTTP del propio JDK, de modo que RNF2 se mantiene.
-
-La separación de responsabilidades se verifica con el propio mecanismo. El asistente depende de la interfaz ---cuyos componentes visuales reutiliza--- y del servicio, pero ninguno de los dos depende de él: la ventana principal expone un punto de extensión y es la raíz de composición la que decide ofrecerlo. El catálogo del autoanálisis lo declara así, de modo que una dependencia del núcleo hacia el asistente, o hacia cualquier modelo de lenguaje, aparecería como deriva. Conviene, por último, delimitar su estatus: el asistente es una ayuda a la adopción y \textbf{no forma parte del mecanismo evaluado}. Sus pruebas verifican lo que es responsabilidad de la herramienta ---qué se envía, cómo se interpreta la respuesta y que la propuesta pase por el mismo cargador y produzca el diagnóstico esperado--- frente a un servidor local que imita las API de los modelos; la calidad de las propuestas de un modelo real no se evaluó, y se plantea como trabajo futuro.
+El resultado se presenta en el orden de lectura de la sección~\ref{sec:interpretacion}: arriba, el estado ---indicando si la severidad lo endureció---, la CR con su tendencia, el tamaño del sistema, los hallazgos y la conformidad local de cada regla; debajo, el grafo interactivo, la tabla de hallazgos con su evidencia y el reporte textual, idéntico al de la línea de comandos. La interfaz no reimplementa ninguna parte del análisis: pide el diagnóstico al servicio y dibuja lo que este le devuelve, de modo que un mismo sistema obtiene el mismo diagnóstico por cualquier vía. Se construyó con Swing, la biblioteca gráfica incluida en el JDK, de modo que RNF2 se mantiene, y su pantalla de inicio ofrece los cinco escenarios del caso de estudio para reproducir con un clic los diagnósticos del capítulo siguiente.
 
 \section{Verificación del prototipo}
-La construcción se acompañó de dos actividades de verificación que conviene distinguir de la evaluación experimental: aquí no se juzga si el mecanismo es útil, sino si hace correctamente lo que dice hacer.
+\label{sec:verificacion}
+La construcción se acompañó de dos actividades de verificación que conviene distinguir de la evaluación experimental: aquí no se juzga si el mecanismo es útil, sino si el prototipo ejecuta correctamente el proceso descrito.
 
-La primera fue una batería de pruebas sobre el núcleo lógico, ejecutada sobre grafos construidos a mano y, por tanto, independiente de la extracción por \textit{bytecode}. Separar ambas etapas evita confundir un defecto propio con un comportamiento de la biblioteca externa, y permite ejercitar casos límite que un caso de estudio real difícilmente ofrece: grafos vacíos, umbrales evaluados en su frontera exacta, autobucles, configuraciones inválidas y resultados internamente incoherentes. La batería reúne \textbf{234 comprobaciones} sobre el grafo, el algoritmo de Tarjan, la carga de configuración, las tres reglas, el motor, las exenciones, los cinco escenarios, los exportadores, la disposición gráfica, la comparación entre corridas, el servicio de análisis y el asistente de catálogo; todas se superan. Las del servicio y el asistente son las únicas que recorren la extracción real: verifican el reconocimiento de proyectos Maven y Gradle, el rechazo de un proyecto sin compilar, la inferencia de la raíz y la paridad entre las distintas formas de indicar un mismo sistema. Las que conciernen al dibujo verifican propiedades que una inspección visual podría pasar por alto: que el orden de las bandas se deduzca de la matriz y no del orden de declaración, que ningún par de paquetes se superponga, que las flechas que llegan a un mismo lado no compartan punto de llegada, que el SVG sea XML bien formado y que dos ejecuciones produzcan exactamente el mismo dibujo. Se construyó sin marcos de prueba externos, en coherencia con la misma restricción de ligereza que se impuso al mecanismo.
+La primera fue una batería de \textbf{262 comprobaciones}, todas superadas, construida sin marcos de prueba externos en coherencia con RNF2. La mayoría se ejecuta sobre grafos construidos a mano, independientes de la extracción, lo que permite ejercitar casos límite que un caso real difícilmente ofrece: grafos vacíos, umbrales en su frontera exacta, autobucles, configuraciones inválidas y resultados internamente incoherentes. Otras recorren la extracción real: las que documentan las reglas de extracción compilan un código en que un paquete referencia a otros diecinueve de formas distintas y comprueban cuáles producen arista ---la tabla~\ref{tab:extraccion} procede de ellas---, y las del servicio verifican el reconocimiento de proyectos Maven y Gradle, el rechazo de un proyecto sin compilar o compilado para una versión no soportada, y la paridad entre las distintas formas de indicar un mismo sistema.
 
-La segunda consistió en aplicar el instrumento sobre sí mismo. Si el prototipo predica una arquitectura estratificada y acíclica, resulta razonable exigirle que la practique. Con una configuración que declara sus nueve paquetes como capas y prohíbe toda dependencia ascendente, el análisis arrojó \textbf{40 verificaciones, cero incumplimientos y una CR del $100\%$}. La comprobación no sustituye a la evaluación experimental ---el sistema analizado es el propio artefacto, con las limitaciones de objetividad que ello supone---, pero sí ofrece una garantía adicional de que la arquitectura interna descrita en la figura~\ref{fig:modulos} es la realmente implementada y no una aspiración documental.
-
-Ese mismo ejercicio produjo un hallazgo instructivo, y de él nació el mecanismo de exenciones descrito en la sección~\ref{sec:exenciones}. Evaluado sin exenciones y con un umbral estricto, el instrumento señalaba el componente que ensambla el núcleo ---primero la raíz de composición y, desde que la interfaz gráfica obligó a extraerlo, el servicio de análisis, que depende de los cinco módulos que encadena--- y su módulo de reporte, que depende de los cuatro que debe representar. Ninguno de los dos es una deriva: ambos concentran dependencias por el papel que desempeñan. La salida inicial ---elevar el umbral hasta que ambos dejaran de aparecer--- resultaba engañosa, porque un umbral laxo aplicado a todo el sistema habría ocultado también las concentraciones reales de cualquier otro paquete. Declarar la raíz y el servicio como núcleo compartido ---raíz de composición y fachada, respectivamente--- y calibrar el umbral en cuatro resuelve el caso sin esa concesión, y deja la excepción a la vista en el reporte. El episodio muestra que FF3, al operar únicamente sobre la topología, es ciega al rol arquitectónico de cada paquete; volveremos sobre ello al examinar la validez de constructo.
+La segunda consistió en aplicar el proceso sobre el propio prototipo. Si este predica una arquitectura estratificada y acíclica, resulta razonable exigirle que la practique. Con un catálogo que declara sus nueve paquetes como capas y prohíbe toda dependencia ascendente, el análisis arrojó \textbf{40 verificaciones, cero incumplimientos y una CR del $100\%$}. El ejercicio produjo, además, un hallazgo que dio origen a las exenciones: evaluado sin ellas y con un umbral estricto, el instrumento señalaba los módulos que ensamblan el núcleo ---la raíz de composición y el servicio de análisis--- y el de reporte, que concentran dependencias por el papel que desempeñan y no por deterioro. Elevar el umbral para todo el sistema habría ocultado también las concentraciones reales de cualquier otro paquete; declarar esos papeles y calibrar el umbral en cuatro resolvió el caso dejando la excepción a la vista en el reporte. El episodio muestra que FF3, al operar únicamente sobre la topología, es ciega al rol de cada paquete, y que es la declaración de la persona la que lo suple.
 
 \section{Escenarios de evaluación}
 \label{sec:escenarios}
-Para evaluar el mecanismo se construyeron cinco versiones de un mismo sistema sintético bajo el paquete raíz \texttt{com.caso}: un pequeño dominio de ventas organizado en las capas \texttt{presentacion}, \texttt{negocio} y \texttt{persistencia}, con un paquete de dominio compartido (\texttt{com.caso.dominio}) que no pertenece a ninguna capa.
+Para evaluar el proceso se construyeron cinco versiones de un mismo sistema sintético bajo el paquete raíz \texttt{com.caso}: un pequeño dominio de ventas organizado en las capas \texttt{presentacion}, \texttt{negocio} y \texttt{persistencia}, con un paquete de dominio compartido (\texttt{com.caso.dominio}) que no pertenece a ninguna capa.
 
 La versión \textbf{C0} constituye la implementación de referencia y respeta la arquitectura declarada: la presentación depende del negocio, el negocio de la persistencia, y no existen dependencias en sentido contrario ni ciclos. Su grafo se muestra en la figura~\ref{fig:grafo-base}.
 
@@ -332,7 +508,7 @@ Las cuatro versiones restantes introducen derivas deliberadas. Las tres primeras
     \item \textbf{C1 — Ruptura de capas.} El controlador de presentación accede directamente al repositorio de persistencia, saltándose la capa de negocio. La dependencia \texttt{presentacion} $\rightarrow$ \texttt{persistencia} no figura en la matriz de adyacencias y, al no invertir el sentido del flujo, no cierra ningún ciclo.
     \item \textbf{C2 — Ciclo de dependencia.} Un subpaquete de cálculo dentro de la capa de negocio y su paquete padre se referencian mutuamente. Como ambos pertenecen a la misma capa, la estratificación permanece intacta y solo se activa FF2. Su grafo se muestra en la figura~\ref{fig:grafo-ciclo}.
     \item \textbf{C3 — Concentración excesiva.} Se agrega un paquete \texttt{com.caso.util} que depende de los cuatro paquetes restantes. Al no estar asignado a ninguna capa no vulnera FF1, y al no ser destino de ninguna dependencia tampoco cierra ciclos.
-    \item \textbf{C4 — Escenario combinado.} Reúne las tres derivas: la persistencia pasa a depender del negocio y de la presentación, se forma un ciclo entre los tres paquetes de capa y reaparece el componente dios. Su grafo se muestra en la figura~\ref{fig:grafo-alterado}.
+    \item \textbf{C4 — Escenario combinado.} Reúne las tres derivas: la persistencia pasa a depender del negocio y de la presentación, se forma un ciclo entre los tres paquetes de capa y reaparece el componente dios. Su evaluación paso a paso se mostró en la tabla~\ref{tab:ejemplo}, y su grafo en la figura~\ref{fig:grafo-alterado}.
 \end{itemize}
 
 \begin{figure}[H]
@@ -352,20 +528,17 @@ Las cuatro versiones restantes introducen derivas deliberadas. Las tres primeras
 Los tres escenarios aislados constituyen la principal diferencia respecto del diseño experimental inicial, que contemplaba una única versión alterada. La razón es metodológica: con las tres derivas juntas es imposible saber cuánto aporta cada regla al descenso de la CR, ni si el mecanismo sería capaz de advertir una desviación que llegara sola, que es precisamente el escenario que una PyME encontraría en la práctica.
 
 \section{Usos y escenarios de aplicación}
-La utilidad del prototipo no se agota en el experimento que lo evalúa. Dado que el artefacto se concibió como un instrumento de gobernanza para PyMES, conviene precisar qué ofrece, en qué situaciones aporta valor y en cuáles, deliberadamente, no interviene. Esta delimitación no es accesoria: define el territorio en el que el mecanismo es legítimamente aplicable y lo protege de usos para los que no fue diseñado.
+\label{sec:usos}
+El prototipo pone el proceso al alcance de un equipo por dos vías equivalentes: la línea de comandos, adecuada para automatizar el análisis y registrar su tendencia, y la interfaz gráfica, adecuada para explorar un sistema, discutir sus hallazgos y obtener un primer diagnóstico sin preparar nada. Ambas ofrecen las mismas capacidades: la extracción automática del grafo, la verificación de las tres reglas, la agregación en una CR reconstruible y un reporte que asocia cada hallazgo a su regla, su evidencia y su severidad, y que declara qué quedó fuera del diagnóstico.
 
-En cuanto a lo que ofrece, cabe enumerar cuatro capacidades que lo distinguen de una biblioteca de reglas aislada. En primer lugar, la extracción automática del grafo de dependencias a partir del \textit{bytecode}, que elimina la necesidad de reconstruir la estructura a mano. En segundo lugar, la verificación mediante tres \textit{Fitness Functions} configurables, que traducen decisiones de diseño en comprobaciones ejecutables. En tercer lugar, la agregación de los resultados en una Tasa de Conformidad única y reconstruible, acompañada de una clasificación en tres niveles. Y en cuarto lugar, un reporte que asocia cada hallazgo a la regla que lo produjo, a la evidencia estructural que lo sustenta ---hasta el método y la línea que originan la dependencia--- y a una severidad, y que declara explícitamente qué quedó fuera del diagnóstico. Las cuatro están disponibles por dos vías equivalentes: la línea de comandos, adecuada para automatizar el análisis y registrar su tendencia, y la interfaz gráfica, adecuada para explorar un sistema, discutir sus hallazgos en equipo y obtener un primer diagnóstico sin preparar nada.
+La principal barrera de adopción no es ejecutar el proceso sino completar su primer paso: las \textit{Fitness Functions} las aporta el mecanismo, pero la arquitectura prevista solo la conoce el equipo, y traducirla a prefijos de paquete y a una matriz de dependencias exige un esfuerzo inicial. Para reducirlo, el prototipo incluye un asistente opcional que, con un modelo de lenguaje ---de Anthropic, OpenAI o DeepSeek, o uno que se ejecute en el propio equipo con Ollama o LM Studio---, propone el catálogo a partir de la estructura del proyecto. El asistente no crea ni modifica reglas: solo traduce la intención del equipo al formato del catálogo, justificando cada decisión, preguntando lo que no puede saber y señalando como deriva probable, en lugar de permitirla, cualquier dependencia actual que contradiga la estratificación. Al modelo solo se le envía el perfil estructural ---paquetes, número de clases, algunos nombres de clase y dependencias---, nunca el código fuente, y la propuesta se valida con el mismo cargador que un catálogo escrito a mano y se previsualiza sobre el código antes de que la persona decida adoptarla. Se trata de una ayuda a la adopción, ajena al proceso evaluado: el análisis no distingue un catálogo escrito a mano de uno propuesto con ayuda. Una exploración con un modelo real, documentada en el anexo~\ref{anexo:asistente}, mostró que las propuestas declaran la estratificación prevista sin legitimar las derivas de capas ni los ciclos, pero que el umbral de concentración es inestable y puede llegar a ocultar la deriva de concentración; por eso la herramienta comprueba cada propuesta con una regla determinista y advierte cuando el umbral deja sin señalar al paquete que más concentra.
 
-En cuanto a los usos, el mecanismo se presta a varios escenarios que, sin ser exhaustivos, ilustran su aporte. El primero es la auditoría puntual de conformidad: ante la sospecha de que una arquitectura ha dejado de respetar sus capas, una ejecución única ofrece un panorama inmediato del estado estructural sin exigir una revisión manual exhaustiva. El segundo es la señal temprana por iteración: si el análisis se ejecuta al cierre de cada ciclo de desarrollo, el equipo puede advertir una desviación apenas se introduce, cuando todavía es barata de revertir, en lugar de descubrirla meses después \citep{Klein2022}. El tercero es la priorización de la refactorización: al clasificar las violaciones por severidad y por dimensión, el reporte orienta al líder técnico sobre qué intervenciones atacar primero, un apoyo valioso cuando los recursos de mantenimiento son escasos \citep{Hamed2023}. El cuarto es el complemento de la documentación de decisiones: la Tasa de Conformidad y las violaciones detectadas constituyen el insumo objetivo contra el cual contrastar los \textit{Architecture Decision Records}, cerrando el ciclo entre lo decidido y lo efectivamente construido \citep{ADR}.
+En cuanto a los usos, el proceso se presta a la auditoría puntual de conformidad, a la señal temprana por iteración ---si se ejecuta al cierre de cada ciclo, la desviación se advierte cuando todavía es barata de revertir \citep{Klein2022}---, a la priorización de la refactorización por severidad y dimensión \citep{Hamed2023} y al contraste de los \textit{Architecture Decision Records} con lo efectivamente construido \citep{ADR}. Está pensado para el perfil que motivó su diseño: una PyME que desarrolla en Java, con una arquitectura en capas y sin documentación arquitectónica actualizada. Es más adecuado para preservar una arquitectura que todavía se respeta que para diagnosticar una que ya se perdió: un sistema legado produce en su primera ejecución un volumen de hallazgos difícil de accionar \citep{Anthony2024}, y atenderlo exige fijar el estado actual como línea de partida, una extensión que se plantea en el capítulo de conclusiones.
 
-En cuanto al contexto de aplicación, el instrumento está pensado para el perfil que motivó su diseño: una PyME de software que desarrolla en Java, cuya arquitectura se organiza en capas y que carece de documentación arquitectónica actualizada. Resulta pertinente en tres situaciones típicas. La primera es la incorporación de nuevos miembros al equipo, escenario en el que el reporte sirve como fotografía verificable de la estructura real del sistema. La segunda es la preparación de una entrega relevante, en la que el mecanismo actúa como una comprobación de salud estructural antes de comprometer una versión. La tercera es el acompañamiento de una refactorización en curso, donde la comparación entre corridas sucesivas permite comprobar si el esfuerzo invertido se traduce efectivamente en mejora estructural.
-
-Conviene, sin embargo, deslindar con honestidad un cuarto escenario que la intuición sugiere pero que el prototipo, en su estado actual, no sostiene: el diagnóstico inicial de un sistema legado que ya arrastra deriva acumulada \citep{Anthony2024}. El obstáculo no es técnico sino de utilidad práctica. Un sistema que lleva años desviándose produce, en su primera ejecución, un volumen de hallazgos que ningún equipo puede accionar, y la experiencia con herramientas de análisis estático muestra que el desenlace habitual de esa avalancha es que el instrumento se desactive. Atender ese escenario exige poder fijar el estado actual como línea de partida y reportar únicamente las violaciones \textit{nuevas}, un mecanismo que el alcance aprobado no contemplaba y que se plantea, con la evidencia recogida, en el capítulo de conclusiones. El instrumento resulta hoy más adecuado para preservar una arquitectura que todavía se respeta que para diagnosticar una que ya se perdió.
-
-Con la misma claridad conviene delimitar lo que el prototipo no hace, en estricta correspondencia con el alcance aprobado en el anteproyecto. No corrige automáticamente las derivas que detecta: su propósito es diagnosticar, clasificar y aportar evidencia para la decisión humana, no reescribir el código. No está integrado como producto de producción ni como etapa de una tubería CI/CD organizacional; la opción de terminar con un código de salida distinto de cero es una afordancia para una adopción futura, no una integración entregada. No soporta múltiples ecosistemas tecnológicos en una misma ejecución, ni realiza análisis dinámico en tiempo de ejecución. Estas fronteras no restan valor al mecanismo; lo acotan al propósito para el que fue evaluado y evitan sobrevender capacidades que no posee. La contribución del prototipo no reside en competir con plataformas de verificación industrial, sino en ofrecer un punto de partida liviano, comprensible y reproducible para que un equipo pequeño comience a gobernar su arquitectura con evidencia \citep{LAIG2025}.
+Con la misma claridad conviene delimitar lo que el prototipo no hace, en estricta correspondencia con el alcance aprobado. No corrige las derivas que detecta: diagnostica, clasifica y aporta evidencia para la decisión humana. No está integrado como producto de producción ni como etapa de una tubería CI/CD organizacional; la opción de terminar con un código de salida condicionado al veredicto es una afordancia para una adopción futura. No soporta varios ecosistemas en una misma ejecución ni realiza análisis dinámico \citep{LAIG2025}.
 
 \section{Trazabilidad entre requisitos e implementación}
-La tabla~\ref{tab:trazabilidadReq} vincula cada requisito con el componente que lo materializa y con la evidencia que permite comprobar su satisfacción, de modo que la verificación del cumplimiento no dependa de la lectura del código.
+La tabla~\ref{tab:trazabilidadReq} vincula cada requisito con el componente que lo materializa y con la evidencia que permite comprobar su satisfacción.
 
 \begin{table}[H]
 \centering
@@ -376,7 +549,7 @@ La tabla~\ref{tab:trazabilidadReq} vincula cada requisito con el componente que 
 \toprule
 \textbf{Req.} & \textbf{Componente que lo materializa} & \textbf{Evidencia de cumplimiento} \\
 \midrule
-RF1 & \texttt{ConstructorGrafo}, \texttt{GrafoDependencias} & Conteo de paquetes y dependencias declarado en cada reporte; grafos exportados en formato DOT. \\
+RF1 & \texttt{ConstructorGrafo}, \texttt{GrafoDependencias} & Reglas de extracción verificadas sobre código compilado (tabla~\ref{tab:extraccion}); conteo de paquetes y dependencias en cada reporte. \\
 \midrule
 RF2 & \texttt{ReglaIntegridadCapas} & Detección de la deriva en C1 y en C4; ausencia de hallazgos en C0, C2 y C3. \\
 \midrule
@@ -388,22 +561,20 @@ RF5 & \texttt{MotorConformidad}, \texttt{GeneradorReporte} & Tabla comparativa d
 \midrule
 RF6 & \texttt{Violacion}, evidencia por arista, sección de alcance del reporte & Hallazgos con método y línea de origen; declaración de reglas, umbrales y exclusiones en todo reporte. \\
 \midrule
-RF7 & \texttt{DisposicionGrafo}, \texttt{ExportadorSvg}, \texttt{ExportadorTikz} & Figuras~\ref{fig:grafo-base}, \ref{fig:grafo-ciclo} y~\ref{fig:grafo-alterado}, generadas por el mecanismo; SVG por escenario consultable en cualquier navegador. \\
+RF7 & \texttt{DisposicionGrafo}, \texttt{ExportadorSvg}, \texttt{ExportadorTikz} & Figuras~\ref{fig:grafo-base}, \ref{fig:grafo-ciclo} y~\ref{fig:grafo-alterado}, generadas por el mecanismo. \\
 \midrule
-RF8 & \texttt{VentanaPrincipal}, \texttt{ResolutorProyecto}, \texttt{Analisis} & Figura~\ref{fig:interfaz}; pruebas de paridad entre la carpeta del proyecto, el directorio de clases y el \texttt{.jar}; autoanálisis que impide a la interfaz eludir el servicio. \\
+RF8 & \texttt{VentanaPrincipal}, \texttt{ResolutorProyecto}, \texttt{Analisis} & Figura~\ref{fig:interfaz}; pruebas de paridad entre la carpeta del proyecto, el directorio de clases y el \texttt{.jar}. \\
 \midrule
-RF9 & \texttt{VentanaAsistente}, \texttt{Conversacion}, \texttt{Propuesta}, \texttt{Asistencia} & Figura~\ref{fig:asistente}; pruebas contra un servidor que imita las API de los modelos; la propuesta se valida con \texttt{CargadorConfiguracion} y su previsualización sobre C4 reproduce la CR del experimento. \\
-\midrule
-RNF1 & \texttt{CargadorConfiguracion}, \texttt{Exenciones} & Los cinco escenarios, el autoanálisis y la aplicación a un sistema externo se ejecutan con el mismo binario y configuraciones distintas; el reporte enumera las exenciones aplicadas. \\
+RNF1 & \texttt{CargadorConfiguracion}, \texttt{Exenciones} & El caso de estudio, el autoanálisis y los sistemas externos se analizan con el mismo binario y catálogos distintos; el reporte enumera las exenciones. \\
 \midrule
 RNF2 & Ausencia de dependencias más allá de \textit{ArchUnit} & Compilación y ejecución con un JDK, sin Maven ni red; batería de pruebas sin marco externo. \\
 \midrule
-RNF3 & \texttt{GeneradorReporte} & Reporte con conformidad local por regla, evidencia por hallazgo y declaración de alcance. \\
+RNF3 & \texttt{GeneradorReporte}, interfaz gráfica & Conformidad local por regla, evidencia por hallazgo, declaración de alcance y guía de lectura (tabla~\ref{tab:interpretacion}). \\
 \midrule
-RNF4 & Exportadores JSON, CSV, SVG, TikZ y DOT & Ejecuciones repetidas con resultados idénticos; evidencia versionable y verificable por terceros. \\
+RNF4 & Exportadores JSON, CSV, SVG, TikZ y DOT; regla R6 & Ejecuciones repetidas con resultados idénticos byte a byte. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Resumen del capítulo}
-Este capítulo documentó el diseño y la implementación del mecanismo. Se describió la propuesta como un instrumento de tres etapas ---extracción del grafo, evaluación mediante \textit{Fitness Functions} y clasificación agregada---, se precisaron sus requisitos, se presentó una arquitectura de cinco módulos con dependencias acíclicas, a la que un servicio de análisis, una interfaz gráfica y un asistente para redactar el catálogo dan acceso, y se formalizó el catálogo de reglas que constituye su núcleo normativo. Se justificó, además, la operacionalización de la Tasa de Conformidad y se dejaron explícitas las tres limitaciones que su formulación proporcional arrastra. La implementación en Java se verificó mediante una batería de 234 comprobaciones y mediante la aplicación del propio instrumento sobre sí mismo. Sobre esta base, y con los cinco escenarios ya construidos, el capítulo siguiente describe cómo se evaluó el mecanismo y qué resultados se obtuvieron.
+Este capítulo describió el proceso de detección de deriva arquitectónica y su instrumentación. La deriva se obtiene comparando dos representaciones de un mismo sistema ---la arquitectura prevista, que la persona declara en un catálogo, y la implementada, que se extrae de su código compilado como un grafo de dependencias entre paquetes con reglas explícitas--- mediante tres \textit{Fitness Functions} seleccionadas a partir de la literatura sobre verificación de conformidad y \textit{smells} arquitectónicos: una prescriptiva, la integridad de capas, y dos intrínsecas, la ausencia de ciclos y la concentración acotada. Cada regla produce verificaciones atómicas y hallazgos con su evidencia; la Tasa de Conformidad los agrega como proporción de verificaciones superadas, la severidad corrige su dilución y la tendencia permite leerla en el tiempo; y una guía de interpretación traduce cada resultado en decisiones posibles. El proceso se instrumentó en un prototipo de cinco módulos, uno por paso, verificado mediante 262 comprobaciones y mediante su aplicación sobre sí mismo. El capítulo siguiente evalúa el proceso sobre los escenarios del caso de estudio.

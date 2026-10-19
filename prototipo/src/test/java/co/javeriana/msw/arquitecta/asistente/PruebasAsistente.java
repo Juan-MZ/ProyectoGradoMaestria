@@ -208,6 +208,25 @@ public final class PruebasAsistente {
                     e.getMessage().contains("¿Está en ejecución Ollama?"));
         }
 
+        HttpServer deepseek = servidor(cuerpo, cabeceras, 200,
+                "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"hola deepseek\"}}]}");
+        try {
+            ConfiguracionModelo ds = ConfiguracionModelo.porDefecto(Proveedor.DEEPSEEK);
+            v.comprueba("DeepSeek: usa el protocolo de OpenAI con su modelo por defecto",
+                    Proveedor.DEEPSEEK.protocolo() == Proveedor.Protocolo.OPENAI && ds.modelo().equals("deepseek-v4-pro")
+                            && ds.url().equals("https://api.deepseek.com"));
+            ClienteModelo c = new ClienteModelo(new ConfiguracionModelo(Proveedor.DEEPSEEK, url(deepseek),
+                    "deepseek-v4-pro", "sk-ds"), Duration.ofSeconds(10));
+            v.igual("DeepSeek: se devuelve el texto de la respuesta", "hola deepseek",
+                    c.completar("sistema", List.of(new Mensaje("user", "pregunta"))));
+            v.comprueba("DeepSeek: la clave viaja como Bearer en Authorization",
+                    "Bearer sk-ds".equals(primera(cabeceras.get(), "Authorization")));
+        } catch (ErrorModelo e) {
+            v.comprueba("DeepSeek: la consulta no falla: " + e.getMessage(), false);
+        } finally {
+            deepseek.stop(0);
+        }
+
         ConfiguracionModelo sinClave = new ConfiguracionModelo(Proveedor.OPENAI, Proveedor.OPENAI.urlPorDefecto(), "m", "");
         v.comprueba("un proveedor remoto sin clave no se consulta",
                 System.getenv("OPENAI_API_KEY") != null || sinClave.incompleta() != null);
@@ -256,12 +275,30 @@ public final class PruebasAsistente {
             } catch (ErrorAnalisis e) {
                 v.comprueba("un catálogo inválido no se previsualiza", e.getMessage().contains("no es válido"));
             }
+
+            v.grupo("Asistente: revisión determinista de la propuesta");
+            Propuesta base = Conversacion.interpretar(PROPUESTA).propuesta();
+            List<String> alto = Revision.avisos(conUmbral(base, 6, List.of()), perfil);
+            v.comprueba("un umbral que deja sin señalar al paquete más acoplado se advierte",
+                    alto.size() == 1 && alto.get(0).contains("com.caso.util"));
+            v.comprueba("un umbral que lo señala no se advierte", Revision.avisos(conUmbral(base, 3, List.of()), perfil).isEmpty());
+            List<String> exento = Revision.avisos(conUmbral(base, 6, List.of(new Propuesta.Exencion("com.caso.util",
+                    "compartido", "utilidad transversal"))), perfil);
+            v.comprueba("un paquete exento con justificación ya no se advierte; se pasa al siguiente que destaca",
+                    exento.stream().noneMatch(a -> a.contains("com.caso.util"))
+                            && exento.stream().anyMatch(a -> a.contains("com.caso.persistencia")));
+            v.comprueba("en la línea base, sin un paquete que destaque, no se advierte",
+                    Revision.avisos(conUmbral(base, 6, List.of()), Asistencia.perfil(C0)).isEmpty());
         } catch (ErrorAnalisis e) {
             v.comprueba("el servicio de asistencia no falla: " + e.getMessage(), false);
         }
     }
 
     // ------------------------------------------------------------- apoyo
+
+    private static Propuesta conUmbral(Propuesta p, int umbral, List<Propuesta.Exencion> exenciones) {
+        return new Propuesta(p.raiz(), p.capas(), p.permitidos(), umbral, "", exenciones, List.of(), List.of());
+    }
 
     private static String anthropic(String texto) {
         return Json.escribir(Map.of("type", "message", "role", "assistant",

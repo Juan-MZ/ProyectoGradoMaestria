@@ -1,0 +1,16 @@
+escenario,repeticion,modelo,valido,segundos,capas,estratificacion_correcta,umbral,exenciones,derivas_inducidas,derivas_detectadas,derivas_ocultas,hallazgos_adicionales,derivas_senaladas,preguntas,cr_propuesta,cr_experimento
+C0,1,deepseek-flash,si,8.96,presentacion|negocio|persistencia|dominio,si,2,,0,0,"","Integridad presentacion->dominio",1,3,92.31,100.0
+C0,2,deepseek-flash,si,13.30,presentacion|negocio|persistencia|dominio,si,5,,0,0,"","",0,3,100.00,100.0
+C0,3,deepseek-flash,si,6.06,presentacion|negocio|persistencia|dominio,si,3,,0,0,"","",0,2,100.00,100.0
+C1,1,deepseek-flash,si,21.55,presentacion|negocio|persistencia|dominio,si,2,,1,1,"","Concentración presentacion",1,2,85.71,90.91
+C1,2,deepseek-flash,si,8.66,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","",1,3,92.86,90.91
+C1,3,deepseek-flash,si,6.57,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",1,2,92.86,90.91
+C2,1,deepseek-flash,si,15.91,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",2,4,87.50,83.33
+C2,2,deepseek-flash,si,21.23,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","Integridad presentacion->dominio",2,3,81.25,83.33
+C2,3,deepseek-flash,si,21.63,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",2,2,87.50,83.33
+C3,1,deepseek-flash,si,13.35,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","Integridad presentacion->dominio",3,3,86.67,91.67
+C3,2,deepseek-flash,si,28.80,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","",1,2,93.33,91.67
+C3,3,deepseek-flash,si,10.02,presentacion|negocio|persistencia|dominio,si,3,,1,1,"","",4,3,93.33,91.67
+C4,1,deepseek-flash,si,10.87,presentacion|negocio|persistencia|dominio,si,3,,4,4,"","",4,4,64.71,57.14
+C4,2,deepseek-flash,si,11.55,presentacion|negocio|persistencia|dominio,si,3,,4,4,"","",3,3,64.71,57.14
+C4,3,deepseek-flash,si,9.23,presentacion|negocio|persistencia|dominio,si,3,,4,4,"","Integridad presentacion->dominio",3,3,58.82,57.14
