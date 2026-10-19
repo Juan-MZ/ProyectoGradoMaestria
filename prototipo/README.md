@@ -22,6 +22,8 @@ clasificación del estado arquitectónico.
 | `…arquitecta.reglas`  | Las tres _Fitness Functions_: integridad de capas, ciclos de dependencia y concentración de dependencias salientes. Cada regla se autodescribe (propiedad, racionalidad, unidad de verificación, criterio de incumplimiento, severidad). |
 | `…arquitecta.motor`   | Agrega las verificaciones, calcula la CR y clasifica el estado por CR, por severidad y en su combinación.                                                                                                                                |
 | `…arquitecta.reporte` | Reporte textual con declaración de alcance, catálogo ejecutable y exportadores a JSON, CSV y DOT.                                                                                                                                        |
+| `…arquitecta.servicio` | Fachada del análisis que comparten la línea de comandos y la interfaz gráfica: reconoce la carpeta de un proyecto Maven, Gradle, IntelliJ o Eclipse (o un `.jar`), carga el catálogo o infiere una configuración mínima y ejecuta el pipeline completo. |
+| `…arquitecta.interfaz` | Interfaz gráfica de escritorio (Swing, incluida en el JDK): selección del proyecto, indicadores, grafo interactivo, hallazgos con su evidencia y exportación. Solo presenta: pide el análisis al servicio y dibuja su resultado. |
 
 La arquitectura interna es estrictamente acíclica y estratificada; el propio
 mecanismo la verifica (véase _Autoanálisis_, más abajo).
@@ -35,14 +37,15 @@ mecanismo la verifica (véase _Autoanálisis_, más abajo).
 ## Inicio rápido
 
 ```bat
+arquitecta.bat   REM abre la interfaz grafica (compila antes si hace falta)
 build.bat        REM compila nucleo, pruebas y los cinco escenarios
-test.bat         REM ejecuta la bateria de pruebas (162 comprobaciones)
+test.bat         REM ejecuta la bateria de pruebas (190 comprobaciones)
 experimento.bat  REM ejecuta el experimento completo y escribe resultados\
 figuras.bat      REM regenera los grafos de la monografia y de esta guia
 ```
 
-En macOS o Linux, los equivalentes son `./build.sh`, `./test.sh`,
-`./experimento.sh` y `./figuras.sh`.
+En macOS o Linux, los equivalentes son `./arquitecta.sh`, `./build.sh`,
+`./test.sh`, `./experimento.sh` y `./figuras.sh`.
 
 Para ver el grafo de cualquier sistema basta con una línea; el resultado se abre
 en el navegador, sin instalar nada:
@@ -52,15 +55,64 @@ java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
      mi-sistema.jar mis-reglas.properties --svg grafo.svg
 ```
 
+## Interfaz gráfica
+
+`arquitecta.bat` (o `./arquitecta.sh`) abre la aplicación de escritorio. No
+requiere instalar nada más que el JDK: está construida con Swing, que el propio
+JDK incluye.
+
+![Interfaz gráfica de Arquitecta sobre el escenario combinado C4](ejemplos/interfaz/interfaz-grafo.png)
+
+El flujo sigue tres pasos, en la barra lateral:
+
+1. **Proyecto.** _Examinar…_ abre un selector de carpetas; también se puede
+   arrastrar la carpeta (o un `.jar`) a la ventana. No hace falta localizar a
+   mano el directorio de clases: basta con la carpeta raíz del proyecto, y la
+   aplicación reconoce `target/classes` (Maven), `build/classes/java/main`
+   (Gradle), `out/production` (IntelliJ IDEA), `bin` (Eclipse) o el `.jar`
+   generado. Si la carpeta solo contiene fuentes `.java`, lo indica y pide
+   compilar primero, en lugar de devolver un análisis vacío.
+2. **Catálogo de reglas.** Si el proyecto trae su catálogo (`rules.properties`,
+   `arquitecta.properties`, `reglas.properties` o `.arquitecta.properties`), se
+   carga solo. Si no, se aplica una **configuración mínima**: se infiere la raíz
+   de paquetes y se evalúan ciclos y concentración; la estratificación no puede
+   verificarse sin capas declaradas, y la interfaz lo advierte.
+3. **Clasificación.** _Extensión y gravedad_ (recomendado, modo
+   `cr+severidad`) o _Solo Tasa de Conformidad_ (modo `cr`).
+
+El resultado muestra la CR (con su variación respecto del análisis anterior del
+mismo proyecto, que se conserva en `~/.arquitecta/historial.csv`), el estado, el
+tamaño del sistema, los hallazgos y la conformidad por regla, y tres pestañas:
+
+- **Grafo**: la misma disposición por capas que el SVG, con zoom (rueda), arrastre
+  y selección. Al hacer clic en un paquete se atenúa todo lo que no le concierne
+  y una ficha muestra su capa, `Ce`/`Ca`, de quién depende, quién depende de él
+  y los hallazgos en que interviene. _Ampliar grafo_ pliega los indicadores para
+  dedicar al grafo toda la altura.
+- **Hallazgos**: tabla por severidad; al seleccionar uno se ve su evidencia (las
+  llamadas concretas en el código) y se resalta en el grafo.
+- **Reporte**: el reporte textual, idéntico al de la línea de comandos.
+
+_Exportar…_ escribe la evidencia completa (reporte, JSON, CSV y el grafo en SVG,
+TikZ y DOT) en la carpeta elegida, y _Guardar SVG…_ solo la imagen del grafo.
+Atajos: `Ctrl+O` abre un proyecto y `F5` repite el análisis.
+
+La interfaz también se puede abrir con un proyecto ya cargado
+(`arquitecta.bat C:\ruta\al\proyecto`) y, para documentación, dibujarse sin
+ventana: `--gui --proyecto <ruta> [--reglas <archivo>] --captura salida.png`
+(`figuras.bat` genera así las capturas de `ejemplos/interfaz/`).
+
 ## Uso manual
 
 ```bat
 java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     <directorio-de-clases | archivo.jar> <archivo-config> [opciones]
+     <proyecto | directorio-de-clases | archivo.jar> [archivo-config] [opciones]
 ```
 
-El sistema puede indicarse como un directorio de clases compiladas o
-directamente como el `.jar` con que se distribuye. Si no se encuentra ninguna
+El sistema puede indicarse como un directorio de clases compiladas, como la
+carpeta raíz de un proyecto Maven, Gradle, IntelliJ o Eclipse, o directamente como
+el `.jar` con que se distribuye. Si se omite el archivo de configuración, se
+aplica la configuración mínima descrita en _Interfaz gráfica_. Si no se encuentra ninguna
 clase bajo la raíz declarada, el mecanismo termina con un error: un grafo vacío
 obtendría una CR del 100 % y se declararía aceptable, de modo que apuntar por
 descuido al directorio de fuentes produciría un falso negativo silencioso.
@@ -238,16 +290,21 @@ java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
      out\arquitecta-core rules-arquitecta.properties --etiqueta Arquitecta-autoanalisis
 ```
 
-Resultado: 6 paquetes, 14 dependencias, 24 verificaciones, 0 incumplimientos →
+Resultado: 8 paquetes, 21 dependencias, 33 verificaciones, 0 incumplimientos →
 **CR 100 % · Aceptable**. La arquitectura interna del prototipo satisface las
 mismas reglas que exige a los sistemas que evalúa.
 
-La configuración declara la raíz de composición como núcleo compartido
-(`rol.compartido`), porque depende de los cinco módulos que ensambla por
-definición del patrón, no por deterioro. Declararlo permite mantener el umbral
+La configuración declara las capas `servicio` e `interfaz` entre el reporte y la
+raíz, y prohíbe a la interfaz el acceso directo a la configuración y a la
+extracción: si alguna vez los usara en lugar de pedírselos al servicio, la regla
+lo señalaría como deriva. Declara además como núcleo compartido
+(`rol.compartido`) la raíz de composición y el servicio, porque dependen de los
+módulos que ensamblan por definición del patrón (raíz de composición y fachada),
+no por deterioro. Declararlo permite mantener el umbral
 estricto en lugar de relajarlo para todo el sistema, que es lo que ocultaría
-concentraciones reales en los demás paquetes. Bajándolo a 3 aparece el módulo de
-reporte (`Ce = 4`), que depende de los cuatro que debe representar: el caso
+concentraciones reales en los demás paquetes. Bajándolo a 3 aparecen el módulo de
+reporte y la interfaz (`Ce = 4` cada uno), que dependen de los cuatro módulos que
+deben representar: el caso
 ilustra que el umbral no es universal y que cada sistema obliga a decidir dónde
 está su techo razonable.
 
@@ -312,10 +369,11 @@ procesarse además con Graphviz si se prefiere.
 
 ## Pruebas
 
-`test.bat` ejecuta 162 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+`test.bat` ejecuta 190 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
 carga de configuración, las tres reglas, el motor, las exenciones, los cinco
-escenarios, los exportadores, la disposición gráfica y la comparación entre
-corridas, incluidos los casos
+escenarios, los exportadores, la disposición gráfica, la comparación entre
+corridas y el servicio de análisis (reconocimiento de proyectos Maven y Gradle,
+paridad entre carpeta y `.jar`, configuración mínima), incluidos los casos
 límite (grafo vacío, umbrales en su frontera exacta, configuraciones inválidas,
 exenciones que no cuelgan de la raíz). La batería se construyó **sin dependencias
 externas**, en coherencia con el requisito de ligereza del propio mecanismo, y
@@ -328,7 +386,8 @@ mvn -q clean package
 ```
 
 Genera `target/arquitecta.jar` con las dependencias empaquetadas
-(`maven-shade-plugin`). La batería de pruebas se compila en la fase
+(`maven-shade-plugin`). Ejecutado sin argumentos (`java -jar target/arquitecta.jar`,
+o con doble clic) abre la interfaz gráfica. La batería de pruebas se compila en la fase
 `test-compile`, pero se ejecuta mediante `test.bat` / `test.sh`, no por
 _surefire_, porque deliberadamente no depende de un marco de pruebas externo.
 

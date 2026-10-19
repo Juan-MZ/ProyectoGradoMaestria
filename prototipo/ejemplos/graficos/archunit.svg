@@ -20,9 +20,9 @@
   <rect x="1039.6" y="76.0" width="207.0" height="415.4" rx="6" fill="none" stroke="#C5CEDC" stroke-dasharray="5 4"/>
   <text x="1049.6" y="93.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="0.6" fill="#6B7A90">SIN CAPA</text>
   <g fill="none">
-    <path d="M1059.6,468.7 C828.2,468.7 828.2,916.0 596.8,916.0" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit → com.tngtech.archunit.base (hacia o desde un núcleo compartido)</title></path>
+    <path d="M1059.6,467.9 C828.2,467.9 828.2,910.0 596.8,910.0" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit → com.tngtech.archunit.base (hacia o desde un núcleo compartido)</title></path>
     <path d="M1059.6,465.7 C967.6,465.7 967.6,734.0 875.6,734.0" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit → com.tngtech.archunit.core.importer.resolvers (hacia o desde un núcleo compartido)</title></path>
-    <path d="M596.8,910.0 C828.2,910.0 828.2,467.9 1059.6,467.9" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit.base → com.tngtech.archunit (hacia o desde un núcleo compartido)</title></path>
+    <path d="M596.8,916.0 C828.2,916.0 828.2,468.7 1059.6,468.7" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit.base → com.tngtech.archunit (hacia o desde un núcleo compartido)</title></path>
     <path d="M552.8,825.0 C806.2,825.0 806.2,467.2 1059.6,467.2" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit.core → com.tngtech.archunit (hacia o desde un núcleo compartido)</title></path>
     <path d="M478.4,752.0 C478.4,790.0 798.1,463.4 1059.6,463.4" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit.core.domain → com.tngtech.archunit (hacia o desde un núcleo compartido)</title></path>
     <path d="M301.1,752.0 C301.1,790.0 718.3,464.2 1059.6,464.2" stroke="#C9CED6" marker-end="url(#punta-nucleo)" stroke-width="1"><title>com.tngtech.archunit.core.domain.properties → com.tngtech.archunit (hacia o desde un núcleo compartido)</title></path>

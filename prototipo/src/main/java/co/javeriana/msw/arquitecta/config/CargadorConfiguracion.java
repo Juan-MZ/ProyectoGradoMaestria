@@ -42,7 +42,12 @@ public final class CargadorConfiguracion {
         return desde(props);
     }
 
-    static ConfiguracionReglas desde(Properties props) {
+    /**
+     * Construye el catálogo a partir de propiedades ya cargadas en memoria. Permite
+     * componer una configuración mínima sin necesidad de un archivo, por ejemplo
+     * cuando solo se conoce la raíz de análisis.
+     */
+    public static ConfiguracionReglas desde(Properties props) {
         String raiz = texto(props, "raiz", null);
         if (raiz == null) {
             throw new IllegalArgumentException("La propiedad 'raiz' es obligatoria.");

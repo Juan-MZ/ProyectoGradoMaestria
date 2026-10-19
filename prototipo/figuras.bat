@@ -5,6 +5,8 @@ rem ============================================================
 rem  Regenera, a partir del codigo, las figuras de grafos:
 rem   - TikZ para la monografia  -> ..\Maestria_PlantillaProyectoGrado\figuras\
 rem   - SVG para la documentacion -> ejemplos\graficos\
+rem   - capturas de la interfaz grafica -> ejemplos\interfaz\ (y
+rem     la del grafo, tambien en la carpeta de la monografia)
 rem  Las figuras del documento no se dibujan a mano: las produce
 rem  el propio mecanismo, de modo que siempre coinciden con el
 rem  grafo que realmente extrae.
@@ -14,6 +16,7 @@ set "CP=out\arquitecta-core;lib\*"
 set "APP=co.javeriana.msw.arquitecta.ArquitectaApp"
 set "TIKZ=..\Maestria_PlantillaProyectoGrado\figuras"
 set "SVG=ejemplos\graficos"
+set "GUI=ejemplos\interfaz"
 
 if not exist "out\arquitecta-core" (
     echo [ERROR] Ejecuta build.bat antes de generar las figuras.
@@ -21,15 +24,30 @@ if not exist "out\arquitecta-core" (
 )
 if not exist "%TIKZ%" mkdir "%TIKZ%"
 if not exist "%SVG%" mkdir "%SVG%"
+if not exist "%GUI%" mkdir "%GUI%"
 
 call :figura out\caso-estudio                rules.properties                             C0-base       c0-base
 call :figura out\caso-estudio-c2-ciclo       rules.properties                             C2-ciclo      c2-ciclo
 call :figura out\caso-estudio-c4-combinado   rules.properties                             C4-combinado  c4-combinado
 call :figura lib\archunit-1.3.0.jar          ejemplos\archunit\rules-archunit.properties  ArchUnit-1.3.0 archunit
 
+rem Las capturas dependen de las fuentes del sistema y muestran el tiempo de
+rem analisis, por lo que no son identicas byte a byte entre equipos; un fallo
+rem (por ejemplo, sin entorno grafico) no invalida las demas figuras.
+echo   - capturas de la interfaz grafica
+java -cp "%CP%" %APP% --gui --proyecto out\caso-estudio-c4-combinado --reglas rules.properties --seleccion negocio --captura "%GUI%\interfaz-grafo.png" > nul 2>&1
+if errorlevel 1 (
+    echo     [aviso] No se pudieron generar las capturas: requieren entorno grafico.
+) else (
+    java -cp "%CP%" %APP% --gui --proyecto out\caso-estudio-c4-combinado --reglas rules.properties --pestana hallazgos --captura "%GUI%\interfaz-hallazgos.png" > nul 2>&1
+    java -cp "%CP%" %APP% --gui --pestana inicio --captura "%GUI%\interfaz-inicio.png" > nul 2>&1
+    copy /y "%GUI%\interfaz-grafo.png" "%TIKZ%\interfaz-grafo.png" > nul
+)
+
 echo.
 echo Figuras TikZ en: %TIKZ%
 echo Figuras SVG  en: %SVG%   (se abren en cualquier navegador)
+echo Capturas     en: %GUI%
 exit /b 0
 
 :figura

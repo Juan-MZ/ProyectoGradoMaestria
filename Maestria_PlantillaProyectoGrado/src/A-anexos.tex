@@ -10,8 +10,8 @@ La biblioteca se distribuye junto al repositorio, de modo que la compilación y 
 \section{Estructura del repositorio}
 \begin{verbatim}
 prototipo/
-  src/main/java/          nucleo del mecanismo
-  src/test/java/          bateria de pruebas (96 comprobaciones)
+  src/main/java/          nucleo, servicio de analisis e interfaz grafica
+  src/test/java/          bateria de pruebas (190 comprobaciones)
   lib/                    ArchUnit 1.3.0 y slf4j-api
   caso-estudio/                        escenario C0 (linea base)
   caso-estudio-c1-capas/               escenario C1 (ruptura de capas)
@@ -20,18 +20,20 @@ prototipo/
   caso-estudio-c4-combinado/           escenario C4 (las tres derivas)
   ejemplos/archunit/          configuraciones de la seccion 4.6
   ejemplos/graficos/          grafos en SVG generados por figuras
+  ejemplos/interfaz/          capturas de la interfaz grafica
   rules.properties            catalogo de reglas del caso de estudio
   rules-arquitecta.properties catalogo para el autoanalisis
+  arquitecta.bat / .sh        interfaz grafica
   build.bat / build.sh        compilacion
-  test.bat  / test.sh         bateria de pruebas (162 comprobaciones)
+  test.bat  / test.sh         bateria de pruebas (190 comprobaciones)
   experimento.bat / .sh       experimento completo
-  figuras.bat / .sh           figuras de grafos de este documento
+  figuras.bat / .sh           figuras y capturas de este documento
 \end{verbatim}
 
 \section{Pasos para reproducir el experimento}
 \begin{enumerate}
     \item \textbf{Compilar.} Ejecutar \texttt{build.bat} en Windows o \texttt{./build.sh} en macOS o Linux. El guion compila el núcleo, la batería de pruebas y los cinco escenarios en el directorio \texttt{out/}.
-    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{test.bat} o \texttt{./test.sh}. La batería debe reportar 162 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
+    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{test.bat} o \texttt{./test.sh}. La batería debe reportar 190 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
     \item \textbf{Ejecutar el experimento.} Ejecutar \texttt{experimento.bat} o \texttt{./experimento.sh}. El guion imprime el catálogo de reglas, recorre los cinco escenarios bajo los dos modos de clasificación y deposita la evidencia en \texttt{resultados/}.
     \item \textbf{Contrastar.} Comparar el archivo \texttt{resultados/modo-cr/resumen.csv} con la tabla~\ref{tab:resultados} y el archivo \texttt{resultados/modo-cr-severidad/resumen.csv} con la tabla~\ref{tab:refinamiento}.
 \end{enumerate}
@@ -54,7 +56,7 @@ java -cp "out\arquitecta-core;lib\*" ^
      --svg archunit.svg
 \end{verbatim}
 
-\noindent El ejemplo reproduce además el análisis de la sección~\ref{sec:archunit}: el mecanismo admite directamente el archivo \texttt{.jar}, y el directorio \texttt{ejemplos/archunit/} contiene las configuraciones con y sin exenciones cuyos resultados recoge la tabla~\ref{tab:archunit}.
+\noindent El mismo análisis puede hacerse desde la interfaz gráfica, que se abre con \texttt{arquitecta.bat} o \texttt{./arquitecta.sh} ---compilando antes el prototipo si hace falta--- y permite elegir el \texttt{.jar} y el catálogo con un selector de archivos. El ejemplo reproduce además el análisis de la sección~\ref{sec:archunit}: el mecanismo admite directamente el archivo \texttt{.jar}, y el directorio \texttt{ejemplos/archunit/} contiene las configuraciones con y sin exenciones cuyos resultados recoge la tabla~\ref{tab:archunit}.
 
 \section{Evidencia generada}
 Cada ejecución con la opción \texttt{-{}-salida} produce cuatro artefactos por escenario y una fila en el resumen comparativo:
@@ -69,6 +71,6 @@ Cada ejecución con la opción \texttt{-{}-salida} produce cuatro artefactos por
 El archivo \texttt{resumen.csv} de cada modo agrega una fila por escenario con el número de paquetes, dependencias, verificaciones e incumplimientos, la Tasa de Conformidad y los tres estados calculados. Es el artefacto del que proceden directamente las tablas del capítulo de evaluación.
 
 \section{Determinismo de los resultados}
-El mecanismo no emplea aleatoriedad, concurrencia ni marcas temporales en su cálculo, por lo que ante la misma entrada produce siempre el mismo diagnóstico. Las estructuras que recorren el grafo conservan el orden de inserción, de modo que también el orden de los hallazgos es estable entre ejecuciones. Ello permite comparar dos corridas mediante una simple diferencia textual de sus archivos de evidencia, sin necesidad de normalización previa.
+El mecanismo no emplea aleatoriedad, concurrencia ni marcas temporales en su cálculo, por lo que ante la misma entrada produce siempre el mismo diagnóstico. La construcción del grafo recorre las clases y sus dependencias en orden alfabético, y las estructuras que lo recorren conservan el orden de inserción, de modo que también el orden de los hallazgos y de su evidencia es estable entre ejecuciones y no depende de cómo se nombre la ruta analizada ni del orden en que la biblioteca de importación entregue las clases. Ello permite comparar dos corridas mediante una simple diferencia textual de sus archivos de evidencia, sin necesidad de normalización previa. Las capturas de la interfaz gráfica son la única excepción: dependen de las fuentes tipográficas del equipo y muestran el tiempo de análisis, por lo que se regeneran junto con las figuras pero no se comparan byte a byte.
 
 Al ejecutar sobre JDK~26 aparecen dos avisos en la salida de error —la ausencia de un proveedor de \textit{logging} para SLF4J y una advertencia sobre el uso de \texttt{sun.misc.Unsafe} emitida por una biblioteca embebida en ArchUnit— que no afectan al resultado y no se presentan con JDK~17.

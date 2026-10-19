@@ -10,8 +10,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.jar.JarFile;
 
 /**
@@ -76,15 +80,61 @@ public class ConstructorGrafo {
         return desdeRuta(directorioClases);
     }
 
+    /**
+     * Cuenta las clases de cada paquete presente en la ruta, sin restringirse a
+     * ninguna raíz. Sirve para inferir la raíz de análisis de un sistema del que
+     * todavía no se dispone de catálogo.
+     */
+    public static Map<String, Integer> contarPaquetes(Path ruta) {
+        ClassFileImporter importador = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS);
+        JavaClasses clases;
+        if (Files.isRegularFile(ruta) && ruta.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            try (JarFile jar = new JarFile(ruta.toFile())) {
+                clases = importador.importJar(jar);
+                return contar(clases);
+            } catch (IOException e) {
+                throw new UncheckedIOException("No se pudo leer el archivo " + ruta, e);
+            }
+        }
+        return contar(importador.importPath(ruta));
+    }
+
+    private static Map<String, Integer> contar(JavaClasses clases) {
+        Map<String, Integer> cuenta = new TreeMap<>();
+        for (JavaClass clase : clases) {
+            String paquete = clase.getPackageName();
+            if (paquete != null && !paquete.isEmpty()) {
+                cuenta.merge(paquete, 1, Integer::sum);
+            }
+        }
+        return cuenta;
+    }
+
+    /**
+     * Construye el grafo a partir de clases ya importadas.
+     *
+     * <p>Las clases y sus dependencias se recorren en orden alfabético: el orden en
+     * que la biblioteca las entrega depende de cómo se nombró la ruta importada, y
+     * sin fijarlo dos análisis del mismo código podrían listar las aristas y su
+     * evidencia en distinto orden. El diagnóstico no cambiaría, pero la evidencia
+     * dejaría de ser reproducible byte a byte.</p>
+     */
     public GrafoDependencias desdeClases(JavaClasses clases) {
         GrafoDependencias grafo = new GrafoDependencias();
-        for (JavaClass clase : clases) {
+        List<JavaClass> ordenadas = new ArrayList<>();
+        clases.forEach(ordenadas::add);
+        ordenadas.sort(Comparator.comparing(JavaClass::getName));
+        for (JavaClass clase : ordenadas) {
             String paquete = clase.getPackageName();
             if (!perteneceAlAnalisis(paquete)) {
                 continue;
             }
             grafo.agregarNodo(paquete);
-            for (Dependency dependencia : clase.getDirectDependenciesFromSelf()) {
+            List<Dependency> dependencias = new ArrayList<>(clase.getDirectDependenciesFromSelf());
+            dependencias.sort(Comparator.comparing((Dependency d) -> d.getTargetClass().getName())
+                    .thenComparing(Dependency::getDescription));
+            for (Dependency dependencia : dependencias) {
                 String destino = dependencia.getTargetClass().getPackageName();
                 if (perteneceAlAnalisis(destino) && !destino.equals(paquete)) {
                     grafo.agregarArista(paquete, destino, dependencia.getDescription());

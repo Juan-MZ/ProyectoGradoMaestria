@@ -190,7 +190,7 @@ public final class ExportadorSvg {
         };
     }
 
-    static String nombreEstado(EstadoNodo estado) {
+    public static String nombreEstado(EstadoNodo estado) {
         return switch (estado) {
             case NORMAL -> "Paquete";
             case CICLO -> "En un ciclo";
@@ -200,7 +200,7 @@ public final class ExportadorSvg {
         };
     }
 
-    static String nombreTipo(TipoArista tipo) {
+    public static String nombreTipo(TipoArista tipo) {
         return switch (tipo) {
             case NUCLEO -> "Hacia núcleo compartido";
             case NORMAL -> "Dependencia";

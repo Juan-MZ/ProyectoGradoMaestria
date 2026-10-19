@@ -1,0 +1,13 @@
+# Finales de línea estables con independencia del sistema de quien clone el
+# repositorio: los guiones POSIX deben conservar LF para ejecutarse en macOS y
+# Linux, y los de Windows, CRLF para que cmd los interprete sin sorpresas.
+* text=auto
+*.sh  text eol=lf
+*.bat text eol=crlf
+
+# Binarios: nunca se normalizan.
+*.jar binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary

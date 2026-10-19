@@ -27,9 +27,9 @@
 \node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,881.0) {CAPA BASE};
 \draw[arqPanel, dash pattern=on 3.5pt off 3pt, rounded corners=4.5pt] (1039.6,76.0) rectangle (1246.6,491.4);
 \node[anchor=west, inner sep=0, text=arqTenue, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (1049.6,89.0) {SIN CAPA};
-\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (1059.6,468.7) .. controls (828.2,468.7) and (828.2,916.0) .. (596.8,916.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (1059.6,467.9) .. controls (828.2,467.9) and (828.2,910.0) .. (596.8,910.0);
 \draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (1059.6,465.7) .. controls (967.6,465.7) and (967.6,734.0) .. (875.6,734.0);
-\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (596.8,910.0) .. controls (828.2,910.0) and (828.2,467.9) .. (1059.6,467.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (596.8,916.0) .. controls (828.2,916.0) and (828.2,468.7) .. (1059.6,468.7);
 \draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (552.8,825.0) .. controls (806.2,825.0) and (806.2,467.2) .. (1059.6,467.2);
 \draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (478.4,752.0) .. controls (478.4,790.0) and (798.1,463.4) .. (1059.6,463.4);
 \draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (301.1,752.0) .. controls (301.1,790.0) and (718.3,464.2) .. (1059.6,464.2);

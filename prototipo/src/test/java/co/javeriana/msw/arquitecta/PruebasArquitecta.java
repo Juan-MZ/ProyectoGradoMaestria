@@ -58,6 +58,7 @@ public final class PruebasArquitecta {
         pruebasExportadores(v);
         pruebasVisualizacion(v);
         pruebasHistorico(v);
+        PruebasServicio.ejecutar(v);
 
         System.exit(v.resumen());
     }
