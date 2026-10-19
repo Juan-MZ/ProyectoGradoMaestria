@@ -20,6 +20,9 @@ import java.util.Properties;
  */
 public record ConfiguracionModelo(Proveedor proveedor, String url, String modelo, String clave) {
 
+    /** Proveedor cuando no hay configuración guardada: uno que no envía datos fuera del equipo. */
+    public static final Proveedor POR_DEFECTO = Proveedor.OLLAMA;
+
     /** Archivo donde se conserva la configuración. */
     public static final Path ARCHIVO = Path.of(System.getProperty("user.home"), ".arquitecta", "asistente.properties");
 
@@ -58,7 +61,12 @@ public record ConfiguracionModelo(Proveedor proveedor, String url, String modelo
         return null;
     }
 
-    /** Lee la configuración guardada, o la de Anthropic por defecto si no hay ninguna. */
+    /**
+     * Lee la configuración guardada o, si no hay ninguna, la del modelo local
+     * (Ollama). Es la aplicación del principio de privacidad por diseño: ningún
+     * dato sale del equipo hasta que la persona elige expresamente un servicio
+     * externo.
+     */
     public static ConfiguracionModelo cargar() {
         return cargar(ARCHIVO);
     }
@@ -74,9 +82,9 @@ public record ConfiguracionModelo(Proveedor proveedor, String url, String modelo
         }
         Proveedor proveedor;
         try {
-            proveedor = Proveedor.valueOf(props.getProperty("proveedor", Proveedor.ANTHROPIC.name()));
+            proveedor = Proveedor.valueOf(props.getProperty("proveedor", POR_DEFECTO.name()));
         } catch (IllegalArgumentException e) {
-            proveedor = Proveedor.ANTHROPIC;
+            proveedor = POR_DEFECTO;
         }
         return new ConfiguracionModelo(proveedor,
                 props.getProperty("url", proveedor.urlPorDefecto()),

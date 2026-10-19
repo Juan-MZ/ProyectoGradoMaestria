@@ -53,6 +53,8 @@ public final class GeneradorReporte {
         sb.append(fila("Verificaciones", Integer.toString(resultado.verificaciones())));
         sb.append(fila("Incumplimientos", Integer.toString(resultado.incumplimientos())));
         sb.append(fila("Tasa de Conformidad", porcentaje(resultado.conformidad())));
+        sb.append(fila("CR por regla", porcentaje(resultado.conformidadPorRegla())
+                + "  (" + resultado.reglasCumplidas() + " de " + resultado.reglasEvaluadas() + " reglas)"));
         if (crAnterior.isPresent()) {
             sb.append(fila("Tendencia",
                     Historico.describirTendencia(resultado.conformidad(), crAnterior.getAsDouble())));

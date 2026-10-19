@@ -73,10 +73,12 @@ arquitecta                         REM abre la aplicacion
 arquitecta C:\ruta\al\proyecto      REM la abre con ese proyecto (carpeta o .jar)
 arquitecta analizar <proyecto> [reglas] [opciones]   REM analisis por consola
 arquitecta compilar                REM compila nucleo, pruebas, arquitecta.jar y escenarios
-arquitecta pruebas                 REM bateria de pruebas (262 comprobaciones)
+arquitecta pruebas                 REM bateria de pruebas (272 comprobaciones)
 arquitecta experimento             REM experimento completo; evidencia en resultados\
 arquitecta figuras                 REM regenera los grafos y capturas de la monografia
-arquitecta sistemas                REM inyecta derivas en 4 sistemas reales y mide su deteccion
+arquitecta aplicaciones            REM clona y compila las 3 aplicaciones en capas de la validacion
+arquitecta sistemas                REM inyecta derivas en 7 sistemas reales y mide su deteccion
+arquitecta estudios [modo]         REM evolucion, umbral, oraculo JDepend, equivalente ArchUnit
 arquitecta ayuda
 ```
 
@@ -182,9 +184,23 @@ acordar el catálogo.
 | Anthropic · Claude | `https://api.anthropic.com` (modelo `claude-opus-5-5`) | `ANTHROPIC_API_KEY` o la indicada |
 | OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` o la indicada |
 | DeepSeek | `https://api.deepseek.com` (modelo `deepseek-v4-pro`; también `deepseek-flash`) | `DEEPSEEK_API_KEY` o la indicada |
-| Ollama (local) | `http://localhost:11434/v1` | no requiere |
+| Ollama (local, **por defecto**) | `http://localhost:11434/v1` | no requiere |
 | LM Studio (local) | `http://localhost:1234/v1` | no requiere |
 | Otro compatible con OpenAI | la que se indique | opcional |
+
+Mientras no se elija expresamente un servicio externo, el asistente usa Ollama:
+por defecto ningún dato sale del equipo
+([ADR-0015](../decisiones/0015-el-asistente-usa-por-defecto-un-modelo-local.md)).
+Con una GPU de 12 GB, un modelo de 14B como `qwen2.5:14b` no cabe con el contexto
+por defecto de Ollama (32 768 tokens) y la carga falla o cae a CPU; basta un
+contexto de 8 192, sobrado para el asistente (~2 100 tokens por consulta):
+
+```bat
+ollama pull qwen2.5:14b
+curl http://localhost:11434/api/create -d "{\"model\":\"qwen2.5-14b-gpu\",\"from\":\"qwen2.5:14b\",\"parameters\":{\"num_ctx\":8192}}"
+```
+
+y elegir `qwen2.5-14b-gpu` como modelo (o definir `OLLAMA_CONTEXT_LENGTH=8192`).
 
 _Probar conexión_ comprueba la dirección y la clave y lista los modelos
 disponibles. La configuración se conserva en `~/.arquitecta/asistente.properties`
@@ -422,11 +438,19 @@ está su techo razonable.
 
 `arquitecta sistemas` inyecta derivas conocidas —una de cada familia y después las
 tres juntas— en cuatro bibliotecas reales (Commons Lang, Jackson Databind, ArchUnit
-y Guava; de 403 a 2 017 clases) y mide si el mecanismo las detecta: **22 de 22
-detectadas, ningún hallazgo que no se inyectara**, en menos de un segundo por
-sistema. En Guava, una deriva aislada deja la CR por encima del 97 % —«Aceptable»
+y Guava; de 403 a 2 017 clases) y en tres aplicaciones en capas cuya arquitectura
+documentan sus propios proyectos (Spring PetClinic, MyBatis JPetStore 6 y DDD
+Sample; se preparan con `arquitecta aplicaciones`), y mide si el mecanismo las
+detecta: **31 de 31 detectadas, ningún hallazgo que no se inyectara**, en menos de
+un segundo por sistema. En Guava, una deriva aislada deja la CR por encima del 97 % —«Aceptable»
 para la CR sola— y el criterio con severidad la señala. Detalle, catálogos y datos:
 [ejemplos/sistemas/](ejemplos/sistemas/README.md).
+
+`arquitecta estudios` completa la validación con cuatro estudios cuya evidencia
+queda en [ejemplos/estudios/](ejemplos/estudios/README.md): la **deriva real** a lo
+largo de 35 versiones publicadas, la **calibración del umbral** de concentración por
+percentiles, el contraste del grafo con **JDepend** como oráculo independiente y
+las mismas reglas escritas con **ArchUnit** para comparar esfuerzo y resultado.
 
 ## Sobre código real: ArchUnit 1.3.0
 
@@ -488,7 +512,7 @@ procesarse además con Graphviz si se prefiere.
 
 ## Pruebas
 
-`arquitecta pruebas` ejecuta 262 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+`arquitecta pruebas` ejecuta 272 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
 carga de configuración, las tres reglas, el motor, las exenciones, los cinco
 escenarios, los exportadores, la disposición gráfica, la comparación entre
 corridas, el servicio de análisis (reconocimiento de proyectos Maven y Gradle,

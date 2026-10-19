@@ -51,6 +51,26 @@ public record Resultado(
         return porRegla.stream().flatMap(r -> r.violaciones().stream()).toList();
     }
 
+    /** Reglas que llegaron a verificar algo: una regla sin verificaciones no se cuenta. */
+    public int reglasEvaluadas() {
+        return (int) porRegla.stream().filter(r -> r.verificaciones() > 0).count();
+    }
+
+    /** Reglas evaluadas que no registraron ningún incumplimiento. */
+    public int reglasCumplidas() {
+        return (int) porRegla.stream().filter(r -> r.verificaciones() > 0 && r.incumplimientos() == 0).count();
+    }
+
+    /**
+     * Tasa de Conformidad en la formulación del anteproyecto: reglas cumplidas
+     * sobre reglas evaluadas. Se reporta junto a la CR por verificación para que
+     * ambas lecturas puedan contrastarse; no interviene en la clasificación.
+     */
+    public double conformidadPorRegla() {
+        int evaluadas = reglasEvaluadas();
+        return evaluadas == 0 ? 100.0 : 100.0 * reglasCumplidas() / evaluadas;
+    }
+
     /** Indica si el veredicto final difiere del que habría producido la CR por sí sola. */
     public boolean severidadAlteroElVeredicto() {
         return estado != estadoPorCR;

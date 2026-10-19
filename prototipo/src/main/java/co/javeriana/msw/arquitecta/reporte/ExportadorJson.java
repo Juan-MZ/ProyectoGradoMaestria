@@ -46,6 +46,7 @@ public final class ExportadorJson {
 
         sb.append("  \"conformidad\": {\n");
         sb.append("    \"cr\": ").append(num(resultado.conformidad())).append(",\n");
+        sb.append("    \"crPorRegla\": ").append(num(resultado.conformidadPorRegla())).append(",\n");
         sb.append("    \"verificaciones\": ").append(resultado.verificaciones()).append(",\n");
         sb.append("    \"incumplimientos\": ").append(resultado.incumplimientos()).append(",\n");
         sb.append("    \"umbralAceptable\": ").append(num(resultado.umbralAceptable())).append(",\n");

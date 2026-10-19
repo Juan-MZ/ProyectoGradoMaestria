@@ -231,6 +231,10 @@ public final class PruebasAsistente {
         v.comprueba("un proveedor remoto sin clave no se consulta",
                 System.getenv("OPENAI_API_KEY") != null || sinClave.incompleta() != null);
 
+        ConfiguracionModelo inicial = ConfiguracionModelo.cargar(Path.of("no-existe", "asistente.properties"));
+        v.comprueba("sin configuración guardada se propone el modelo local: ningún dato sale del equipo",
+                inicial.proveedor() == Proveedor.OLLAMA && inicial.proveedor().local());
+
         Path temporal = Files.createTempFile("asistente", ".properties");
         try {
             new ConfiguracionModelo(Proveedor.LM_STUDIO, "http://localhost:1234/v1", "qwen", "secreta").guardar(temporal, false);
@@ -284,9 +288,15 @@ public final class PruebasAsistente {
             v.comprueba("un umbral que lo señala no se advierte", Revision.avisos(conUmbral(base, 3, List.of()), perfil).isEmpty());
             List<String> exento = Revision.avisos(conUmbral(base, 6, List.of(new Propuesta.Exencion("com.caso.util",
                     "compartido", "utilidad transversal"))), perfil);
-            v.comprueba("un paquete exento con justificación ya no se advierte; se pasa al siguiente que destaca",
-                    exento.stream().noneMatch(a -> a.contains("com.caso.util"))
-                            && exento.stream().anyMatch(a -> a.contains("com.caso.persistencia")));
+            v.comprueba("con el paquete más acoplado exento, la revisión del umbral pasa al siguiente que destaca",
+                    exento.stream().anyMatch(a -> a.contains("Con el umbral propuesto")
+                            && a.contains("com.caso.persistencia") && !a.contains("com.caso.util")));
+            v.comprueba("eximir al paquete que más concentra se advierte aparte, con su motivo",
+                    exento.stream().anyMatch(a -> a.startsWith("La propuesta exime a com.caso.util")
+                            && a.contains("utilidad transversal")));
+            v.comprueba("eximir a otro paquete no se advierte como exención del más acoplado",
+                    Revision.avisos(conUmbral(base, 3, List.of(new Propuesta.Exencion("com.caso.persistencia",
+                            "compartido", "x"))), perfil).stream().noneMatch(a -> a.startsWith("La propuesta exime")));
             v.comprueba("en la línea base, sin un paquete que destaque, no se advierte",
                     Revision.avisos(conUmbral(base, 6, List.of()), Asistencia.perfil(C0)).isEmpty());
         } catch (ErrorAnalisis e) {

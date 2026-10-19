@@ -8,6 +8,7 @@
 #    ./arquitecta.sh analizar <proyecto> [reglas] [opciones]
 #                                         analisis por consola
 #    ./arquitecta.sh compilar | pruebas | experimento | figuras | sistemas
+#    ./arquitecta.sh aplicaciones | estudios [umbral|evolucion|oraculo|archunit]
 #    ./arquitecta.sh ayuda
 #
 #  Compila por su cuenta la primera vez y cada vez que cambia el
@@ -34,7 +35,9 @@ ayuda() {
    ./arquitecta.sh pruebas              ejecuta la bateria de pruebas
    ./arquitecta.sh experimento          reproduce el experimento (resultados/)
    ./arquitecta.sh figuras              regenera figuras y capturas
-   ./arquitecta.sh sistemas             inyecta derivas en 4 sistemas reales y mide su deteccion
+   ./arquitecta.sh sistemas             inyecta derivas en sistemas reales y mide su deteccion
+   ./arquitecta.sh aplicaciones         clona y compila las 3 aplicaciones en capas de la validacion
+   ./arquitecta.sh estudios [modo]      umbral, evolucion, oraculo JDepend y equivalente ArchUnit (ejemplos/estudios/)
 
  El proyecto puede indicarse por su carpeta raiz (Maven, Gradle, IntelliJ,
  Eclipse), por su directorio de clases o por su archivo .jar.
@@ -64,9 +67,12 @@ case "${1:-}" in
         bash "$RAIZ/scripts/compilar.sh" ;;
     preparar)
         actualizar ;;
-    pruebas|experimento|figuras|sistemas)
+    pruebas|experimento|figuras|sistemas|aplicaciones)
         actualizar
         bash "$RAIZ/scripts/$1.sh" ;;
+    estudios)
+        actualizar
+        bash "$RAIZ/scripts/estudios.sh" "${2:-todos}" ;;
     "")
         actualizar
         exec java -jar "$JAR" ;;

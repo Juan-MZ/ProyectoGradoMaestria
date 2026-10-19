@@ -6,10 +6,11 @@
 % entrada. Se declara como misceláneo para no atribuir un medio de publicación
 % que no se ha verificado.
 @misc{SanMartin,
-  author = {Daniel San Martín and Valter Vieira De Camargo and Guisella Angulo},
-  title  = {A MAPE-K-Based Method for Architectural Conformance Checking in Self-Adaptive Systems},
-  year   = {2024},
-  note   = {Trabajo relacionado con verificación de conformidad arquitectónica en sistemas autoadaptativos}
+  author       = {San Martín, Daniel and Angulo, Guisella and Vieira de Camargo, Valter},
+  title        = {A {MAPE-K}-Based Method for Architectural Conformance Checking in Self-Adaptive Systems},
+  year         = {2024},
+  howpublished = {Preprint, arXiv:2401.16382 (versión 3, 2025)},
+  url          = {https://arxiv.org/abs/2401.16382}
 }
 
 @article{Jolak2025,
@@ -78,12 +79,15 @@
   type   = {PhD Thesis}
 }
 
-@misc{SasAvgeriou,
-  author    = {Sas, Darius and Avgeriou, Paris},
-  title     = {An architectural technical debt index based on machine learning and architectural smells},
-  year      = {2022},
-  publisher = {arXiv},
-  note      = {Bernoulli Institute, University of Groningen}
+@article{SasAvgeriou,
+  author  = {Sas, Darius and Avgeriou, Paris},
+  title   = {An Architectural Technical Debt Index Based on Machine Learning and Architectural Smells},
+  journal = {IEEE Transactions on Software Engineering},
+  volume  = {49},
+  number  = {8},
+  pages   = {4169--4195},
+  year    = {2023},
+  doi     = {10.1109/TSE.2023.3286179}
 }
 
 @article{PaulWang2019,
@@ -126,10 +130,13 @@
 % PENDIENTE: completar la publicación (revista o congreso) y cambiar el tipo de
 % entrada. Se declara como misceláneo para no atribuir un medio de publicación
 % que no se ha verificado.
-@misc{ArchSyncJAndres,
-  author = {J Andres Diaz-Pace and Alvaro Soria and Guillermo Rodriguez and Marcelo R Campo},
-  year   = {2011},
-  title  = {Taking ArchSync to the Real World: An Analysis of Three Case-Studies}
+@inproceedings{ArchSyncJAndres,
+  author    = {Diaz-Pace, J. Andr{\'e}s and Soria, {\'A}lvaro and Rodr{\'\i}guez, Guillermo and Campo, Marcelo R.},
+  title     = {Taking {ArchSync} to the Real World: An Analysis of Three Case-Studies},
+  booktitle = {Simposio Argentino de Ingenier{\'\i}a de Software (ASSE), 40 JAIIO},
+  pages     = {25--36},
+  year      = {2011},
+  publisher = {SADIO}
 }
 
 @article{Murphy2001,
@@ -196,12 +203,93 @@
   publisher = {ACM}
 }
 
-@misc{Rosik,
+@phdthesis{Rosik,
   author = {Rosik, Jacek},
   title  = {Maintaining Architecture Consistency},
+  school = {University of Limerick},
   year   = {2007},
-  note   = {Tesis, University of Limerick},
   url    = {https://hdl.handle.net/10344/187}
+}
+
+@article{Li2022,
+  author  = {Li, Ruiyin and Liang, Peng and Soliman, Mohamed and Avgeriou, Paris},
+  title   = {Understanding Software Architecture Erosion: A Systematic Mapping Study},
+  journal = {Journal of Software: Evolution and Process},
+  volume  = {34},
+  number  = {3},
+  pages   = {e2423},
+  year    = {2022},
+  doi     = {10.1002/smr.2423}
+}
+
+@article{Besker2019,
+  author  = {Besker, Terese and Martini, Antonio and Bosch, Jan},
+  title   = {Software Developer Productivity Loss Due to Technical Debt---A Replication and Extension Study Examining Developers' Development Work},
+  journal = {Journal of Systems and Software},
+  volume  = {156},
+  pages   = {41--61},
+  year    = {2019}
+}
+
+@inproceedings{Alves2010,
+  author    = {Alves, Tiago L. and Ypma, Christiaan and Visser, Joost},
+  title     = {Deriving Metric Thresholds from Benchmark Data},
+  booktitle = {Proceedings of the 26th IEEE International Conference on Software Maintenance (ICSM)},
+  pages     = {1--10},
+  year      = {2010},
+  publisher = {IEEE}
+}
+
+@book{LanzaMarinescu2006,
+  author    = {Lanza, Michele and Marinescu, Radu},
+  title     = {Object-Oriented Metrics in Practice},
+  publisher = {Springer},
+  address   = {Berlin},
+  year      = {2006}
+}
+
+@inproceedings{ArcelliFontana2016,
+  author    = {Arcelli Fontana, Francesca and Pigazzini, Ilaria and Roveda, Riccardo and Zanoni, Marco},
+  title     = {Automatic Detection of Instability Architectural Smells},
+  booktitle = {Proceedings of the IEEE International Conference on Software Maintenance and Evolution (ICSME)},
+  pages     = {433--437},
+  year      = {2016},
+  doi       = {10.1109/ICSME.2016.33}
+}
+
+@article{TyreeAkerman2005,
+  author  = {Tyree, Jeff and Akerman, Art},
+  title   = {Architecture Decisions: Demystifying Architecture},
+  journal = {IEEE Software},
+  volume  = {22},
+  number  = {2},
+  pages   = {19--27},
+  year    = {2005}
+}
+
+@book{Ford2022,
+  author    = {Ford, Neal and Parsons, Rebecca and Kua, Patrick and Sadalage, Pramod},
+  title     = {Building Evolutionary Architectures: Automated Software Governance},
+  edition   = {2},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol, CA},
+  year      = {2022}
+}
+
+@book{Evans2003,
+  author    = {Evans, Eric},
+  title     = {Domain-Driven Design: Tackling Complexity in the Heart of Software},
+  publisher = {Addison-Wesley},
+  address   = {Boston},
+  year      = {2003}
+}
+
+@misc{JDepend,
+  author       = {Clark, Mike},
+  title        = {{JDepend}: métricas de calidad de diseño por paquete para {Java}},
+  howpublished = {Herramienta de código abierto; se usó la versión 2.9.5 de guru.nidi},
+  year         = {2015},
+  url          = {https://github.com/clarkware/jdepend}
 }
 
 @misc{StefanoRossiniMedium,

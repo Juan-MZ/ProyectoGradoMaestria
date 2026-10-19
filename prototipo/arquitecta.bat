@@ -8,6 +8,7 @@ rem    arquitecta <carpeta|jar>        la abre con ese proyecto
 rem    arquitecta analizar <proyecto> [reglas] [opciones]
 rem                                    analisis por consola
 rem    arquitecta compilar | pruebas | experimento | figuras | sistemas
+rem    arquitecta aplicaciones | estudios [umbral|evolucion|oraculo|archunit]
 rem    arquitecta ayuda
 rem
 rem  Con doble clic abre la aplicacion. Compila por su cuenta la
@@ -26,6 +27,8 @@ if /i "%~1"=="pruebas"     goto :guion
 if /i "%~1"=="experimento" goto :guion
 if /i "%~1"=="figuras"     goto :guion
 if /i "%~1"=="sistemas"    goto :guion
+if /i "%~1"=="aplicaciones" goto :guion
+if /i "%~1"=="estudios"    goto :guion
 if /i "%~1"=="preparar"    goto :actualizar
 
 call :actualizar
@@ -83,7 +86,7 @@ exit /b %CODIGO%
 call :actualizar
 if errorlevel 1 exit /b 1
 pushd "%CD%"
-call "%RAIZ%scripts\%~1.bat"
+call "%RAIZ%scripts\%~1.bat" %2
 set "CODIGO=%errorlevel%"
 popd
 exit /b %CODIGO%
@@ -133,7 +136,9 @@ echo    arquitecta preparar              compila solo si el codigo cambio
 echo    arquitecta pruebas               ejecuta la bateria de pruebas
 echo    arquitecta experimento           reproduce el experimento (resultados\)
 echo    arquitecta figuras               regenera figuras y capturas
-echo    arquitecta sistemas              inyecta derivas en 4 sistemas reales y mide su deteccion
+echo    arquitecta sistemas              inyecta derivas en sistemas reales y mide su deteccion
+echo    arquitecta aplicaciones          clona y compila las 3 aplicaciones en capas de la validacion
+echo    arquitecta estudios [modo]       umbral, evolucion, oraculo JDepend y equivalente ArchUnit (ejemplos\estudios\)
 echo.
 echo  El proyecto puede indicarse por su carpeta raiz (Maven, Gradle, IntelliJ,
 echo  Eclipse), por su directorio de clases o por su archivo .jar.

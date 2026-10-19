@@ -1,0 +1,9 @@
+sistema,conjunto,paquetes,p50,p70,p80,p90,maximo,umbral_catalogo,senalados_catalogo,umbral_p90_calibracion,senalados_p90_calibracion,umbral_p90_propio,senalados_p90_propio
+commons-lang3,calibracion,17,2,2,2,4,5,5,0,10,0,4,1
+jackson-databind,calibracion,22,6,10,11,12,14,12,2,10,6,12,2
+archunit,calibracion,21,5,6,7,8,10,6,5,10,0,8,1
+guava,calibracion,18,3,5,6,7,7,8,0,10,0,7,0
+spring-framework-petclinic,validacion,8,2,2,2,3,3,8,0,10,0,3,0
+jpetstore-6,validacion,5,1,2,2,2,2,8,0,10,0,2,0
+dddsample-core,validacion,24,4,4,5,6,10,8,1,10,0,6,2
+caso-estudio-c0,validacion,4,1,2,2,2,2,3,0,10,0,2,0

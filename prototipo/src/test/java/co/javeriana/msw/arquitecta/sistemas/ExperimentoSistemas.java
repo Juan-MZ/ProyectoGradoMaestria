@@ -58,7 +58,7 @@ public final class ExperimentoSistemas {
     private record Sistema(String id, String nombre, Path jar, Path catalogo) {
     }
 
-    private static final List<Sistema> LISTA = List.of(
+    private static final List<Sistema> BIBLIOTECAS = List.of(
             new Sistema("commons-lang3", "Apache Commons Lang 3.14.0", SISTEMAS.resolve("commons-lang3-3.14.0.jar"),
                     EVIDENCIA.resolve("commons-lang3/catalogo.properties")),
             new Sistema("archunit", "ArchUnit 1.3.0", Path.of("lib", "archunit-1.3.0.jar"),
@@ -68,8 +68,37 @@ public final class ExperimentoSistemas {
             new Sistema("guava", "Guava 33.2.1", SISTEMAS.resolve("guava-33.2.1-jre.jar"),
                     EVIDENCIA.resolve("guava/catalogo.properties")));
 
+    /**
+     * Aplicaciones en capas de código abierto: identificador, nombre y versión
+     * fijada. {@code arquitecta aplicaciones} las clona en esa versión y las
+     * compila en {@code out/aplicaciones/<id>/target/classes}. Sus catálogos no
+     * los propuso el asistente: transcriben la arquitectura que documenta cada
+     * proyecto.
+     */
+    static final List<String[]> APLICACIONES = List.of(
+            new String[] {"spring-framework-petclinic", "Spring Framework PetClinic"},
+            new String[] {"jpetstore-6", "MyBatis JPetStore 6"},
+            new String[] {"dddsample-core", "DDD Sample (Citerus)"});
+
+    /** Bibliotecas y, si están compiladas, las aplicaciones en capas. */
+    private static List<Sistema> lista() throws java.io.IOException {
+        List<Sistema> lista = new ArrayList<>(BIBLIOTECAS);
+        for (String[] app : APLICACIONES) {
+            Path clases = Path.of("out", "aplicaciones", app[0], "target", "classes");
+            if (!Files.isDirectory(clases)) {
+                System.out.println("[aviso] " + app[1] + " no está compilada; se omite (arquitecta aplicaciones).");
+                continue;
+            }
+            Path jar = SISTEMAS.resolve(app[0] + ".jar");
+            InyectorDerivas.jarDeDirectorio(clases, jar);
+            lista.add(new Sistema(app[0], app[1], jar, EVIDENCIA.resolve(app[0]).resolve("catalogo.properties")));
+        }
+        return lista;
+    }
+
     /** Dónde se inyectó cada deriva. */
-    private record Plan(String[] capas, String[] ciclo, String paqueteConcentrador, List<String> destinosConcentracion) {
+    private record Plan(String[] capas, String[] ciclo, boolean cicloViolaCapas, String paqueteConcentrador,
+            List<String> destinosConcentracion) {
     }
 
     private ExperimentoSistemas() {
@@ -93,7 +122,7 @@ public final class ExperimentoSistemas {
      */
     private static void proponer() throws Exception {
         ConfiguracionModelo config = ConfiguracionModelo.cargar();
-        for (Sistema s : LISTA) {
+        for (Sistema s : lista()) {
             if (Files.exists(s.catalogo())) {
                 System.out.println(s.id() + ": ya tiene catálogo, se conserva.");
                 continue;
@@ -131,7 +160,7 @@ public final class ExperimentoSistemas {
                 + "estado_cr,estado_cr_severidad,derivas_inyectadas,derivas_detectadas,hallazgos_nuevos_no_inyectados,"
                 + "hallazgos_desaparecidos,segundos");
         StringBuilder planes = new StringBuilder("# Derivas inyectadas por sistema\n\n");
-        for (Sistema s : LISTA) {
+        for (Sistema s : lista()) {
             ConfiguracionReglas config = CargadorConfiguracion.cargar(s.catalogo());
             GrafoDependencias grafo = new ConstructorGrafo(config.raiz(), config.exclusiones()).desdeRuta(s.jar());
             int clases = ConstructorGrafo.contarPaquetes(s.jar()).entrySet().stream()
@@ -146,7 +175,10 @@ public final class ExperimentoSistemas {
                             : "- Capas: `" + plan.capas()[0] + "` → `" + plan.capas()[1]
                                     + "` (dependencia que la matriz no permite y que no cierra ningún ciclo)\n")
                     .append("- Ciclo: `").append(plan.ciclo()[0]).append("` → `").append(plan.ciclo()[1])
-                    .append("` (cierra un ciclo sin violar las capas)\n")
+                    .append(plan.cicloViolaCapas()
+                            ? "` (cierra un ciclo; en esta estratificación estricta toda arista que cierra un ciclo"
+                                    + " apunta hacia arriba, de modo que también viola las capas)\n"
+                            : "` (cierra un ciclo sin violar las capas)\n")
                     .append("- Concentración: paquete nuevo `").append(plan.paqueteConcentrador()).append("` con ")
                     .append(plan.destinosConcentracion().size()).append(" dependencias salientes (umbral ")
                     .append(config.umbralConcentracion()).append(")\n\n");
@@ -191,6 +223,10 @@ public final class ExperimentoSistemas {
                     if (encontrado != null) {
                         detectadas++;
                         nuevos.removeIf(k -> explica(k, e, plan));
+                        if (e.equals("ciclo") && plan.cicloViolaCapas()) {
+                            nuevos.removeIf(k -> k.startsWith("Integridad")
+                                    && k.endsWith("| " + plan.ciclo()[0] + " , " + plan.ciclo()[1]));
+                        }
                     }
                 }
                 filas.add(fila(s, clases, r, variante, original.resultado(), esperadas.size(), detectadas,
@@ -283,6 +319,32 @@ public final class ExperimentoSistemas {
                 }
             }
         }
+        // En un sistema estrictamente estratificado ---una capa por paquete, sin
+        // dependencias dentro de la misma capa--- toda arista que cierra un ciclo
+        // apunta hacia arriba y viola también las capas. Solo entonces se admite
+        // que la deriva de ciclo active las dos reglas; el hallazgo de capas que
+        // produce se cuenta como explicado por la inyección.
+        boolean cicloViolaCapas = false;
+        if (ciclo == null) {
+            for (String a : paquetes) {
+                if (ciclo != null) {
+                    break;
+                }
+                if (compartidos.contains(a) || grafo.acoplamientoEferente(a) + 1 > umbral || claseDe(a, nombres) == null
+                        || (capas != null && List.of(capas).contains(a))) {
+                    continue;
+                }
+                for (String b : paquetes) {
+                    if (!a.equals(b) && !grafo.existeArista(a, b) && claseDe(b, nombres) != null
+                            && alcance.get(b).contains(a) && !enCiclo.contains(a) && !enCiclo.contains(b)
+                            && !compartidos.contains(b) && (capas == null || !List.of(capas).contains(b))) {
+                        ciclo = new String[] {a, b};
+                        cicloViolaCapas = true;
+                        break;
+                    }
+                }
+            }
+        }
         // Un sistema sin capas declaradas no admite la deriva de capas: se omite.
         if (ciclo == null || (capas == null && !config.capas().isEmpty())) {
             throw new IllegalStateException("No se encontró dónde inyectar " + (ciclo == null ? "el ciclo" : "la deriva de capas"));
@@ -301,7 +363,7 @@ public final class ExperimentoSistemas {
                 destinos.add(p);
             }
         }
-        return new Plan(capas, ciclo, concentrador, destinos);
+        return new Plan(capas, ciclo, cicloViolaCapas, concentrador, destinos);
     }
 
     private static Capa capa(ConfiguracionReglas config, String paquete) {

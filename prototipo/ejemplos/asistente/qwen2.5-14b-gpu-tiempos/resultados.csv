@@ -1,0 +1,6 @@
+escenario,repeticion,modelo,valido,segundos,capas,estratificacion_correcta,umbral,exenciones,derivas_inducidas,derivas_detectadas,derivas_ocultas,hallazgos_adicionales,derivas_senaladas,preguntas,cr_propuesta,cr_experimento,aviso_umbral
+C0,1,qwen2.5-14b-gpu,si,13.55,presentacion|negocio|persistencia|dominio,si,6,compartido:com.caso,0,0,"","Integridad presentacion->dominio",0,1,92.31,100.0,no
+C1,1,qwen2.5-14b-gpu,si,9.18,presentacion|negocio|persistencia|dominio,si,5,,1,1,"","Integridad presentacion->dominio",0,0,85.71,90.91,si
+C2,1,qwen2.5-14b-gpu,no,9.12,presentacion|negocio|persistencia,,3,compartido:dominio,1,,,,1,1,,83.33
+C3,1,qwen2.5-14b-gpu,si,12.54,presentacion|negocio|persistencia|dominio,si,4,compartido:util,1,0,"concentracion en util","Integridad presentacion->dominio",1,1,92.31,91.67,si
+C4,1,qwen2.5-14b-gpu,si,11.22,dominio|negocio|persistencia|presentacion,si,6,compartido:util,4,3,"concentracion en util","",2,2,66.67,57.14,si

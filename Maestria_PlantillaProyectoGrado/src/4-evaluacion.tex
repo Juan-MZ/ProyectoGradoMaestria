@@ -2,12 +2,12 @@
 % EVALUACIÓN
 %%%%%%%%%%%%%%%%%%%%
 
-Este capítulo presenta la evaluación del mecanismo, que constituye la quinta fase de la metodología: la ejecución del experimento controlado y el análisis de sus resultados. Se describe primero el diseño del experimento y la matriz de validación que fija de antemano lo que debía observarse; se exponen después los resultados obtenidos sobre los cinco escenarios; se analiza a continuación un hallazgo que obligó a refinar el criterio de clasificación, y se cierra contrastando los resultados con los indicadores comprometidos en la metodología y examinando las amenazas a la validez de la evidencia producida.
+Este capítulo presenta la evaluación del mecanismo, que constituye la quinta fase de la metodología: la ejecución del experimento controlado y el análisis de sus resultados. Se describe primero el diseño del experimento y la matriz de validación que fija de antemano lo que debía observarse; se exponen después los resultados obtenidos sobre los cinco escenarios; se analiza a continuación un hallazgo que obligó a refinar el criterio de clasificación y se contrastan los resultados con los indicadores comprometidos en la metodología. La segunda mitad del capítulo somete esos resultados a pruebas que el caso de estudio no puede ofrecer: la aplicación a sistemas reales con derivas inyectadas, la observación de deriva real a lo largo de versiones publicadas, la calibración estadística del umbral, el contraste de la extracción con una herramienta independiente y la comparación con la verificación escrita directamente en \textit{ArchUnit}. El capítulo cierra contrastando la hipótesis de trabajo componente por componente y examinando las amenazas a la validez.
 
 \section{Diseño de la evaluación}
 La evaluación se planteó como un experimento controlado de caso único, la modalidad que la investigación en diseño reserva para demostrar la viabilidad de un artefacto antes de someterlo a validación en campo \citep{Hevner2004, Peffers2007}. Su propósito fue determinar si el mecanismo construido detecta las derivas arquitectónicas que se le presentan y si clasifica de forma coherente el estado de conformidad del sistema evaluado.
 
-La hipótesis de trabajo fue que, al aplicar el mecanismo sobre una implementación de referencia y sobre versiones deliberadamente alteradas, la primera obtendría una conformidad plena sin hallazgos, mientras que cada versión alterada activaría la \textit{Fitness Function} correspondiente a la deriva inducida y vería descender su Tasa de Conformidad.
+La hipótesis operativa del experimento, que traduce a observables los dos primeros componentes de la hipótesis de trabajo (sección~\ref{sec:hipotesis-intro}), fue que, al aplicar el mecanismo sobre una implementación de referencia y sobre versiones deliberadamente alteradas, la primera obtendría una conformidad plena sin hallazgos, mientras que cada versión alterada activaría la \textit{Fitness Function} correspondiente a la deriva inducida, vería descender su Tasa de Conformidad y recibiría un estado distinto de \textit{aceptable}. La hipótesis completa, que incluye además la utilidad de la evidencia para decidir, se contrasta al final del capítulo (sección~\ref{sec:hipotesis}).
 
 Como variable independiente se manipuló la presencia y el tipo de deriva en el código, según los cinco escenarios descritos en el capítulo anterior. Las variables dependientes observadas fueron cuatro: los hallazgos reportados por cada \textit{Fitness Function}, la Tasa de Conformidad resultante, el estado arquitectónico asignado y la evidencia estructural asociada a cada hallazgo. Todas las demás condiciones se mantuvieron constantes ---el catálogo de reglas de la sección~\ref{sec:catalogo}, los umbrales, la versión del prototipo y el entorno de ejecución---, de modo que las diferencias observadas puedan atribuirse a la variable manipulada y no a variaciones del procedimiento \citep{Wohlin2012}.
 
@@ -51,16 +51,16 @@ La tabla~\ref{tab:resultados} resume el resultado agregado sobre los cinco escen
 \centering
 \caption{Resultados agregados del mecanismo sobre los cinco escenarios.}
 \label{tab:resultados}
-\small
-\begin{tabular}{lrrrrrl}
+\footnotesize
+\begin{tabular}{lrrrrrrl}
 \toprule
-\textbf{Escenario} & \textbf{Paq.} & \textbf{Dep.} & \textbf{Verif.} & \textbf{Incum.} & \textbf{CR} & \textbf{Estado según CR} \\
+\textbf{Escenario} & \textbf{Paq.} & \textbf{Dep.} & \textbf{Verif.} & \textbf{Incum.} & \textbf{CR} & \textbf{CR por regla} & \textbf{Estado según CR} \\
 \midrule
-C0 · base            & 4 & 5  & 10 & 0 & $100{,}00\%$ & Aceptable \\
-C1 · capas           & 4 & 6  & 11 & 1 & $90{,}91\%$  & Aceptable \\
-C2 · ciclo           & 5 & 8  & 12 & 2 & $83{,}33\%$  & En observación \\
-C3 · concentración   & 5 & 9  & 12 & 1 & $91{,}67\%$  & Aceptable \\
-C4 · combinado       & 5 & 11 & 14 & 6 & $57{,}14\%$  & No conforme \\
+C0 · base            & 4 & 5  & 10 & 0 & $100{,}00\%$ & $100{,}00\%$ & Aceptable \\
+C1 · capas           & 4 & 6  & 11 & 1 & $90{,}91\%$  & $66{,}67\%$ & Aceptable \\
+C2 · ciclo           & 5 & 8  & 12 & 2 & $83{,}33\%$  & $66{,}67\%$ & En observación \\
+C3 · concentración   & 5 & 9  & 12 & 1 & $91{,}67\%$  & $66{,}67\%$ & Aceptable \\
+C4 · combinado       & 5 & 11 & 14 & 6 & $57{,}14\%$  & $0{,}00\%$ & No conforme \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -165,6 +165,12 @@ No se trata de un defecto de implementación sino de una consecuencia matemátic
 La consecuencia práctica es seria para el propósito del proyecto. Un instrumento pensado como señal temprana debería alertar precisamente cuando la primera desviación aparece, que es cuando corregirla resulta barata; sin embargo, el criterio basado solo en la CR guarda silencio hasta que las desviaciones se acumulan. El riesgo se agrava porque el veredicto \textit{aceptable} podría interpretarse como ausencia de problemas, y no como lo que realmente significa.
 
 Merece subrayarse que este riesgo no era desconocido: el anteproyecto lo había anticipado al identificar la sobreinterpretación de la CR como uno de los riesgos éticos del proyecto y al advertir que la métrica «no debe reemplazar el juicio técnico». Lo que la evaluación aporta no es la intuición del riesgo, sino la medida de su magnitud y una respuesta verificable.
+
+\subsection{La formulación del anteproyecto: la CR por regla}
+\label{sec:crregla}
+La dilución procede de haber tomado la verificación, y no la regla, como unidad de conteo (sección~\ref{sec:operacionalizacion}). Cabe entonces preguntarse si la formulación literal del anteproyecto ---reglas cumplidas sobre reglas evaluadas, ecuación~\ref{eq:crregla}--- habría evitado el problema. La tabla~\ref{tab:resultados} lo responde: la CR por regla no se diluye, pero tampoco gradúa. Cualquier escenario con una sola deriva queda en $66{,}67\%$, por debajo del umbral de observación y, por tanto, \textit{no conforme}, sea la deriva una arista de capas o un ciclo; el combinado cae a $0\%$. Con tres reglas, la métrica solo puede tomar cuatro valores, y los umbrales del $85\%$ y el $70\%$ dejan de discriminar: todo sistema con algún hallazgo es no conforme.
+
+Los sistemas reales de las secciones siguientes muestran el costo de esa rigidez con más claridad que el caso de estudio. La CR por regla de Jackson Databind vale $0\%$ en las trece versiones analizadas, mientras la CR por verificación desciende del $65{,}38\%$ al $57{,}38\%$ a medida que aparece deriva real (sección~\ref{sec:evolucion}): la primera no puede mostrar la tendencia que la segunda sí registra. En DDD Sample, con ocho hallazgos y ciento una verificaciones, la CR por regla es también del $0\%$ y la CR por verificación del $89{,}11\%$; ninguna de las dos, por sí sola, describe el sistema. La conclusión es que ambas lecturas responden a preguntas distintas ---qué reglas se incumplen y qué parte del sistema las incumple--- y que ninguna resuelve la gravedad. Por eso se conservaron las dos en el reporte y se resolvió la gravedad con un criterio propio, que es el refinamiento que se describe a continuación.
 
 \section{Refinamiento del artefacto}
 La investigación en diseño prescribe que los resultados de la evaluación retroalimenten el artefacto en un nuevo ciclo, en lugar de limitarse a describir sus carencias \citep{Hevner2004, Peffers2007}. Siguiendo ese principio se introdujo un segundo criterio de clasificación, complementario y no sustitutivo del primero.
@@ -296,13 +302,15 @@ Queda por señalar qué \emph{no} establece este ejercicio. Se trata de un solo 
 \label{sec:sistemas}
 El caso de estudio permite saber con exactitud qué derivas contiene cada escenario, pero es pequeño y fue construido para el experimento; la aplicación a \textit{ArchUnit} enfrenta el mecanismo a código real, pero sin saber qué derivas contiene. La validación que se describe a continuación combina ambas virtudes: toma sistemas reales y les \textbf{inyecta derivas conocidas}, de modo que se sabe exactamente qué debería detectarse. Como la aplicación anterior, \textbf{no forma parte del experimento controlado de OBJ4}, cuyo alcance ---un único sistema--- se mantiene; es una demostración complementaria de que lo observado en el caso de estudio se sostiene fuera de él.
 
-\paragraph{Sistemas.} Se emplearon cuatro bibliotecas Java de código abierto y uso extendido, de tamaño creciente, analizadas directamente sobre el \texttt{.jar} que publican en Maven Central y cuya integridad se verificó con la suma SHA-1 del repositorio: Apache Commons Lang 3.14.0, Jackson Databind 2.17.2, \textit{ArchUnit} 1.3.0 y Guava 33.2.1. Ninguna declara formalmente su arquitectura. Para \textit{ArchUnit} se conservó la estratificación hipotética de la sección anterior; para las otras tres se adoptó, sin modificarla, la propuesta del asistente de catálogo (sección~\ref{sec:usos}), que reproduce la situación de una organización que incorpora la herramienta sin haber declarado nunca su arquitectura. Los catálogos son, por tanto, hipótesis, y los hallazgos de cada sistema original no se juzgan como defectos.
+\paragraph{Sistemas.} Se emplearon siete sistemas Java de código abierto en dos grupos. El primero reúne cuatro bibliotecas de uso extendido y tamaño creciente, analizadas directamente sobre el \texttt{.jar} que publican en Maven Central y cuya integridad se verificó con la suma SHA-1 del repositorio: Apache Commons Lang 3.14.0, Jackson Databind 2.17.2, \textit{ArchUnit} 1.3.0 y Guava 33.2.1. Ninguna declara formalmente su arquitectura: para \textit{ArchUnit} se conservó la estratificación hipotética de la sección anterior, y para las otras tres se adoptó, sin modificarla, la propuesta del asistente de catálogo (sección~\ref{sec:usos}), que reproduce la situación de una organización que incorpora la herramienta sin haber declarado nunca su arquitectura.
 
-\paragraph{Procedimiento.} A cada sistema se le inyectaron derivas del mismo tipo que las de C1 a C4: una dependencia entre capas que la matriz no permite, una que cierra un ciclo, y un paquete nuevo con más dependencias salientes que el umbral, primero por separado y después las tres juntas. Cada deriva es una clase mínima, generada directamente en \textit{bytecode} e incorporada al \texttt{.jar}, que declara un campo del tipo de una clase del paquete destino: añade exactamente una dependencia entre paquetes y nada más. Su ubicación se eligió de forma determinista para que activara solo la regla correspondiente ---la de capas no cierra ningún ciclo ni excede el umbral; la de ciclo no viola las capas---. Como cada sistema real trae sus propios hallazgos, lo que se mide es la \textbf{diferencia} entre la versión alterada y la original: si aparece el hallazgo de la deriva inyectada, si aparece alguno que no se inyectó y cuánto varía la CR. En total se analizaron 19 versiones, con 22 derivas inyectadas.
+El segundo grupo responde a la objeción de que una biblioteca no es el perfil de una PyME. Lo forman tres aplicaciones en capas, fijadas en un \textit{commit} concreto y compiladas a partir de su código: \textbf{Spring Framework PetClinic}, que su documentación describe como una arquitectura de tres capas ---presentación, servicio y repositorio--- sobre un modelo de dominio compartido; \textbf{MyBatis JPetStore 6}, «una aplicación MVC típica con tres capas: presentación, lógica y acceso a datos»; y \textbf{DDD Sample}, la aplicación de referencia de Domain Language y Citerus que materializa la arquitectura en capas del diseño guiado por el dominio ---interfaces de usuario, aplicación, dominio e infraestructura--- \citep{Evans2003}. Para estas tres el catálogo \textbf{no lo propuso el asistente}: transcribe la arquitectura que cada proyecto documenta, de modo que sus hallazgos sí pueden leerse como desviaciones respecto de una intención declarada por sus autores. Su umbral de concentración se fijó con el procedimiento de la sección~\ref{sec:umbral}, sin ajustarlo después.
+
+\paragraph{Procedimiento.} A cada sistema se le inyectaron derivas del mismo tipo que las de C1 a C4: una dependencia entre capas que la matriz no permite, una que cierra un ciclo, y un paquete nuevo con más dependencias salientes que el umbral, primero por separado y después las tres juntas. Cada deriva es una clase mínima, generada directamente en \textit{bytecode} e incorporada al \texttt{.jar}, que declara un campo del tipo de una clase del paquete destino: añade exactamente una dependencia entre paquetes y nada más. Su ubicación se eligió de forma determinista para que activara solo la regla correspondiente ---la de capas no cierra ningún ciclo ni excede el umbral; la de ciclo no viola las capas---. La única excepción es JPetStore, cuya estratificación es estricta: cada capa es un solo paquete y no hay dependencias dentro de una misma capa, de modo que toda arista que cierra un ciclo apunta necesariamente hacia arriba y viola también las capas. Allí la deriva de ciclo activa las dos reglas, y el hallazgo de capas que produce se cuenta como explicado por la inyección. Como cada sistema real trae sus propios hallazgos, lo que se mide es la \textbf{diferencia} entre la versión alterada y la original: si aparece el hallazgo de la deriva inyectada, si aparece alguno que no se inyectó y cuánto varía la CR. En total se analizaron 34 versiones, con 31 derivas inyectadas.
 
 \begin{table}[H]
 \centering
-\caption{Inyección controlada de derivas en cuatro sistemas reales. La variación de la CR corresponde a las versiones con una sola deriva.}
+\caption{Inyección controlada de derivas en siete sistemas reales. La variación de la CR corresponde a las versiones con una sola deriva.}
 \label{tab:sistemas}
 \footnotesize
 \begin{tabularx}{\textwidth}{Xrrrcccc}
@@ -314,7 +322,11 @@ Jackson Databind 2.17.2 & 784 & 23 & $60{,}00\%$ & 6/6 & 0 & $-0{,}3$ a $-3{,}3$
 \textit{ArchUnit} 1.3.0 & 923 & 22 & $86{,}41\%$ & 6/6 & 0 & $-0{,}7$ a $-1{,}9$ & 0,6\,s \\
 Guava 33.2.1 & 2\,017 & 18 & $100{,}00\%$ & 6/6 & 0 & $-1{,}2$ a $-2{,}4$ & 0,4\,s \\
 \midrule
-\textbf{Total} & & & & \textbf{22/22} & \textbf{0} & & \\
+Spring Framework PetClinic & 49 & 9 & $100{,}00\%$ & 3/3 & 0 & $-3{,}9$ a $-8{,}3$ & $<0{,}1$\,s \\
+MyBatis JPetStore 6 & 26 & 5 & $100{,}00\%$ & 3/3 & 0 & $-5{,}9$ a $-18{,}8$ & $<0{,}1$\,s \\
+DDD Sample & 94 & 26 & $89{,}11\%$ & 3/3 & 0 & $-0{,}8$ a $-2{,}0$ & $<0{,}1$\,s \\
+\midrule
+\textbf{Total} & & & & \textbf{31/31} & \textbf{0} & & \\
 \bottomrule
 \multicolumn{8}{l}{\textsuperscript{*}\,El catálogo propuesto no declara capas, de modo que la deriva de capas no aplica.}
 \end{tabularx}
@@ -322,7 +334,7 @@ Guava 33.2.1 & 2\,017 & 18 & $100{,}00\%$ & 6/6 & 0 & $-1{,}2$ a $-2{,}4$ & 0,4\
 
 Los resultados de la tabla~\ref{tab:sistemas} permiten cuatro lecturas.
 
-\paragraph{La detección se sostiene en sistemas reales.} El mecanismo detectó las 22 derivas inyectadas y no produjo ningún hallazgo que no se hubiera inyectado: la cobertura de detección y la ausencia de falsos positivos observadas en el caso de estudio se reproducen sobre sistemas de hasta dos mil clases, con un tiempo de análisis inferior a un segundo.
+\paragraph{La detección se sostiene en sistemas reales.} El mecanismo detectó las 31 derivas inyectadas y no produjo ningún hallazgo que no se hubiera inyectado: la cobertura de detección y la ausencia de falsos positivos observadas en el caso de estudio se reproducen sobre sistemas de hasta dos mil clases, en bibliotecas y en aplicaciones en capas, con un tiempo de análisis inferior a un segundo.
 
 \paragraph{La dilución de la CR crece con el número de verificaciones.} Una sola deriva hace descender la CR entre 0,3 y 5,9 puntos según el sistema. Lo que determina el descenso no es el número de clases sino el de verificaciones, porque la CR es una proporción sobre ellas: un ciclo resta 5,9 puntos en Commons Lang, con 34 verificaciones, y 1,9 en \textit{ArchUnit}, con 103; Guava, con más clases que \textit{ArchUnit} pero 83 verificaciones, queda entre ambos. Guava muestra además la consecuencia con nitidez: partiendo de una conformidad del $100\%$, cualquiera de las derivas aisladas la deja por encima del $97\%$, y la CR por sí sola seguiría clasificando el sistema como \textit{aceptable}. El criterio combinado, en cambio, lo clasifica \textit{en observación} ante una violación de capas o una concentración, y \textit{no conforme} ante un ciclo. Es la limitación de la sección~\ref{sec:dilucion} reproducida en un sistema real y con unas siete veces más verificaciones que los escenarios del caso de estudio, y confirma que el refinamiento no era un ajuste al caso de estudio.
 
@@ -330,22 +342,191 @@ Los resultados de la tabla~\ref{tab:sistemas} permiten cuatro lecturas.
 
 \paragraph{Un catálogo deducido del código detecta la deriva futura, no la pasada.} El catálogo que el asistente propuso para Guava declara quince capas cuya matriz reproduce las dependencias existentes, y por eso el sistema original obtiene una CR del $100\%$: describe el estado actual en lugar de cuestionarlo. Aun así, detectó todas las derivas inyectadas después. Ese comportamiento es, en la práctica, el de una línea base, y delimita lo que puede esperarse de un catálogo propuesto sin intervención humana: protege contra la deriva que se introduzca a partir de su adopción, pero no revela la que ya existía. La propuesta para Guava, además, excluyó por su nombre un paquete propio de la biblioteca (\texttt{thirdparty.publicsuffix}), y la de Commons Lang activó la revisión determinista del umbral, dos recordatorios de que la propuesta debe revisarse antes de adoptarse.
 
-Las limitaciones de esta validación son claras. Los cuatro sistemas son bibliotecas y no aplicaciones empresariales en capas, que son el perfil de las PyMES; las derivas inyectadas son mínimas y sintéticas, aunque se insertan en código real; y los catálogos son hipótesis, no arquitecturas declaradas por quienes mantienen esos sistemas. La validación muestra que el mecanismo detecta derivas conocidas en código real, a escala y sin ruido; no sustituye la validación externa con equipos industriales. La evidencia completa se conserva en \texttt{prototipo/ejemplos/sistemas/} y se reproduce con \texttt{arquitecta sistemas}.
+\paragraph{Las aplicaciones en capas: lo que el mecanismo encuentra cuando la intención está escrita.} PetClinic y JPetStore cumplen su arquitectura documentada sin un solo hallazgo, lo que es en sí un resultado: la regla de capas validó dos estratificaciones declaradas por sus autores sin falsos positivos. DDD Sample, en cambio, presenta ocho hallazgos reales, que nadie inyectó, y su lectura siguiendo la guía de la sección~\ref{sec:interpretacion} ilustra el tipo de decisión que el reporte permite tomar:
+\begin{itemize}
+    \item \textbf{Un tipo de la capa de interfaces usado por la de aplicación.} El servicio \texttt{ApplicationEvents} recibe como parámetro \texttt{HandlingEventRegistrationAttempt}, una clase definida en \texttt{interfaces.handling}. Es una inversión de dependencia en sentido estricto: la capa de aplicación conoce un tipo de la capa superior. El mismo tipo cierra, además, el ciclo crítico entre \texttt{interfaces.handling}, \texttt{interfaces.handling.ws} y \texttt{application}, de modo que \textbf{mover esa clase a la capa de aplicación resolvería a la vez un hallazgo de capas, el ciclo y el hallazgo de infraestructura} que también depende de ella. Es el mismo patrón de causa común que se observó en C4, ahora en un sistema real.
+    \item \textbf{Un ciclo entre dos agregados del dominio.} Los paquetes \texttt{handling} y \texttt{cargo} del modelo de dominio se referencian mutuamente: un evento de manipulación conoce su carga, y la carga deriva su estado de los eventos. No viola ninguna capa ---ambos paquetes pertenecen al dominio---, pero acopla dos agregados que el diseño guiado por el dominio procura mantener independientes. Es una decisión de diseño discutible más que un error, y el reporte la pone sobre la mesa con su evidencia en lugar de ocultarla.
+    \item \textbf{Consumidores de mensajería que invocan servicios de aplicación.} Las clases de \texttt{infrastructure.messaging.jms} reciben mensajes y llaman a servicios de aplicación. Según la estratificación declarada, la infraestructura solo puede depender del dominio, y la llamada es una violación; pero esas clases actúan como adaptadores de entrada, un papel que en la arquitectura de Evans corresponde a la capa de interfaces. El hallazgo admite, por tanto, dos lecturas: deriva ---los adaptadores están en el paquete equivocado--- o un catálogo impreciso ---la infraestructura de entrada debería poder invocar a la aplicación---. El mecanismo no puede decidir entre ellas, y no debe: es la discusión de diseño que el riesgo de formalismo vacío del anteproyecto pretendía provocar.
+    \item \textbf{Dos concentraciones en la capa de interfaces}, la de su paquete raíz ($Ce = 10$) y la de la fachada interna de reservas ($Ce = 7$), por encima del umbral de 6 derivado de la propia distribución del sistema.
+\end{itemize}
+La lectura conjunta muestra que los ocho hallazgos se reducen a tres decisiones: reubicar un tipo, discutir el acoplamiento entre dos agregados y decidir dónde viven los adaptadores de entrada. Esa reducción es la que la CR, por sí sola, no ofrece: el sistema obtiene un $89{,}11\%$, \textit{aceptable} por la proporción, y \textit{no conforme} por la severidad de sus dos ciclos.
+
+Las limitaciones de esta validación son claras. Las aplicaciones en capas son aplicaciones de referencia y no sistemas en producción de una PyME; las derivas inyectadas son mínimas y sintéticas, aunque se insertan en código real; y los catálogos de las bibliotecas son hipótesis, no arquitecturas declaradas por quienes las mantienen. La validación muestra que el mecanismo detecta derivas conocidas en código real, a escala y sin ruido; no sustituye la validación externa con equipos industriales. La evidencia completa se conserva en \texttt{prototipo/ejemplos/sistemas/} y se reproduce con \texttt{arquitecta aplicaciones} seguido de \texttt{arquitecta sistemas}.
+
+\section{Deriva real a lo largo de la evolución}
+\label{sec:evolucion}
+Toda deriva medida hasta aquí fue fabricada, en el caso de estudio o por inyección. Queda una objeción legítima: que el mecanismo detecte lo que se le pone delante no prueba que detecte la deriva que aparece sola, que es la que una PyME padece. Para responderla se aplicó el catálogo declarado para una versión de referencia ---el mismo de la sección anterior, sin modificarlo--- a las versiones publicadas antes y después de ella de tres bibliotecas: trece de Jackson Databind (de la 2.4.0 a la 2.22.0), doce de Guava (de la 18.0 a la 33.7.0) y diez de Commons Lang (de la 3.1 a la 3.21.0), treinta y cinco en total, todas descargadas de Maven Central y verificadas con su SHA-1. Las versiones posteriores a la referencia responden a la pregunta operativa del mecanismo: si el equipo hubiera declarado esa arquitectura en ese momento, ¿qué deriva habría aparecido después? Las anteriores muestran desde cuándo existía lo que hoy se señala. La tabla~\ref{tab:evolucion} resume el resultado.
+
+\begin{table}[H]
+\centering
+\caption{Evolución de la conformidad respecto del catálogo declarado para la versión de referencia. «Posteriores» resume los hallazgos que aparecieron después de ella.}
+\label{tab:evolucion}
+\footnotesize
+\begin{tabularx}{\textwidth}{lccccX}
+\toprule
+\textbf{Serie} & \textbf{Primera} & \textbf{Referencia} & \textbf{Última} & \textbf{Mayor ciclo} & \textbf{Posteriores a la referencia} \\
+\midrule
+Jackson Databind & $65{,}38\%$ & $60{,}00\%$ & $57{,}38\%$ & 16 $\rightarrow$ 19 paq. & 2.19.0: \texttt{introspect} $\rightarrow$ \texttt{deser.impl} (capas) y concentración en \texttt{introspect} ($Ce = 13 > 12$) \\
+Guava & $100\%$ & $100\%$ & $100\%$ & sin ciclos & Ninguno en cinco versiones \\
+Commons Lang & $90{,}91\%$ & $82{,}35\%$ & $79{,}41\%$ & 2 $\rightarrow$ 6 paq. & 3.21.0: concentración en \texttt{builder} ($Ce = 6 > 5$) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{El mecanismo detecta deriva que nadie inyectó.} En Jackson Databind 2.19.0 aparece una dependencia de la introspección hacia la implementación de la deserialización: el método \texttt{\_addCreatorParams} de la clase \texttt{POJOPropertiesCollector} invoca a \texttt{creatorParamName}, de \texttt{UnwrappedPropertyHandler}. Es exactamente el tipo de atajo que describe la deriva ---un componente de bajo nivel que pasa a conocer uno de alto nivel para resolver un caso particular---, y el mecanismo lo señala en la versión en que aparece, con el método que lo origina. En Commons Lang 3.21.0, el paquete \texttt{builder} incorpora una dependencia hacia \texttt{mutable} y supera el umbral. Ninguna de estas desviaciones se fabricó para el experimento.
+
+\paragraph{La tendencia hace visible lo que el valor absoluto oculta.} En Jackson Databind, la CR por verificación desciende del $65{,}38\%$ al $57{,}38\%$ a lo largo de las versiones, mientras el ciclo mayor crece de 16 a 19 paquetes; la CR por regla, en cambio, vale $0\%$ en todas y no registra ningún cambio (sección~\ref{sec:crregla}). En Commons Lang el ciclo pasa de dos a seis paquetes antes de la versión de referencia, y la CR desciende del $90{,}91\%$ al $82{,}35\%$: la erosión fue gradual, como la describen las leyes de Lehman \citep{Lehman1980}, y la lectura por tendencia de la sección~\ref{sec:operacionalizacion} la habría hecho visible versión a versión.
+
+\paragraph{También detecta la ausencia de deriva.} Guava conserva una conformidad del $100\%$ en las doce versiones, desde la 18.0 hasta la 33.7.0: su estratificación se mantuvo intacta mientras el número de clases crecía de 1\,687 a más de 2\,000. Un instrumento que solo encontrara problemas sería sospechoso; este distingue el sistema que se erosiona del que no.
+
+Dos precisiones acotan estas lecturas. Los catálogos son hipótesis y no arquitecturas declaradas por los equipos, de modo que lo detectado es deriva respecto de ellos, no necesariamente un defecto reconocido por sus autores. Y se trata de tres series, no de una muestra representativa; lo que establecen es que el mecanismo detecta deriva real y no solo la inyectada, no con qué frecuencia la encontraría en otros sistemas. La evidencia se conserva en \texttt{prototipo/ejemplos/estudios/evolucion.md} y se reproduce con \texttt{arquitecta estudios evolucion}.
+
+\section{Calibración del umbral de concentración}
+\label{sec:umbral}
+FF3 es la única regla con un parámetro numérico, y un umbral es el parámetro más fácil de ajustar para dejar de ver una deriva: la evaluación del asistente lo mostró (anexo~\ref{anexo:asistente}). El umbral del caso de estudio, $Ce > 3$, se fijó con el catálogo y no tenía otro respaldo que el juicio del autor. Para sustituir el juicio por un procedimiento se aplicó el método de derivación de umbrales a partir de datos de referencia de \citet{Alves2010}: se reunió la distribución del acoplamiento eferente de los paquetes que FF3 verifica en un \textbf{conjunto de calibración} ---las cuatro bibliotecas, 78 paquetes--- y se contrastó después en un \textbf{conjunto de validación} que no intervino en la calibración ---las tres aplicaciones en capas y el caso de estudio---. La tabla~\ref{tab:umbral} resume las distribuciones.
+
+\begin{table}[H]
+\centering
+\caption{Distribución del acoplamiento eferente de los paquetes verificados por FF3 (percentiles por rango más cercano).}
+\label{tab:umbral}
+\footnotesize
+\begin{tabular}{llrrrrrr}
+\toprule
+\textbf{Sistema} & \textbf{Conjunto} & \textbf{Paq.} & \textbf{p50} & \textbf{p70} & \textbf{p80} & \textbf{p90} & \textbf{Máx.} \\
+\midrule
+Commons Lang 3.14.0 & calibración & 17 & 2 & 2 & 2 & 4 & 5 \\
+Jackson Databind 2.17.2 & calibración & 22 & 6 & 10 & 11 & 12 & 14 \\
+\textit{ArchUnit} 1.3.0 & calibración & 21 & 5 & 6 & 7 & 8 & 10 \\
+Guava 33.2.1 & calibración & 18 & 3 & 5 & 6 & 7 & 7 \\
+\midrule
+\textit{Conjunto de calibración} & & 78 & 4 & 6 & 7 & 10 & 14 \\
+\midrule
+Spring Framework PetClinic & validación & 8 & 2 & 2 & 2 & 3 & 3 \\
+MyBatis JPetStore 6 & validación & 5 & 1 & 2 & 2 & 2 & 2 \\
+DDD Sample & validación & 24 & 4 & 4 & 5 & 6 & 10 \\
+Caso de estudio (C0) & validación & 4 & 1 & 2 & 2 & 2 & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Un umbral absoluto común no sirve.} El percentil 90 del conjunto de calibración es 10. Aplicado a las aplicaciones en capas, no señalaría nunca nada: su máximo observado es 2 o 3. Aplicado a Jackson Databind, señalaría seis paquetes. La razón es estructural: el acoplamiento eferente está acotado por el número de paquetes del sistema, de modo que un mismo valor absoluto significa cosas distintas en un sistema de cinco paquetes y en uno de veinticinco. Es la misma advertencia que \citet{LanzaMarinescu2006} hacen sobre trasladar umbrales entre contextos.
+
+\paragraph{El procedimiento adoptado: el percentil 90 de la línea base.} Lo que sí se traslada es el procedimiento. El umbral se fija en el percentil 90 del $Ce$ de los paquetes no exentos de la versión que el equipo acepta como línea base, la frontera de riesgo «muy alto» de \citet{Alves2010}. Con él, cada sistema señala solo los paquetes que destacan sobre su propia distribución ---uno en Commons Lang y en \textit{ArchUnit}, dos en Jackson Databind y en DDD Sample, ninguno en Guava ni en las aplicaciones más pequeñas---, y el catálogo congela esa distribución para señalar todo paquete que la exceda después. Las tres aplicaciones de la sección~\ref{sec:sistemas} usaron este procedimiento sin ajustes.
+
+\paragraph{La clasificación es robusta al umbral.} En el caso de estudio, el percentil 90 de C0 es 2, no 3. Se reejecutaron los cinco escenarios con umbral 2: C1 y C2 suman un hallazgo de concentración ---la arista inyectada eleva también el $Ce$ de su paquete de origen hasta 3---, pero \textbf{ninguno de los cinco veredictos cambia}. El experimento conservó el umbral de 3, fijado antes de ejecutarlo, y el resultado de OBJ4 no depende de esa elección. La observación revela, además, una propiedad que conviene declarar: en sistemas muy pequeños el percentil 90 coincide con el máximo, de modo que cualquier dependencia nueva del paquete más acoplado se señala, y una misma arista puede activar dos reglas. Es el comportamiento de línea base que se busca, con el costo de hallazgos solapados que el reporte presenta por separado.
+
+La evidencia se conserva en \texttt{prototipo/ejemplos/estudios/umbral.md}, junto con la sensibilidad completa ---cuántos paquetes señala cada umbral en cada sistema---, y se reproduce con \texttt{arquitecta estudios umbral}.
+
+\section{Contraste con un oráculo independiente}
+\label{sec:oraculo}
+Todos los resultados anteriores dependen de que el grafo extraído sea correcto, y hasta aquí esa corrección solo la verificaban pruebas escritas por el propio autor. Para obtener un contraste independiente se ejecutó JDepend \citep{JDepend}, una herramienta que calcula las métricas de paquetes de \citet{Martin2003} con su propio lector de \textit{bytecode}, sobre los mismos binarios de los ocho sistemas analizados, y se compararon arista por arista las dependencias entre paquetes del sistema. JDepend se ejecutó como un proceso aparte y no forma parte de la herramienta.
+
+\begin{table}[H]
+\centering
+\caption{Dependencias entre paquetes extraídas por el mecanismo y por JDepend sobre los mismos binarios.}
+\label{tab:oraculo}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrc}
+\toprule
+\textbf{Sistema} & \textbf{Mecanismo} & \textbf{JDepend} & \textbf{Comunes} & \textbf{Solo mec.} & \textbf{Solo JD} & \textbf{Paq. en ciclo} \\
+\midrule
+Commons Lang 3.14.0 & 43 & 43 & 43 & 0 & 0 & 12 / 12 \\
+Jackson Databind 2.17.2 & 166 & 163 & 163 & 3 & 0 & 21 / 21 \\
+\textit{ArchUnit} 1.3.0 & 107 & 105 & 105 & 2 & 0 & 12 / 10 \\
+Guava 33.2.1 & 63 & 48 & 48 & 15 & 0 & 0 / 0 \\
+Spring Framework PetClinic & 13 & 13 & 13 & 0 & 0 & 0 / 0 \\
+MyBatis JPetStore 6 & 5 & 5 & 5 & 0 & 0 & 0 / 0 \\
+DDD Sample & 93 & 94 & 93 & 0 & 1 & 5 / 5 \\
+Caso de estudio (C0) & 5 & 5 & 5 & 0 & 0 & 0 / 0 \\
+\midrule
+\textbf{Total} & 495 & 476 & \textbf{475} & 20 & 1 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ambas herramientas reconocen exactamente los mismos paquetes en los ocho sistemas, y coinciden en 475 de las 496 aristas distintas que entre las dos detectan. Lo importante es que \textbf{las 21 diferencias se explican sin excepción por las reglas de extracción documentadas} en la sección~\ref{sec:extraccion}, y en ninguna dirección revelan un error:
+\begin{itemize}
+    \item \textbf{Cinco aristas proceden de argumentos de tipos genéricos} ---por ejemplo, un método de \textit{ArchUnit} que devuelve \texttt{Optional<JavaClass>}---. El mecanismo las registra (regla R2, forma «genérico»); JDepend no lee la firma genérica de las clases.
+    \item \textbf{Quince proceden de anotaciones con retención \texttt{CLASS}}: los paquetes de Guava anotados con \texttt{@GwtCompatible} o \texttt{@Beta} dependen del paquete de anotaciones. El mecanismo las registra (forma «anotación retenida»); JDepend no lee los atributos de anotaciones invisibles en tiempo de ejecución.
+    \item \textbf{Una, solo de JDepend, procede de un tipo que únicamente aparece en una variable local} de DDD Sample, a través de la firma de un método invocado. El mecanismo, por la regla R2, no registra los tipos de variables locales.
+\end{itemize}
+La única discrepancia en los ciclos, la de \textit{ArchUnit}, es consecuencia de las aristas genéricas, que incorporan dos paquetes más a un componente. El contraste confirma así dos cosas: que el grafo coincide con el de una herramienta independiente en todo lo que ambas pueden ver, y que el catálogo de formas de dependencia de la tabla~\ref{tab:extraccion} describe con exactitud lo que el mecanismo ve y lo que no. Durante el contraste se observó también que JDepend 2.9.5 aborta el análisis de todo un archivo al encontrar el descriptor de módulo de Java 9 (\texttt{module-info.class}); se le entregaron las clases sin él. La evidencia, arista por arista, se conserva en \texttt{prototipo/ejemplos/estudios/oraculo-jdepend.md}.
+
+\section{Aporte frente a la verificación con \textit{ArchUnit}}
+\label{sec:aporte}
+El mecanismo se apoya en \textit{ArchUnit} para leer el código compilado, lo que obliga a responder con datos qué aporta frente a escribir las mismas reglas directamente con esa biblioteca, que es como hoy se expresan en Java las \textit{Fitness Functions} estructurales. Para responderlo se escribieron las tres reglas del caso de estudio con \textit{ArchUnit}: la estratificación con su API de arquitectura en capas, los ciclos con su regla de \textit{slices} libres de ciclos y, como la biblioteca no ofrece una regla de acoplamiento eferente, la concentración con código propio. La tabla~\ref{tab:aporte} compara ambas formas sobre los cinco escenarios.
+
+\begin{table}[H]
+\centering
+\caption{Las reglas del caso de estudio escritas con \textit{ArchUnit} y declaradas en el catálogo del mecanismo.}
+\label{tab:aporte}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.3cm}XX}
+\toprule
+& \textbf{\textit{ArchUnit}} & \textbf{Catálogo del mecanismo} \\
+\midrule
+Detección en C0--C4 & Idéntica regla por regla en los cinco escenarios & Idéntica regla por regla en los cinco escenarios \\
+\midrule
+Especificación & 33 líneas de Java, con código propio para $Ce$ & 14 líneas de propiedades \\
+\midrule
+Quién puede escribirla & Quien programe en Java y conozca la API & Quien conozca la arquitectura prevista \\
+\midrule
+Resultado & Pasa o falla por regla, con la lista de accesos infractores & CR, estado con severidad, evidencia por hallazgo, alcance del diagnóstico y tendencia \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+La detección es la misma, como debe ser: ambas formas leen el mismo \textit{bytecode} con el mismo importador. El aporte no está en el motor de reglas, sino en lo que el mecanismo hace con su resultado. Reduce a menos de la mitad la especificación y la saca del lenguaje de programación, y sobre todo convierte tres veredictos binarios en un diagnóstico: una medida de la extensión, un estado que pondera la gravedad, la declaración de lo que quedó fuera y la comparación con el análisis anterior. Es la agregación que, según la revisión del capítulo~\ref{cap:marco}, no ofrecía ninguna de las propuestas basadas en \textit{Fitness Functions}. La comparación se reproduce con \texttt{arquitecta estudios archunit}.
+
+\section{Contraste de la hipótesis de trabajo}
+\label{sec:hipotesis}
+La hipótesis del anteproyecto (sección~\ref{sec:hipotesis-intro}) tiene tres componentes, y no todos pueden contrastarse con la misma clase de evidencia. La tabla~\ref{tab:hipotesis} los separa.
+
+\begin{table}[H]
+\centering
+\caption{Contraste de los componentes de la hipótesis de trabajo.}
+\label{tab:hipotesis}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.4cm}Xp{2.2cm}}
+\toprule
+\textbf{Componente} & \textbf{Evidencia} & \textbf{Resultado} \\
+\midrule
+(i) Detectar tempranamente derivas relevantes &
+Seis de seis derivas inducidas en el caso de estudio, sin falsos positivos; 31 de 31 inyectadas en siete sistemas reales; deriva real detectada en la versión en que aparece (Jackson 2.19.0, Commons Lang 3.21.0); grafo concordante con una herramienta independiente. &
+Confirmado \\
+\midrule
+(ii) Diferenciar objetivamente un estado aceptable de uno problemático &
+Con el criterio aprobado (solo CR), dos de cinco escenarios con deriva real se clasificaron como aceptables; con el refinamiento, los cinco correctamente, y en los tres sistemas reales que partían de un estado aceptable toda deriva aislada inyectada cambió el veredicto final, aunque la CR apenas variara. El criterio es objetivo ---un cociente y una regla de severidad declarados--- y robusto al umbral de concentración. &
+Confirmado tras el refinamiento \\
+\midrule
+(iii) Producir evidencia suficiente para apoyar decisiones de mantenimiento &
+Cada hallazgo identifica regla, paquetes, severidad y la referencia hasta el método y la línea. En C4 y en DDD Sample, la lectura conjunta redujo varios hallazgos a una causa común y a decisiones concretas. No se evaluó con equipos reales si el reporte les resulta útil para decidir. &
+Confirmado parcialmente \\
+\midrule
+Sin depender de documentación externa &
+El mecanismo solo requiere el código compilado y un catálogo de pocas líneas versionado con él; sin catálogo evalúa FF2 y FF3. &
+Confirmado, con la precisión de la sección~\ref{sec:declaracion} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El tercer componente merece una declaración explícita, porque es el único que el trabajo no pudo demostrar por completo. Lo que se demuestra es la \textbf{suficiencia de la evidencia}: el reporte contiene la información que una decisión de mantenimiento requiere, y la interpretación de los sistemas reales muestra decisiones concretas que de ella se derivan. Lo que no se demuestra es su \textbf{utilidad percibida}: que equipos de PyMES, al recibir el reporte, lo consideren útil y lo usen para priorizar. Esa demostración exige evaluadores ajenos al autor, y durante la ejecución no hubo acceso a equipos de desarrollo ni a profesionales dispuestos a evaluarlo; juzgarlo el propio autor no constituiría evidencia. Se trata, por tanto, de un impedimento de acceso y no de diseño, y su superación es directa: un estudio breve en el que entre cinco y diez desarrolladores lean el reporte de un sistema que conozcan y respondan, con una escala de Likert, si identifican la causa del hallazgo, si sabrían cómo corregirla y si la priorizarían, del tipo de la validación con dieciséis profesionales que emplearon \citet{SasAvgeriou}. Se plantea como la primera línea de trabajo futuro.
 
 \section{Amenazas a la validez}
 Toda evaluación empírica debe examinar con honestidad los límites de la evidencia que produce. El análisis sigue la clasificación habitual en investigación empírica en ingeniería de software \citep{Wohlin2012, RunesonHost2009}.
 
-\paragraph{Validez interna.} La principal amenaza proviene de la naturaleza sintética de los escenarios: al haber sido las derivas introducidas por el propio investigador, existe el riesgo de que el mecanismo se haya ajustado, aun de forma no intencional, a las particularidades de esos casos. Se aplicaron tres contenciones. Primera, las reglas se mantuvieron genéricas y se declararon por configuración, de modo que no codifican conocimiento del caso alterado; el mismo binario evaluó los cinco escenarios y el propio prototipo, con configuraciones distintas. Segunda, la matriz de validación se fijó antes de ejecutar el experimento, lo que impide reinterpretar a posteriori lo observado. Tercera, el comportamiento esperado se codificó además en la batería de pruebas, que verifica los valores de la CR sobre grafos construidos a mano, con independencia de la extracción por \textit{bytecode}: si la herramienta de análisis estático produjera un grafo distinto del previsto, la discrepancia se manifestaría en lugar de pasar inadvertida. Una amenaza que no se logra contener por completo es que el refinamiento de la clasificación se diseñó \textit{después} de observar el comportamiento de C1 y C3; aunque su formulación es independiente de esos escenarios ---no menciona capas, ciclos ni concentración, sino solo severidades---, su validación sobre los mismos casos que lo motivaron no constituye evidencia independiente.
+\paragraph{Validez interna.} La principal amenaza proviene de la naturaleza sintética de los escenarios: al haber sido las derivas introducidas por el propio investigador, existe el riesgo de que el mecanismo se haya ajustado, aun de forma no intencional, a las particularidades de esos casos. Se aplicaron tres contenciones. Primera, las reglas se mantuvieron genéricas y se declararon por configuración, de modo que no codifican conocimiento del caso alterado; el mismo binario evaluó los cinco escenarios y el propio prototipo, con configuraciones distintas. Segunda, la matriz de validación se fijó antes de ejecutar el experimento, lo que impide reinterpretar a posteriori lo observado. Tercera, el comportamiento esperado se codificó además en la batería de pruebas, que verifica los valores de la CR sobre grafos construidos a mano, con independencia de la extracción por \textit{bytecode}: si la herramienta de análisis estático produjera un grafo distinto del previsto, la discrepancia se manifestaría en lugar de pasar inadvertida. Una amenaza que no se logra contener por completo es que el refinamiento de la clasificación se diseñó \textit{después} de observar el comportamiento de C1 y C3; aunque su formulación es independiente de esos escenarios ---no menciona capas, ciclos ni concentración, sino solo severidades---, su validación sobre los mismos casos que lo motivaron no constituye evidencia independiente. Esta amenaza se atenuó después con datos que no intervinieron en el diseño: las tres aplicaciones en capas, cuyos catálogos transcriben la documentación de sus autores y cuyo umbral se fijó con un procedimiento definido antes de analizarlas, y las treinta y cinco versiones históricas, en las que el refinamiento siguió distinguiendo los sistemas con ciclos de los que no los tienen. Atenuada no significa eliminada: el autor eligió esos sistemas.
 
-\paragraph{Validez externa.} La generalización está limitada por el tamaño y la artificialidad de los escenarios. Cinco paquetes y once dependencias distan mucho de un sistema industrial, y los resultados demuestran la viabilidad del enfoque sin autorizar a extrapolar su desempeño a proyectos con arquitecturas heterogéneas, múltiples lenguajes o volúmenes de código muy superiores. El autoanálisis del prototipo ---seis paquetes, catorce dependencias, veinticuatro verificaciones--- aporta un segundo sistema real, aunque igualmente pequeño y desarrollado por el mismo autor. La aplicación a \textit{ArchUnit} descrita en la sección~\ref{sec:archunit} añade un tercero que sí es ajeno y de un orden de magnitud mayor, y con ello despeja una duda concreta: el mecanismo opera sobre código industrial sin degradarse, en poco más de un segundo. Pero no resuelve la amenaza de fondo, por tres razones que conviene no disimular: sigue siendo un único sistema, la arquitectura contra la que se le evaluó fue supuesta por el propio autor en lugar de declarada por sus desarrolladores, y nadie con conocimiento del sistema confirmó si los hallazgos corresponden a deriva real o a decisiones deliberadas. Hay, además, un efecto que el tamaño reducido de los escenarios oculta: la dilución descrita en la sección~\ref{sec:dilucion} se agrava con la escala, de modo que en sistemas grandes cabe esperar que el criterio basado solo en la CR sea aún menos discriminante que lo observado aquí. La generalización exige una validación sobre repositorios industriales con la participación de quienes los mantienen, que se plantea como trabajo futuro.
+\paragraph{Validez externa.} La generalización está limitada por el tamaño y la artificialidad de los escenarios. Cinco paquetes y once dependencias distan mucho de un sistema industrial, y los resultados demuestran la viabilidad del enfoque sin autorizar a extrapolar su desempeño a proyectos con arquitecturas heterogéneas, múltiples lenguajes o volúmenes de código muy superiores. El autoanálisis del prototipo ---seis paquetes, catorce dependencias, veinticuatro verificaciones--- aporta un segundo sistema real, aunque igualmente pequeño y desarrollado por el mismo autor. La aplicación a \textit{ArchUnit} descrita en la sección~\ref{sec:archunit} añade un tercero que sí es ajeno y de un orden de magnitud mayor, y con ello despeja una duda concreta: el mecanismo opera sobre código industrial sin degradarse, en poco más de un segundo. Pero no resuelve la amenaza de fondo, por tres razones que conviene no disimular: sigue siendo un único sistema, la arquitectura contra la que se le evaluó fue supuesta por el propio autor en lugar de declarada por sus desarrolladores, y nadie con conocimiento del sistema confirmó si los hallazgos corresponden a deriva real o a decisiones deliberadas. Hay, además, un efecto que el tamaño reducido de los escenarios oculta: la dilución descrita en la sección~\ref{sec:dilucion} se agrava con la escala, de modo que en sistemas grandes cabe esperar que el criterio basado solo en la CR sea aún menos discriminante que lo observado aquí. Las validaciones de las secciones~\ref{sec:sistemas} a~\ref{sec:oraculo} amplían de forma considerable esa base ---siete sistemas reales de entre 26 y 2\,017 clases, tres de ellos aplicaciones en capas con arquitectura documentada, y treinta y cinco versiones históricas---, pero siguen siendo sistemas de código abierto elegidos por el autor y analizados sin la participación de sus equipos. La generalización exige una validación sobre repositorios industriales con la participación de quienes los mantienen, que se plantea como trabajo futuro.
 
-\paragraph{Validez de constructo.} La pregunta es si las variables observadas representan adecuadamente el fenómeno que se pretende medir. Operacionalizar la deriva arquitectónica en solo tres dimensiones es, necesariamente, una aproximación parcial de un fenómeno complejo: un sistema puede obtener una CR del $100\%$ y padecer derivas que el catálogo no cubre, razón por la cual el reporte declara explícitamente qué quedó fuera del diagnóstico. La propia extracción tiene puntos ciegos conocidos (sección~\ref{sec:extraccion}): las dependencias que solo existen en tiempo de ejecución ---reflexión, carga dinámica, configuración externa--- y las que el compilador elimina no llegan al grafo, de modo que la arquitectura implementada que se compara es la que el código compilado declara, no necesariamente toda la que el sistema ejecuta. A ello se suma una limitación específica de FF3 que el autoanálisis puso de manifiesto: al operar solo sobre la topología, la regla no distingue un componente dios de un concentrador legítimo, como una raíz de composición o una fachada, y por tanto su umbral no es un valor universal sino un parámetro que cada organización debe calibrar.
+\paragraph{Validez de constructo.} La pregunta es si las variables observadas representan adecuadamente el fenómeno que se pretende medir. Operacionalizar la deriva arquitectónica en solo tres dimensiones es, necesariamente, una aproximación parcial de un fenómeno complejo: un sistema puede obtener una CR del $100\%$ y padecer derivas que el catálogo no cubre, razón por la cual el reporte declara explícitamente qué quedó fuera del diagnóstico. La propia extracción tiene puntos ciegos conocidos (sección~\ref{sec:extraccion}): las dependencias que solo existen en tiempo de ejecución ---reflexión, carga dinámica, configuración externa--- y las que el compilador elimina no llegan al grafo, de modo que la arquitectura implementada que se compara es la que el código compilado declara, no necesariamente toda la que el sistema ejecuta. El contraste con JDepend (sección~\ref{sec:oraculo}) acota esta amenaza en lo que el análisis estático sí puede ver: sobre 496 aristas, todas las discrepancias se explican por las reglas de extracción declaradas. A ello se suma una limitación específica de FF3 que el autoanálisis puso de manifiesto: al operar solo sobre la topología, la regla no distingue un componente dios de un concentrador legítimo, como una raíz de composición o una fachada, y por tanto su umbral no es un valor universal sino un parámetro que cada organización debe calibrar.
 
 Las exenciones descritas en la sección~\ref{sec:exenciones} atenúan esa ceguera, pero no la eliminan, y al introducirlas aparece una amenaza nueva que debe declararse con franqueza. El mecanismo sigue sin ser capaz de reconocer por sí mismo el papel de un paquete: se limita a aplicar el que alguien le declaró. Esto traslada el juicio a quien configura, y con ello abre la posibilidad de que una exención mal concedida oculte una concentración o un ciclo perfectamente reales. La evidencia recogida sobre \textit{ArchUnit} sugiere que el riesgo no se materializó allí ---los tres ciclos sobrevivieron a las exenciones---, pero un solo caso favorable no es garantía. Las salvaguardas disponibles son de procedimiento y no técnicas: que la exención se declare en la configuración y no en el código, que el reporte la enumere siempre, y que su concesión quede sujeta a la misma revisión que cualquier otra decisión arquitectónica.
 
 Por último, la asignación de paquetes a capas se resuelve por prefijo y en el orden en que las capas se declaran, lo que exige cuidado cuando una capa es prefijo de otra.
 
-\paragraph{Validez de conclusión.} Las conclusiones se apoyan en la transparencia del cálculo: al ser la CR un cociente explícito y reproducible, cualquier afirmación puede auditarse reconstruyendo el diagnóstico paso a paso, y la evidencia se conserva en formatos verificables por terceros. No obstante, el carácter determinista del experimento ---cinco escenarios, una configuración, un sistema--- impide todo tratamiento estadístico. Los resultados deben leerse como evidencia de viabilidad y de sensibilidad por dimensión, no como una estimación de desempeño generalizable.
+\paragraph{Validez de conclusión.} Las conclusiones se apoyan en la transparencia del cálculo: al ser la CR un cociente explícito y reproducible, cualquier afirmación puede auditarse reconstruyendo el diagnóstico paso a paso, y la evidencia se conserva en formatos verificables por terceros. No obstante, el carácter determinista del experimento ---cinco escenarios, una configuración, un sistema--- impide todo tratamiento estadístico: el mecanismo produce siempre el mismo resultado sobre el mismo código, de modo que repetir la ejecución no aporta variabilidad que estimar. La única fuente de variabilidad del trabajo es el asistente, cuyas corridas se repitieron y se reportan como frecuencias (anexo~\ref{anexo:asistente}). Los resultados deben leerse como evidencia de viabilidad y de sensibilidad por dimensión, no como una estimación de desempeño generalizable.
 
 \section{Resumen del capítulo}
-Este capítulo presentó el diseño de la evaluación, concebido como un experimento controlado con una matriz de validación fijada de antemano y con criterios de éxito explícitos. El mecanismo detectó las seis derivas inducidas en los cuatro escenarios alterados, sin producir un solo hallazgo sobre la implementación de referencia, superando así el criterio del $80\%$ comprometido para OBJ4. Como complemento, una validación de aplicabilidad en entorno controlado sobre cuatro sistemas reales detectó las 22 derivas inyectadas sin hallazgos espurios y confirmó, fuera del caso de estudio, la dilución de la CR que motivó el refinamiento. Los escenarios de deriva aislada revelaron, además, que la Tasa de Conformidad ---al ser una proporción no ponderada--- diluye las violaciones localizadas y puede clasificar como aceptable un sistema con una desviación real. Ese hallazgo motivó un refinamiento del criterio de clasificación que incorpora la severidad del peor hallazgo sin alterar el cálculo de la métrica, y que clasifica correctamente los cinco escenarios. Al margen del experimento, el mecanismo se aplicó sobre una biblioteca de terceros para comprobar su comportamiento ante código real: la regla de integridad de capas resultó exacta, el análisis completo tardó poco más de un segundo y las exenciones declaradas eliminaron cerca de dos tercios de los hallazgos de concentración sin silenciar los ciclos genuinos. El capítulo cerró examinando las amenazas a la validez de la evidencia producida, entre las que destacan la artificialidad de los escenarios, el hecho de que el refinamiento se validara sobre los mismos casos que lo motivaron y el riesgo que introducen las propias exenciones al trasladar a quien configura un juicio que el mecanismo no sabe emitir.
+Este capítulo presentó el diseño de la evaluación, concebido como un experimento controlado con una matriz de validación fijada de antemano y con criterios de éxito explícitos. El mecanismo detectó las seis derivas inducidas en los cuatro escenarios alterados, sin producir un solo hallazgo sobre la implementación de referencia, superando así el criterio del $80\%$ comprometido para OBJ4. Como complemento, una validación de aplicabilidad en entorno controlado sobre siete sistemas reales ---cuatro bibliotecas y tres aplicaciones en capas--- detectó las 31 derivas inyectadas sin hallazgos espurios y confirmó, fuera del caso de estudio, la dilución de la CR que motivó el refinamiento; sobre treinta y cinco versiones publicadas, el mecanismo encontró además deriva real que nadie inyectó. La formulación de la CR del anteproyecto, calculada en paralelo, no se diluye pero satura y no muestra tendencia; el umbral de concentración se sustituyó por un procedimiento estadístico ante el que la clasificación resultó robusta; el grafo coincidió con el de una herramienta independiente salvo en diferencias explicadas por las reglas de extracción; y las mismas reglas escritas con \textit{ArchUnit} detectaron lo mismo con más del doble de especificación y sin veredicto agregado. Los componentes de detección y de diferenciación de la hipótesis quedaron confirmados; el de utilidad para decidir, solo en cuanto a la suficiencia de la evidencia, por falta de acceso a evaluadores. Los escenarios de deriva aislada revelaron, además, que la Tasa de Conformidad ---al ser una proporción no ponderada--- diluye las violaciones localizadas y puede clasificar como aceptable un sistema con una desviación real. Ese hallazgo motivó un refinamiento del criterio de clasificación que incorpora la severidad del peor hallazgo sin alterar el cálculo de la métrica, y que clasifica correctamente los cinco escenarios. Al margen del experimento, el mecanismo se aplicó sobre una biblioteca de terceros para comprobar su comportamiento ante código real: la regla de integridad de capas resultó exacta, el análisis completo tardó poco más de un segundo y las exenciones declaradas eliminaron cerca de dos tercios de los hallazgos de concentración sin silenciar los ciclos genuinos. El capítulo cerró examinando las amenazas a la validez de la evidencia producida, entre las que destacan la artificialidad de los escenarios, el hecho de que el refinamiento se validara sobre los mismos casos que lo motivaron y el riesgo que introducen las propias exenciones al trasladar a quien configura un juicio que el mecanismo no sabe emitir.

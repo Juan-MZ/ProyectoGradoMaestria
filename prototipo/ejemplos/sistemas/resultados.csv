@@ -1,20 +1,35 @@
 sistema,clases,paquetes,dependencias,variante,verificaciones,incumplimientos,cr,delta_cr_pp,estado_cr,estado_cr_severidad,derivas_inyectadas,derivas_detectadas,hallazgos_nuevos_no_inyectados,hallazgos_desaparecidos,segundos
 commons-lang3,403,18,43,original,34,6,82.35,0.00,En observación,No conforme,0,0,0,0,0.21
-commons-lang3,403,18,44,ciclo,34,8,76.47,-5.88,En observación,No conforme,1,1,0,0,0.15
-commons-lang3,403,19,49,concentracion,36,7,80.56,-1.80,En observación,No conforme,1,1,0,0,0.11
-commons-lang3,403,19,50,combinada,36,9,75.00,-7.35,En observación,No conforme,2,2,0,0,0.10
-archunit,923,22,107,original,103,14,86.41,0.00,Aceptable,No conforme,0,0,0,0,0.53
-archunit,923,22,108,capas,104,15,85.58,-0.83,Aceptable,No conforme,1,1,0,0,0.48
-archunit,923,22,108,ciclo,103,16,84.47,-1.94,En observación,No conforme,1,1,0,0,0.48
-archunit,923,23,114,concentracion,105,15,85.71,-0.69,Aceptable,No conforme,1,1,0,0,0.55
-archunit,923,23,116,combinada,106,18,83.02,-3.39,En observación,No conforme,3,3,0,0,0.53
+commons-lang3,403,18,44,ciclo,34,8,76.47,-5.88,En observación,No conforme,1,1,0,0,0.17
+commons-lang3,403,19,49,concentracion,36,7,80.56,-1.80,En observación,No conforme,1,1,0,0,0.12
+commons-lang3,403,19,50,combinada,36,9,75.00,-7.35,En observación,No conforme,2,2,0,0,0.11
+archunit,923,22,107,original,103,14,86.41,0.00,Aceptable,No conforme,0,0,0,0,0.99
+archunit,923,22,108,capas,104,15,85.58,-0.83,Aceptable,No conforme,1,1,0,0,0.94
+archunit,923,22,108,ciclo,103,16,84.47,-1.94,En observación,No conforme,1,1,0,0,0.94
+archunit,923,23,114,concentracion,105,15,85.71,-0.69,Aceptable,No conforme,1,1,0,0,0.92
+archunit,923,23,116,combinada,106,18,83.02,-3.39,En observación,No conforme,3,3,0,0,0.50
 jackson-databind,784,23,166,original,60,24,60.00,0.00,No conforme,No conforme,0,0,0,0,0.23
-jackson-databind,784,23,167,capas,61,25,59.02,-0.98,No conforme,No conforme,1,1,0,0,0.22
-jackson-databind,784,23,167,ciclo,60,26,56.67,-3.33,No conforme,No conforme,1,1,0,1,0.22
-jackson-databind,784,24,179,concentracion,62,25,59.68,-0.32,No conforme,No conforme,1,1,0,0,0.23
+jackson-databind,784,23,167,capas,61,25,59.02,-0.98,No conforme,No conforme,1,1,0,0,0.23
+jackson-databind,784,23,167,ciclo,60,26,56.67,-3.33,No conforme,No conforme,1,1,0,1,0.23
+jackson-databind,784,24,179,concentracion,62,25,59.68,-0.32,No conforme,No conforme,1,1,0,0,0.22
 jackson-databind,784,24,181,combinada,63,28,55.56,-4.44,No conforme,No conforme,3,3,0,1,0.22
-guava,2017,18,63,original,83,0,100.00,0.00,Aceptable,Aceptable,0,0,0,0,0.35
+guava,2017,18,63,original,83,0,100.00,0.00,Aceptable,Aceptable,0,0,0,0,0.36
 guava,2017,18,64,capas,84,1,98.81,-1.19,Aceptable,En observación,1,1,0,0,0.37
-guava,2017,18,64,ciclo,83,2,97.59,-2.41,Aceptable,No conforme,1,1,0,0,0.36
-guava,2017,19,72,concentracion,85,1,98.82,-1.18,Aceptable,En observación,1,1,0,0,0.36
-guava,2017,19,74,combinada,86,4,95.35,-4.65,Aceptable,No conforme,3,3,0,0,0.37
+guava,2017,18,64,ciclo,83,2,97.59,-2.41,Aceptable,No conforme,1,1,0,0,0.37
+guava,2017,19,72,concentracion,85,1,98.82,-1.18,Aceptable,En observación,1,1,0,0,0.37
+guava,2017,19,74,combinada,86,4,95.35,-4.65,Aceptable,No conforme,3,3,0,0,0.36
+spring-framework-petclinic,49,9,13,original,24,0,100.00,0.00,Aceptable,Aceptable,0,0,0,0,0.01
+spring-framework-petclinic,49,9,14,capas,25,1,96.00,-4.00,Aceptable,En observación,1,1,0,0,0.01
+spring-framework-petclinic,49,9,14,ciclo,24,2,91.67,-8.33,Aceptable,No conforme,1,1,0,0,0.01
+spring-framework-petclinic,49,10,17,concentracion,26,1,96.15,-3.85,Aceptable,En observación,1,1,0,0,0.01
+spring-framework-petclinic,49,10,19,combinada,27,4,85.19,-14.81,Aceptable,No conforme,3,3,0,0,0.01
+jpetstore-6,26,5,5,original,15,0,100.00,0.00,Aceptable,Aceptable,0,0,0,0,0.01
+jpetstore-6,26,5,6,capas,16,1,93.75,-6.25,Aceptable,En observación,1,1,0,0,0.01
+jpetstore-6,26,5,6,ciclo,16,3,81.25,-18.75,En observación,No conforme,1,1,0,0,0.01
+jpetstore-6,26,6,8,concentracion,17,1,94.12,-5.88,Aceptable,En observación,1,1,0,0,0.01
+jpetstore-6,26,6,10,combinada,19,5,73.68,-26.32,En observación,No conforme,3,3,0,0,0.01
+dddsample-core,94,26,93,original,101,11,89.11,0.00,Aceptable,No conforme,0,0,0,0,0.02
+dddsample-core,94,26,94,capas,102,12,88.24,-0.87,Aceptable,No conforme,1,1,0,0,0.02
+dddsample-core,94,26,94,ciclo,101,13,87.13,-1.98,Aceptable,No conforme,1,1,0,0,0.02
+dddsample-core,94,27,100,concentracion,103,12,88.35,-0.76,Aceptable,No conforme,1,1,0,0,0.02
+dddsample-core,94,27,102,combinada,104,15,85.58,-3.53,Aceptable,No conforme,3,3,0,0,0.02

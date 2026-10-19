@@ -105,4 +105,22 @@ final class InyectorDerivas {
             }
         }
     }
+
+    /**
+     * Empaqueta un directorio de clases compiladas ---el {@code target/classes} de
+     * una aplicación--- en un {@code .jar}, para inyectarle derivas igual que a
+     * una biblioteca publicada.
+     */
+    static void jarDeDirectorio(Path directorio, Path destino) throws IOException {
+        Files.createDirectories(destino.toAbsolutePath().getParent());
+        try (OutputStream salida = Files.newOutputStream(destino);
+             JarOutputStream nuevo = new JarOutputStream(salida);
+             java.util.stream.Stream<Path> archivos = Files.walk(directorio)) {
+            for (Path a : (Iterable<Path>) archivos.filter(Files::isRegularFile).sorted()::iterator) {
+                nuevo.putNextEntry(new JarEntry(directorio.relativize(a).toString().replace('\\', '/')));
+                nuevo.write(Files.readAllBytes(a));
+                nuevo.closeEntry();
+            }
+        }
+    }
 }

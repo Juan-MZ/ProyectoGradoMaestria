@@ -25,9 +25,11 @@ import java.util.Locale;
  * el modelo, al describir el código que ve, las legitimó.</p>
  *
  * <p>Uso: {@code java -cp "out/arquitecta-core;out/arquitecta-test;lib/*"
- * co.javeriana.msw.arquitecta.asistente.EvaluacionAsistente <repeticiones> <etiqueta> [modelo]}.
- * Usa la configuración de {@code ~/.arquitecta/asistente.properties}; la clave
- * nunca se escribe en la evidencia.</p>
+ * co.javeriana.msw.arquitecta.asistente.EvaluacionAsistente <repeticiones> <etiqueta> [modelo] [proveedor]}.
+ * Usa la configuración de {@code ~/.arquitecta/asistente.properties}; con un
+ * cuarto argumento ({@code ollama}, {@code lm_studio}...) usa en cambio ese
+ * proveedor con su dirección por defecto, sin tocar la configuración guardada.
+ * La clave nunca se escribe en la evidencia.</p>
  */
 public final class EvaluacionAsistente {
 
@@ -62,8 +64,14 @@ public final class EvaluacionAsistente {
         int repeticiones = args.length > 0 ? Integer.parseInt(args[0]) : 3;
         String etiqueta = args.length > 1 ? args[1] : "evaluacion";
         ConfiguracionModelo base = ConfiguracionModelo.cargar();
-        ConfiguracionModelo config = args.length > 2
-                ? new ConfiguracionModelo(base.proveedor(), base.url(), args[2], base.clave()) : base;
+        ConfiguracionModelo config;
+        if (args.length > 3) {
+            Proveedor proveedor = Proveedor.valueOf(args[3].toUpperCase(Locale.ROOT));
+            config = new ConfiguracionModelo(proveedor, proveedor.urlPorDefecto(), args[2], "");
+        } else {
+            config = args.length > 2
+                    ? new ConfiguracionModelo(base.proveedor(), base.url(), args[2], base.clave()) : base;
+        }
         Path salida = Path.of("ejemplos", "asistente", etiqueta);
         Files.createDirectories(salida);
         String reglas = Asistencia.descripcionReglas();
@@ -81,7 +89,10 @@ public final class EvaluacionAsistente {
                 long inicio = System.nanoTime();
                 Conversacion.Respuesta respuesta;
                 try {
-                    respuesta = new Conversacion(new ClienteModelo(config), perfil.describir(), reglas).proponer("");
+                    // Un modelo local sin aceleración por GPU puede tardar varios minutos por respuesta.
+                    ClienteModelo cliente = config.proveedor().local()
+                            ? new ClienteModelo(config, java.time.Duration.ofMinutes(30)) : new ClienteModelo(config);
+                    respuesta = new Conversacion(cliente, perfil.describir(), reglas).proponer("");
                 } catch (ClienteModelo.ErrorModelo ex) {
                     System.out.println("   fallo: " + ex.getMessage());
                     filas.add(String.join(",", e.etiqueta(), "" + r, config.modelo(), "error", "", "", "", "", "",

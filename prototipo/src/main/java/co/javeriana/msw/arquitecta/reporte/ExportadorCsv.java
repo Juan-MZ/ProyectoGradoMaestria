@@ -19,7 +19,7 @@ public final class ExportadorCsv {
 
     public static final String CABECERA_RESUMEN =
             "escenario,paquetes,dependencias,verificaciones,incumplimientos,cr,"
-            + "estado_por_cr,severidad_maxima,estado_por_severidad,estado_final";
+            + "estado_por_cr,severidad_maxima,estado_por_severidad,estado_final,cr_por_regla";
 
     public static final String CABECERA_HALLAZGOS =
             "escenario,regla,severidad,descripcion,ubicacion";
@@ -38,7 +38,8 @@ public final class ExportadorCsv {
                 celda(resultado.estadoPorCR().etiqueta()),
                 celda(resultado.severidadMaxima() == null ? "" : resultado.severidadMaxima().etiqueta()),
                 celda(resultado.estadoPorSeveridad().etiqueta()),
-                celda(resultado.estado().etiqueta()));
+                celda(resultado.estado().etiqueta()),
+                String.format(Locale.ROOT, "%.2f", resultado.conformidadPorRegla()));
     }
 
     public static String filasHallazgos(Resultado resultado, String etiqueta) {

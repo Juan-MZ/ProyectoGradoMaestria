@@ -6,7 +6,7 @@ Functions* y análisis estático de grafos de dependencia.**
 [![Documento: CC BY-NC-ND 4.0](https://img.shields.io/badge/documento-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![Código: Apache 2.0](https://img.shields.io/badge/c%C3%B3digo-Apache%202.0-blue.svg)](LICENSE-CODE)
 [![Java 17+](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net/)
-[![Pruebas: 262](https://img.shields.io/badge/pruebas-262%20superadas-brightgreen.svg)](prototipo/src/test/java)
+[![Pruebas: 272](https://img.shields.io/badge/pruebas-272%20superadas-brightgreen.svg)](prototipo/src/test/java)
 
 Trabajo de grado para optar al título de **Magíster en Ingeniería de Software**
 de la Pontificia Universidad Javeriana Cali.
@@ -77,13 +77,18 @@ El mecanismo se evaluó sobre cinco versiones de un mismo sistema: una
 implementación de referencia y cuatro con derivas inducidas, tres de ellas
 **aisladas** para poder medir la sensibilidad de cada regla por separado.
 
-| Escenario | Paquetes | Dependencias | Verificaciones | Incumpl. | CR | Estado |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| C0 · línea base | 4 | 5 | 10 | 0 | 100,00 % | Aceptable |
-| C1 · ruptura de capas | 4 | 6 | 11 | 1 | 90,91 % | En observación |
-| C2 · ciclo de dependencia | 5 | 8 | 12 | 2 | 83,33 % | No conforme |
-| C3 · concentración excesiva | 5 | 9 | 12 | 1 | 91,67 % | En observación |
-| C4 · las tres combinadas | 5 | 11 | 14 | 6 | 57,14 % | No conforme |
+| Escenario | Paquetes | Dependencias | Verificaciones | Incumpl. | CR | CR por regla | Estado |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| C0 · línea base | 4 | 5 | 10 | 0 | 100,00 % | 100,00 % | Aceptable |
+| C1 · ruptura de capas | 4 | 6 | 11 | 1 | 90,91 % | 66,67 % | En observación |
+| C2 · ciclo de dependencia | 5 | 8 | 12 | 2 | 83,33 % | 66,67 % | No conforme |
+| C3 · concentración excesiva | 5 | 9 | 12 | 1 | 91,67 % | 66,67 % | En observación |
+| C4 · las tres combinadas | 5 | 11 | 14 | 6 | 57,14 % | 0,00 % | No conforme |
+
+La **CR por regla** es la formulación literal del anteproyecto (reglas cumplidas
+sobre reglas evaluadas). Se calcula y se reporta siempre, pero no clasifica: no se
+diluye, pero satura —toda deriva aislada la deja en 66,67 %— y no registra
+tendencias ([ADR-0008](decisiones/0008-cr-por-verificacion-atomica-reportando-tambien-la-cr.md)).
 
 Se detectaron **las seis derivas inducidas** sin producir un solo hallazgo falso
 sobre la implementación de referencia.
@@ -106,12 +111,24 @@ cálculo de la CR** ni sus umbrales, y con él los cinco escenarios se clasifica
 como corresponde. La columna «Estado» de la tabla anterior ya refleja ese
 criterio refinado.
 
-### Sobre sistemas reales, en entorno controlado
+### Sobre sistemas reales
 
-Se inyectaron derivas conocidas en cuatro bibliotecas Java reales (Commons Lang,
-Jackson Databind, ArchUnit y Guava, de 403 a 2 017 clases): el mecanismo detectó
-**las 22**, sin un solo hallazgo espurio y en menos de un segundo por sistema, y
-confirmó fuera del caso de estudio que la CR sola se diluye en sistemas grandes.
+| Estudio | Qué se hizo | Resultado |
+| --- | --- | --- |
+| Derivas inyectadas | 4 bibliotecas (Commons Lang, Jackson Databind, ArchUnit, Guava) y 3 aplicaciones en capas con arquitectura documentada (Spring PetClinic, MyBatis JPetStore, DDD Sample) | **31/31** detectadas, 0 hallazgos espurios, < 1 s por sistema |
+| Deriva real | El catálogo de una versión de referencia aplicado a 35 versiones publicadas de Jackson, Guava y Commons Lang | Deriva nueva detectada en Jackson 2.19.0 y Commons Lang 3.21.0; Guava sin deriva en 12 versiones |
+| Umbral | Percentil 90 del acoplamiento eferente (Alves et al., 2010), calibrado en 4 bibliotecas y validado en otros 4 sistemas | Los cinco veredictos del caso de estudio no cambian con el umbral derivado |
+| Oráculo | Mismo grafo extraído con JDepend | 475 de 496 aristas coinciden; las 21 diferencias se explican por las reglas de extracción |
+| Frente a ArchUnit | Las mismas reglas escritas con ArchUnit | Misma detección; 33 líneas de Java frente a 14 de catálogo, sin veredicto agregado |
+
+Evidencia en [`prototipo/ejemplos/sistemas/`](prototipo/ejemplos/sistemas/) y
+[`prototipo/ejemplos/estudios/`](prototipo/ejemplos/estudios/).
+
+### Por qué se decidió cada cosa
+
+Las decisiones de diseño, de método y de evaluación —incluidas las que se apartan
+de la letra del anteproyecto— están registradas como ADR, con alternativas y
+respaldo, en [`decisiones/`](decisiones/README.md).
 
 ### El mecanismo aplicado sobre sí mismo
 
@@ -126,9 +143,9 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
 ```
 ├── Maestria_PlantillaProyectoGrado/   Documento del trabajo de grado (LaTeX)
 │   ├── main.tex                       Raíz del documento
-│   ├── main.pdf                       PDF compilado (101 páginas)
-│   ├── src/                           Capítulos y anexo
-│   ├── referencias.bib                Bibliografía (39 entradas)
+│   ├── main.pdf                       PDF compilado (114 páginas)
+│   ├── src/                           Capítulos y anexos
+│   ├── referencias.bib                Bibliografía (48 entradas)
 │   ├── compilar.bat / .sh             Compilación vía Docker
 │   └── thesis.cls, format.tex, img/   Plantilla institucional (ver TERCEROS.md)
 │
@@ -136,12 +153,15 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
     ├── arquitecta.bat · .sh           Punto de entrada único (doble clic: la aplicación)
     ├── src/main/java/                 Núcleo (config, grafo, reglas, motor, reporte),
     │                                  servicio de análisis e interfaz gráfica
-    ├── src/test/java/                 Batería de 262 comprobaciones
+    ├── src/test/java/                 Batería de 272 comprobaciones y estudios
     ├── caso-estudio/                  Los cinco escenarios (c0-base … c4-combinado)
     │                                  y su catálogo de reglas
-    ├── ejemplos/                      Autoanálisis, ArchUnit, grafos SVG y capturas
+    ├── ejemplos/                      Autoanálisis, ArchUnit, sistemas reales,
+    │                                  estudios, asistente, grafos SVG y capturas
     ├── lib/                           ArchUnit y SLF4J (ver TERCEROS.md)
     └── scripts/                       Guiones que invoca el lanzador
+
+decisiones/                            Registro de decisiones (ADR)
 ```
 
 El **anteproyecto aprobado** se mantiene en un repositorio aparte; este contiene
@@ -175,9 +195,12 @@ del caso de estudio con un clic. El mismo lanzador reúne el resto de las tareas
 ```bash
 cd prototipo
 ./arquitecta.sh               # abre la aplicación (compila solo si hace falta)
-./arquitecta.sh pruebas       # 262 comprobaciones
+./arquitecta.sh pruebas       # 272 comprobaciones
 ./arquitecta.sh experimento   # experimento completo; evidencia en resultados/
 ./arquitecta.sh figuras       # regenera los grafos y capturas de la monografía
+./arquitecta.sh aplicaciones  # clona y compila las 3 aplicaciones en capas (Docker o Maven Wrapper)
+./arquitecta.sh sistemas      # inyecta derivas en los 7 sistemas reales
+./arquitecta.sh estudios      # evolución, umbral, oráculo JDepend y equivalente ArchUnit
 ./arquitecta.sh ayuda         # todos los subcomandos
 ```
 
@@ -193,8 +216,9 @@ La forma más directa es la aplicación: abrirla y elegir la carpeta del proyect
 ya compilado, o directamente `./arquitecta.sh ruta/al/proyecto`. Si el proyecto no trae catálogo de reglas, se
 aplica una configuración mínima (raíz inferida; ciclos y concentración) hasta que
 se le asigne uno, y el **asistente de catálogo** puede proponérselo: un modelo de
-lenguaje —Claude, OpenAI, DeepSeek o uno local con Ollama o LM Studio, configurable desde la
-misma ventana— lee la estructura del proyecto (nunca su código fuente), propone
+lenguaje —por defecto uno local con Ollama, para que nada salga del equipo; o
+Claude, OpenAI, DeepSeek o LM Studio si se eligen expresamente desde la misma
+ventana— lee la estructura del proyecto (nunca su código fuente), propone
 capas, dependencias permitidas, umbral y exenciones justificando cada decisión, y
 usted lo revisa, lo previsualiza sobre su código y decide si lo adopta. La guía del [prototipo](prototipo/README.md#interfaz-gráfica)
 describe la interfaz en detalle.

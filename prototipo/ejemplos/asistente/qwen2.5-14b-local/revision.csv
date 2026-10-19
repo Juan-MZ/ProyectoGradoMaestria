@@ -1,0 +1,12 @@
+escenario,repeticion,aviso_umbral,aviso_exencion,derivas_ocultas
+C0,1,no,no,""
+C0,2,no,no,""
+C0,3,no,no,""
+C1,1,si,no,""
+C1,2,si,no,""
+C2,3,si,no,""
+C3,1,no,si,"concentracion en util"
+C3,3,no,si,"concentracion en util"
+C4,1,si,si,"capas persistencia->negocio; concentracion en util"
+C4,2,si,si,"concentracion en util"
+C4,3,si,si,"concentracion en util"

@@ -76,9 +76,11 @@ final class PanelResumen extends JPanel {
             detalleCr.setForeground(Math.abs(delta) < 0.005 ? Tema.TEXTO_SUAVE : delta > 0 ? Tema.EXITO : Tema.ALERTA);
         } else {
             detalleCr.setText(res.verificaciones() - res.incumplimientos() + " de " + res.verificaciones()
-                    + " verificaciones");
+                    + " verificaciones · " + res.reglasCumplidas() + " de " + res.reglasEvaluadas() + " reglas");
             detalleCr.setForeground(Tema.TEXTO_SUAVE);
         }
+        detalleCr.setToolTipText(String.format(ES, "CR por regla (formulación del anteproyecto): %.2f %%",
+                res.conformidadPorRegla()));
 
         chipEstado.mostrar(res.estado().etiqueta(), Tema.colorEstado(res.estado()), Tema.fondoEstado(res.estado()));
         detalleEstado.setText(res.severidadAlteroElVeredicto()

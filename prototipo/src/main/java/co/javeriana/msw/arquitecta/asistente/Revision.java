@@ -24,6 +24,7 @@ public final class Revision {
     /** Advertencias sobre la propuesta; vacía si no hay nada que señalar. */
     public static List<String> avisos(Propuesta propuesta, Perfil perfil) {
         List<String> avisos = new ArrayList<>();
+        avisarExencionDelMasAcoplado(propuesta, perfil, avisos);
         Integer umbral = propuesta.umbralConcentracion();
         if (umbral == null) {
             return avisos;
@@ -47,6 +48,32 @@ public final class Revision {
                     + " declárelo como exención justificada; si no lo es, baje el umbral.");
         }
         return avisos;
+    }
+
+    /**
+     * Una exención retira el paquete de FF2 y FF3, de modo que eximir al paquete
+     * que más concentra oculta la concentración igual que un umbral alto. Con un
+     * modelo local se observó exactamente eso: el paquete concentrador declarado
+     * como «compartido». Se advierte solo cuando el paquete destaca sobre el resto.
+     */
+    private static void avisarExencionDelMasAcoplado(Propuesta propuesta, Perfil perfil, List<String> avisos) {
+        List<Perfil.Paquete> todos = perfil.paquetes().stream()
+                .sorted(Comparator.comparingInt(Perfil.Paquete::ce).reversed())
+                .toList();
+        if (todos.isEmpty()) {
+            return;
+        }
+        Perfil.Paquete mayor = todos.get(0);
+        int segundo = todos.size() > 1 ? todos.get(1).ce() : 0;
+        if (mayor.ce() <= segundo) {
+            return;
+        }
+        propuesta.exenciones().stream().filter(e -> cubre(e, mayor.nombre())).findFirst().ifPresent(e -> avisos.add(
+                "La propuesta exime a " + mayor.nombre() + ", el paquete que más dependencias salientes concentra (Ce = "
+                        + mayor.ce() + "; el siguiente, " + segundo + ")" + (e.justificacion() == null
+                                || e.justificacion().isBlank() ? "" : ", con el motivo «" + e.justificacion() + "»")
+                        + ". Una exención lo retira de los ciclos y de la concentración: confirme que concentra por su"
+                        + " papel (raíz de composición, fachada) y que no es la deriva que se quiere detectar."));
     }
 
     private static boolean cubre(Propuesta.Exencion e, String paquete) {

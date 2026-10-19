@@ -321,6 +321,8 @@ public final class PruebasArquitecta {
 
         Resultado vacio = motor.evaluar(new GrafoDependencias(), reglas(configPorDefecto()));
         v.igual("un grafo vacio no produce division por cero", 100.0, vacio.conformidad(), EPS);
+        v.igual("un grafo vacio tampoco divide por cero en la CR por regla", 100.0,
+                vacio.conformidadPorRegla(), EPS);
         v.igual("un grafo vacio se clasifica como aceptable",
                 EstadoArquitectonico.ACEPTABLE, vacio.estado());
 
@@ -431,6 +433,15 @@ public final class PruebasArquitecta {
         v.igual("C4 - el estado es no conforme", EstadoArquitectonico.NO_CONFORME, c4.estado());
         v.comprueba("C4 - las tres reglas reportan hallazgos",
                 c4.porRegla().stream().allMatch(r -> !r.violaciones().isEmpty()));
+
+        // CR por regla (formulacion del anteproyecto): con tres reglas solo admite
+        // cuatro valores, y cualquier deriva aislada la deja en 66,67 %.
+        v.igual("CR por regla - C0 cumple las tres reglas", 100.0, base.conformidadPorRegla(), EPS);
+        v.igual("CR por regla - C1 incumple una de tres", 66.667, c1.conformidadPorRegla(), 0.01);
+        v.igual("CR por regla - C2 incumple una de tres", 66.667, c2.conformidadPorRegla(), 0.01);
+        v.igual("CR por regla - C3 incumple una de tres", 66.667, c3.conformidadPorRegla(), 0.01);
+        v.igual("CR por regla - C4 incumple las tres", 0.0, c4.conformidadPorRegla(), EPS);
+        v.igual("CR por regla - C4 evalua tres reglas", 3, c4.reglasEvaluadas());
 
         v.comprueba("la severidad solo puede endurecer el veredicto, nunca relajarlo",
                 conSeveridad.evaluar(escenarioCapas(), reglas).estado().ordinal()

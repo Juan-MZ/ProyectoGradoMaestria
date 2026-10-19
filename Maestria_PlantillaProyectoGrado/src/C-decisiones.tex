@@ -1,0 +1,86 @@
+\label{anexo:decisiones}
+
+Las decisiones con consecuencias conceptuales ---las que cambian el artefacto, el método de evaluación o la forma de interpretar los resultados--- se registraron como \textit{Architecture Decision Records} en la carpeta \texttt{decisiones/} del repositorio, siguiendo la práctica de documentar explícitamente las decisiones arquitectónicas y su razón de ser \citep{TyreeAkerman2005, ADR}. Cada registro recoge el contexto que motivó la decisión, la decisión adoptada, las alternativas descartadas, sus consecuencias y su respaldo bibliográfico o empírico. Las decisiones anteriores a la creación de la carpeta se registraron de forma retrospectiva y se fechan con el cambio correspondiente del historial de versiones. Este anexo resume el registro; el texto completo de cada decisión está en el repositorio.
+
+\section{Desviaciones respecto del anteproyecto}
+El anteproyecto aprobado no se modificó. La tabla~\ref{tab:desviaciones} reúne las decisiones que se apartan de su letra y remite a la sección del documento que las justifica.
+
+\begin{table}[H]
+\centering
+\caption{Decisiones que se apartan de la letra del anteproyecto.}
+\label{tab:desviaciones}
+\footnotesize
+\begin{tabularx}{\textwidth}{p{3.6cm}Xp{1.9cm}}
+\toprule
+\textbf{Anteproyecto} & \textbf{Trabajo realizado y motivo} & \textbf{Registro} \\
+\midrule
+CR = reglas cumplidas / reglas totales &
+La clasificación usa la CR por verificación, que gradúa la extensión y registra la tendencia; la del anteproyecto, que satura, se calcula y reporta siempre como CR por regla (secciones~\ref{sec:operacionalizacion} y~\ref{sec:crregla}). &
+ADR-0008 \\
+\midrule
+Clasificación por umbrales de la CR &
+Se añade la severidad del peor hallazgo porque la proporción diluye las violaciones aisladas; el modo original se conserva (sección~\ref{sec:dilucion}). &
+ADR-0009, 0010 \\
+\midrule
+Análisis estático «del código fuente» &
+Se analiza el código compilado, derivado fiel del fuente, con puntos ciegos declarados y contrastados con un oráculo (secciones~\ref{sec:extraccion} y~\ref{sec:oraculo}). &
+ADR-0003, 0019 \\
+\midrule
+Un único sistema en el estudio de caso &
+Se mantiene para OBJ4; se añaden validaciones complementarias en siete sistemas reales y treinta y cinco versiones publicadas (secciones~\ref{sec:sistemas} y~\ref{sec:evolucion}). &
+ADR-0016 a 0018 \\
+\midrule
+Umbral de concentración fijado en el catálogo &
+Se sustituye el juicio por un procedimiento estadístico de percentiles, frente al que la clasificación es robusta (sección~\ref{sec:umbral}). &
+ADR-0011 \\
+\midrule
+Revisiones mensuales con el director &
+No se realizaron durante la ejecución; se declara (sección de metodología del capítulo 1). &
+ADR-0026 \\
+\midrule
+(No previsto) Asistente de catálogo &
+Aporte complementario fuera de OBJ1--OBJ4, con modelo local por defecto (anexo~\ref{anexo:asistente}). &
+ADR-0014, 0015 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Índice del registro}
+\begin{table}[H]
+\centering
+\caption{Registro de decisiones del trabajo.}
+\label{tab:adr}
+\footnotesize
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{ADR} & \textbf{Decisión} \\
+\midrule
+0001 & Registrar las decisiones de diseño e investigación como ADR. \\
+0002 & Prototipo en Java estándar, sin Spring Boot ni otro marco de trabajo. \\
+0003 & Extraer la arquitectura implementada del \textit{bytecode}, con \textit{ArchUnit}. \\
+0004 & Granularidad de paquete para el grafo y las reglas. \\
+0005 & Catálogo de tres \textit{Fitness Functions} seleccionadas con los criterios C1--C5. \\
+0006 & La arquitectura prevista se declara en un catálogo de propiedades. \\
+0007 & Exenciones declaradas: \texttt{excluir} y \texttt{rol.compartido}. \\
+0008 & CR por verificación atómica, reportando también la CR por regla del anteproyecto. \\
+0009 & Clasificación combinada \texttt{cr+severidad}: el veredicto más restrictivo. \\
+0010 & Severidades: ciclos «crítica», capas y concentración «mayor». \\
+0011 & Umbral de concentración: percentil 90 del $Ce$ de la línea base. \\
+0012 & FF3 mide solo la concentración eferente, no el \textit{hub-like} completo. \\
+0013 & Interfaz Swing y lanzador único. \\
+0014 & Asistente de catálogo con modelos de lenguaje, como aporte complementario. \\
+0015 & El asistente usa por defecto un modelo local. \\
+0016 & Validación complementaria por inyección controlada de derivas en sistemas reales. \\
+0017 & Aplicaciones en capas como conjunto de validación independiente. \\
+0018 & Estudio de evolución histórica: deriva real, no inyectada. \\
+0019 & Oráculo externo: contrastar el grafo con JDepend. \\
+0020 & Contrastar el catálogo con las mismas reglas escritas en \textit{ArchUnit}. \\
+0021 & Guardia de versión de \textit{bytecode} (Java 23 como máximo). \\
+0022 & Licencia dual: documento CC BY-NC-ND 4.0 y código Apache 2.0. \\
+0023 & Compilar la monografía con Docker (TeX Live completo). \\
+0024 & Contraste explícito de la hipótesis y evaluación de utilidad con usuarios. \\
+0025 & Reemplazar la literatura gris por fuentes arbitradas en las afirmaciones centrales. \\
+0026 & Registro honesto del cronograma y de las revisiones con el director. \\
+\bottomrule
+\end{tabularx}
+\end{table}

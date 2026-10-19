@@ -1,0 +1,16 @@
+escenario,repeticion,modelo,valido,segundos,capas,estratificacion_correcta,umbral,exenciones,derivas_inducidas,derivas_detectadas,derivas_ocultas,hallazgos_adicionales,derivas_senaladas,preguntas,cr_propuesta,cr_experimento,aviso_umbral
+C0,1,qwen2.5-14b-cpu,si,127.01,presentacion|negocio|persistencia|dominio,si,3,,0,0,"","",0,1,100.00,100.0,no
+C0,2,qwen2.5-14b-cpu,si,111.28,dominio|negocio|persistencia|presentacion,si,3,,0,0,"","Integridad presentacion->dominio",0,1,92.31,100.0,no
+C0,3,qwen2.5-14b-cpu,si,107.93,dominio|negocio|persistencia|presentacion,si,3,,0,0,"","Integridad presentacion->dominio",0,1,92.31,100.0,no
+C1,1,qwen2.5-14b-cpu,si,100.01,presentacion|negocio|persistencia|dominio,si,4,,1,1,"","",0,0,92.86,90.91,si
+C1,2,qwen2.5-14b-cpu,si,82.43,presentacion|negocio|persistencia|dominio,si,5,,1,1,"","",0,1,92.86,90.91,si
+C1,3,qwen2.5-14b-cpu,no,114.70,presentacion|negocio|persistencia,,3,compartido:dominio,1,,,,0,0,,90.91
+C2,1,qwen2.5-14b-cpu,sin-catalogo,96.27,,,,,1,,,,,,,83.33
+C2,2,qwen2.5-14b-cpu,sin-catalogo,94.92,,,,,1,,,,,,,83.33
+C2,3,qwen2.5-14b-cpu,si,115.55,presentacion|negocio|negocio-calculo|persistencia|dominio,si,5,compartido:dominio,1,1,"","Integridad presentacion->dominio",1,0,78.57,83.33,si
+C3,1,qwen2.5-14b-cpu,si,88.18,presentacion|negocio|persistencia|dominio,si,4,compartido:util,1,0,"concentracion en util","Integridad presentacion->dominio",1,2,92.31,91.67,no
+C3,2,qwen2.5-14b-cpu,no,97.75,presentacion|negocio|persistencia|utilidades,,6,compartido:dominio|compartido:util,1,,,,0,1,,91.67
+C3,3,qwen2.5-14b-cpu,si,107.92,presentacion|negocio|persistencia|dominio|compartido,si,5,compartido:util,1,0,"concentracion en util","Integridad presentacion->dominio",0,1,94.12,91.67,no
+C4,1,qwen2.5-14b-cpu,si,126.11,presentacion|negocio|persistencia|dominio|utilidades,no,5,compartido:util,4,2,"capas persistencia->negocio; concentracion en util","Integridad persistencia->dominio; Integridad util->dominio; Integridad util->negocio; Integridad util->persistencia; Integridad util->presentacion",2,2,52.63,57.14,si
+C4,2,qwen2.5-14b-cpu,si,92.07,presentacion|negocio|persistencia|dominio,si,6,compartido:util,4,3,"concentracion en util","Integridad presentacion->dominio",0,0,60.00,57.14,si
+C4,3,qwen2.5-14b-cpu,si,98.25,presentacion|negocio|persistencia|dominio,si,5,compartido:util,4,3,"concentracion en util","",1,1,66.67,57.14,si

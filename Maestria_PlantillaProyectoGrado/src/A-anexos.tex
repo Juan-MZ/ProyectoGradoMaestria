@@ -12,7 +12,7 @@ La biblioteca se distribuye junto al repositorio, de modo que la compilación y 
 prototipo/
   arquitecta.bat / .sh        lanzador unico (aplicacion y tareas)
   src/main/java/              nucleo, servicio, interfaz y asistente
-  src/test/java/              bateria de pruebas (262 comprobaciones)
+  src/test/java/              bateria de pruebas (272 comprobaciones)
   lib/                        ArchUnit 1.3.0 y slf4j-api
   caso-estudio/
     c0-base/                  escenario C0 (linea base)
@@ -25,10 +25,12 @@ prototipo/
     autoanalisis/             catalogo para el autoanalisis
     archunit/                 configuraciones de la seccion 4.6
     sistemas/                 catalogos y resultados de la seccion 4.7
+    estudios/                 evolucion, umbral y oraculo (4.8 a 4.10)
     asistente/                exploracion del asistente (anexo B)
     graficos/                 grafos en SVG generados por la herramienta
     interfaz/                 capturas de la interfaz grafica
   scripts/                    guiones que invoca el lanzador
+decisiones/                   registro de decisiones (ADR, anexo C)
 \end{verbatim}
 
 \noindent Cada escenario tiene la estructura de un proyecto Maven: su código está en \texttt{src/main/java} y la compilación deja sus clases en \texttt{target/classes}, de modo que la carpeta del escenario puede indicarse tal cual, desde la línea de comandos o desde la interfaz gráfica.
@@ -36,9 +38,10 @@ prototipo/
 \section{Pasos para reproducir el experimento}
 \begin{enumerate}
     \item \textbf{Compilar.} Ejecutar \texttt{arquitecta compilar} (\texttt{./arquitecta.sh compilar} en macOS o Linux). El guion compila el núcleo y la batería de pruebas en \texttt{out/}, empaqueta la herramienta en \texttt{out/arquitecta.jar} y compila cada escenario en su \texttt{target/classes}. El paso es opcional: los siguientes compilan por su cuenta si hace falta.
-    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{arquitecta pruebas}. La batería debe reportar 262 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
+    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{arquitecta pruebas}. La batería debe reportar 272 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
     \item \textbf{Ejecutar el experimento.} Ejecutar \texttt{arquitecta experimento}. El guion imprime el catálogo de reglas, recorre los cinco escenarios bajo los dos modos de clasificación y deposita la evidencia en \texttt{resultados/}.
-    \item \textbf{Validación sobre sistemas reales (opcional).} Ejecutar \texttt{arquitecta sistemas}. El guion descarga de Maven Central los tres \texttt{.jar} necesarios, verifica su suma SHA-1, inyecta las derivas descritas en la sección~\ref{sec:sistemas} y escribe la tabla de resultados y la ubicación de cada deriva en \texttt{ejemplos/sistemas/}. Requiere conexión la primera vez.
+    \item \textbf{Validación sobre sistemas reales (opcional).} Ejecutar primero \texttt{arquitecta aplicaciones}, que clona las tres aplicaciones en capas en el \textit{commit} fijado y las compila ---con Docker y la imagen oficial de Maven con JDK~17 si está disponible, o con el \textit{Maven Wrapper} de cada proyecto---, y después \texttt{arquitecta sistemas}. Este segundo guion descarga de Maven Central los \texttt{.jar} de las bibliotecas, verifica su suma SHA-1, inyecta las derivas descritas en la sección~\ref{sec:sistemas} y escribe la tabla de resultados y la ubicación de cada deriva en \texttt{ejemplos/sistemas/}. Si alguna aplicación no está compilada, se omite con un aviso. Requiere conexión la primera vez.
+    \item \textbf{Estudios complementarios (opcional).} Ejecutar \texttt{arquitecta estudios}, que reproduce la evolución histórica (sección~\ref{sec:evolucion}), la calibración del umbral (sección~\ref{sec:umbral}), el contraste con JDepend (sección~\ref{sec:oraculo}) y la comparación con \textit{ArchUnit} (sección~\ref{sec:aporte}); cada uno puede ejecutarse por separado con \texttt{arquitecta estudios evolucion}, \texttt{umbral}, \texttt{oraculo} o \texttt{archunit}. Descarga y verifica las treinta y cinco versiones históricas y JDepend la primera vez, y escribe la evidencia en \texttt{ejemplos/estudios/}.
     \item \textbf{Contrastar.} Comparar el archivo \texttt{resultados/modo-cr/resumen.csv} con la tabla~\ref{tab:resultados} y el archivo \texttt{resultados/modo-cr-severidad/resumen.csv} con la tabla~\ref{tab:refinamiento}.
 \end{enumerate}
 
@@ -69,7 +72,7 @@ Cada ejecución con la opción \texttt{-{}-salida} produce cuatro artefactos por
     \item los \textbf{hallazgos tabulados} (\texttt{.csv}), una fila por hallazgo, para su tratamiento en una hoja de cálculo.
 \end{itemize}
 
-El archivo \texttt{resumen.csv} de cada modo agrega una fila por escenario con el número de paquetes, dependencias, verificaciones e incumplimientos, la Tasa de Conformidad y los tres estados calculados. Es el artefacto del que proceden directamente las tablas del capítulo de evaluación.
+El archivo \texttt{resumen.csv} de cada modo agrega una fila por escenario con el número de paquetes, dependencias, verificaciones e incumplimientos, la Tasa de Conformidad, los tres estados calculados y la CR por regla. Es el artefacto del que proceden directamente las tablas del capítulo de evaluación.
 
 \section{Determinismo de los resultados}
 El mecanismo no emplea aleatoriedad, concurrencia ni marcas temporales en su cálculo, por lo que ante la misma entrada produce siempre el mismo diagnóstico. La construcción del grafo recorre las clases y sus dependencias en orden alfabético, y las estructuras que lo recorren conservan el orden de inserción, de modo que también el orden de los hallazgos y de su evidencia es estable entre ejecuciones y no depende de cómo se nombre la ruta analizada ni del orden en que la biblioteca de importación entregue las clases. Ello permite comparar dos corridas mediante una simple diferencia textual de sus archivos de evidencia, sin necesidad de normalización previa. Las capturas de la interfaz gráfica son la única excepción: dependen de las fuentes tipográficas del equipo y muestran el tiempo de análisis, por lo que se regeneran junto con las figuras pero no se comparan byte a byte.
