@@ -33,10 +33,19 @@ public final class InterfazGrafica {
 
     /** Abre la ventana principal, opcionalmente con un proyecto y un catálogo ya elegidos. */
     public static void abrir(Path proyecto, Path catalogo) {
+        abrir(proyecto, catalogo, null);
+    }
+
+    /**
+     * Abre la ventana principal ofreciendo, además, un asistente para redactar el
+     * catálogo de reglas.
+     */
+    public static void abrir(Path proyecto, Path catalogo, AsistenteCatalogo asistente) {
         SwingUtilities.invokeLater(() -> {
             configurarAspecto();
             VentanaPrincipal ventana = new VentanaPrincipal(true);
             ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.usarAsistente(asistente);
             if (catalogo != null) {
                 ventana.seleccionarCatalogo(catalogo);
             }

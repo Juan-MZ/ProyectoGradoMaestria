@@ -6,7 +6,7 @@ Functions* y análisis estático de grafos de dependencia.**
 [![Documento: CC BY-NC-ND 4.0](https://img.shields.io/badge/documento-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![Código: Apache 2.0](https://img.shields.io/badge/c%C3%B3digo-Apache%202.0-blue.svg)](LICENSE-CODE)
 [![Java 17+](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net/)
-[![Pruebas: 190](https://img.shields.io/badge/pruebas-190%20superadas-brightgreen.svg)](prototipo/src/test/java)
+[![Pruebas: 234](https://img.shields.io/badge/pruebas-234%20superadas-brightgreen.svg)](prototipo/src/test/java)
 
 Trabajo de grado para optar al título de **Magíster en Ingeniería de Software**
 de la Pontificia Universidad Javeriana Cali.
@@ -108,8 +108,8 @@ criterio refinado.
 
 ### El mecanismo aplicado sobre sí mismo
 
-El prototipo se analiza a sí mismo: 8 paquetes, 21 dependencias, 33
-verificaciones, **0 incumplimientos**, interfaz gráfica incluida. La arquitectura interna satisface las
+El prototipo se analiza a sí mismo: 9 paquetes, 26 dependencias, 40
+verificaciones, **0 incumplimientos**, interfaz gráfica y asistente incluidos. La arquitectura interna satisface las
 mismas reglas que el instrumento exige a los sistemas que evalúa.
 
 ---
@@ -119,23 +119,22 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
 ```
 ├── Maestria_PlantillaProyectoGrado/   Documento del trabajo de grado (LaTeX)
 │   ├── main.tex                       Raíz del documento
-│   ├── main.pdf                       PDF compilado (85 páginas)
+│   ├── main.pdf                       PDF compilado (90 páginas)
 │   ├── src/                           Capítulos y anexo
 │   ├── referencias.bib                Bibliografía (39 entradas)
 │   ├── compilar.bat / .sh             Compilación vía Docker
 │   └── thesis.cls, format.tex, img/   Plantilla institucional (ver TERCEROS.md)
 │
 └── prototipo/                         Arquitecta: el mecanismo construido
+    ├── arquitecta.bat · .sh           Punto de entrada único (doble clic: la aplicación)
     ├── src/main/java/                 Núcleo (config, grafo, reglas, motor, reporte),
     │                                  servicio de análisis e interfaz gráfica
-    ├── src/test/java/                 Batería de 190 comprobaciones
-    ├── caso-estudio*/                 Los cinco escenarios del experimento
+    ├── src/test/java/                 Batería de 234 comprobaciones
+    ├── caso-estudio/                  Los cinco escenarios (c0-base … c4-combinado)
+    │                                  y su catálogo de reglas
+    ├── ejemplos/                      Autoanálisis, ArchUnit, grafos SVG y capturas
     ├── lib/                           ArchUnit y SLF4J (ver TERCEROS.md)
-    ├── rules.properties               Catálogo de reglas del caso de estudio
-    ├── rules-arquitecta.properties    Catálogo para el autoanálisis
-    ├── ejemplos/                      Grafos SVG, capturas de la interfaz y ArchUnit
-    └── arquitecta · build · test ·    Guiones .bat y .sh
-        experimento · figuras
+    └── scripts/                       Guiones que invoca el lanzador
 ```
 
 El **anteproyecto aprobado** se mantiene en un repositorio aparte; este contiene
@@ -159,35 +158,46 @@ documento usa **`natbib` con `bibtex`**, no `biblatex` con `biber`; ejecutar
 
 ## Ejecutar el prototipo
 
-Requiere **JDK 17 o superior**. Maven es opcional: las dependencias están en
-`lib/` y se resuelven con un comodín de *classpath*, sin red ni repositorio local.
+Requiere únicamente **JDK 17 o superior**: las dependencias están en `lib/`, sin
+Maven, red ni repositorio local.
+
+En Windows basta con **doble clic en `prototipo/arquitecta.bat`**: la primera vez
+compila todo y abre la aplicación, cuya pantalla de inicio analiza cada escenario
+del caso de estudio con un clic. El mismo lanzador reúne el resto de las tareas:
 
 ```bash
 cd prototipo
-./arquitecta.sh    # abre la interfaz gráfica (compila antes si hace falta)
-./build.sh         # compila núcleo, pruebas y los cinco escenarios
-./test.sh          # 190 comprobaciones sobre el núcleo y el servicio
-./figuras.sh       # regenera los grafos y las capturas de la monografía
-./experimento.sh   # experimento completo; evidencia en resultados/
+./arquitecta.sh               # abre la aplicación (compila solo si hace falta)
+./arquitecta.sh pruebas       # 234 comprobaciones
+./arquitecta.sh experimento   # experimento completo; evidencia en resultados/
+./arquitecta.sh figuras       # regenera los grafos y capturas de la monografía
+./arquitecta.sh ayuda         # todos los subcomandos
 ```
 
-En Windows, los equivalentes son `arquitecta.bat`, `build.bat`, `test.bat`,
-`figuras.bat` y `experimento.bat`.
+En Windows se usa igual con `arquitecta.bat` (`.\arquitecta` desde PowerShell).
+La compilación deja además `out/arquitecta.jar`, un único archivo con las
+dependencias dentro que puede copiarse a otro equipo y abrirse con doble clic o
+`java -jar`. En VS Code conviene abrir la carpeta `prototipo/`, que trae las
+configuraciones de ejecución (F5) y las tareas.
 
 ### Uso sobre un proyecto propio
 
-La forma más directa es la interfaz gráfica: `./arquitecta.sh` y elegir la
-carpeta del proyecto ya compilado. Si el proyecto no trae catálogo de reglas, se
+La forma más directa es la aplicación: abrirla y elegir la carpeta del proyecto
+ya compilado, o directamente `./arquitecta.sh ruta/al/proyecto`. Si el proyecto no trae catálogo de reglas, se
 aplica una configuración mínima (raíz inferida; ciclos y concentración) hasta que
-se le asigne uno. La guía del [prototipo](prototipo/README.md#interfaz-gráfica)
+se le asigne uno, y el **asistente de catálogo** puede proponérselo: un modelo de
+lenguaje —Claude, OpenAI o uno local con Ollama o LM Studio, configurable desde la
+misma ventana— lee la estructura del proyecto (nunca su código fuente), propone
+capas, dependencias permitidas, umbral y exenciones justificando cada decisión, y
+usted lo revisa, lo previsualiza sobre su código y decide si lo adopta. La guía del [prototipo](prototipo/README.md#interfaz-gráfica)
 describe la interfaz en detalle.
 
 Para scripts e integración continua está la línea de comandos, que acepta lo
 mismo —carpeta del proyecto, directorio de clases o `.jar`—:
 
 ```bash
-java -cp "out/arquitecta-core:lib/*" co.javeriana.msw.arquitecta.ArquitectaApp \
-     <proyecto | directorio-de-clases | archivo.jar> [archivo-de-reglas] [opciones]
+./arquitecta.sh analizar <proyecto | directorio-de-clases | archivo.jar> [archivo-de-reglas] [opciones]
+java -jar arquitecta.jar <...>     # lo mismo, con el .jar copiado a otro equipo
 ```
 
 | Opción | Efecto |
@@ -217,7 +227,7 @@ clasificacion.modo=cr+severidad
 
 ## Reproducir el experimento
 
-`experimento.sh` recorre los cinco escenarios bajo los dos criterios de
+`./arquitecta.sh experimento` recorre los cinco escenarios bajo los dos criterios de
 clasificación y escribe en `resultados/` un reporte legible, la evidencia
 completa en JSON, el grafo dibujado en SVG, TikZ y DOT —con las aristas infractoras
 resaltadas— y los hallazgos tabulados en CSV. El archivo `resumen.csv` de cada

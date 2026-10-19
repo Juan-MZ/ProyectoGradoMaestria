@@ -1,31 +1,88 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Abre la interfaz grafica de Arquitecta. Equivalente POSIX de
+#  Arquitecta: punto de entrada unico. Equivalente POSIX de
 #  arquitecta.bat.
 #
-#    ./arquitecta.sh                 abre la ventana vacia
-#    ./arquitecta.sh <carpeta|jar>   la abre con ese proyecto
+#    ./arquitecta.sh                      abre la aplicacion
+#    ./arquitecta.sh <carpeta|jar>        la abre con ese proyecto
+#    ./arquitecta.sh analizar <proyecto> [reglas] [opciones]
+#                                         analisis por consola
+#    ./arquitecta.sh compilar | pruebas | experimento | figuras
+#    ./arquitecta.sh ayuda
 #
-#  Si el prototipo aun no esta compilado, lo compila primero.
-#  Requiere JDK 17+.
+#  Compila por su cuenta la primera vez y cada vez que cambia el
+#  codigo. Requiere JDK 17+.
 # ============================================================
 set -euo pipefail
 
-# La ruta del proyecto se resuelve antes de cambiar de directorio.
-PROYECTO=""
-if [ $# -gt 0 ]; then
-    PROYECTO="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-fi
-cd "$(dirname "$0")"
+RAIZ="$(cd "$(dirname "$0")" && pwd)"
+JAR="$RAIZ/out/arquitecta.jar"
 
-if [ ! -f out/arquitecta-core/co/javeriana/msw/arquitecta/ArquitectaApp.class ]; then
-    echo "Compilando Arquitecta por primera vez..."
-    bash build.sh
-fi
+ayuda() {
+    cat <<'TEXTO'
 
-CP="out/arquitecta-core:lib/*"
-if [ -z "$PROYECTO" ]; then
-    exec java -cp "$CP" co.javeriana.msw.arquitecta.ArquitectaApp --gui
-else
-    exec java -cp "$CP" co.javeriana.msw.arquitecta.ArquitectaApp --gui --proyecto "$PROYECTO"
-fi
+ Arquitecta - deteccion de deriva arquitectonica
+
+   ./arquitecta.sh                      abre la aplicacion
+   ./arquitecta.sh <carpeta|jar>        la abre con ese proyecto
+   ./arquitecta.sh analizar <proyecto> [reglas.properties] [opciones]
+                                        analisis por consola; opciones:
+                                        --salida <dir>  --svg <archivo>  --modo cr|cr+severidad
+                                        --etiqueta <nombre>  --fallar-si <estado>
+   ./arquitecta.sh compilar             compila el prototipo y el caso de estudio
+   ./arquitecta.sh preparar             compila solo si el codigo cambio
+   ./arquitecta.sh pruebas              ejecuta la bateria de pruebas
+   ./arquitecta.sh experimento          reproduce el experimento (resultados/)
+   ./arquitecta.sh figuras              regenera figuras y capturas
+
+ El proyecto puede indicarse por su carpeta raiz (Maven, Gradle, IntelliJ,
+ Eclipse), por su directorio de clases o por su archivo .jar.
+TEXTO
+}
+
+# Recompila si falta el .jar o si alguna fuente es posterior a la ultima
+# compilacion.
+actualizar() {
+    local marca="$RAIZ/out/.compilado"
+    if [ -f "$JAR" ] && [ -f "$marca" ] \
+        && [ -z "$(find "$RAIZ/src" "$RAIZ/caso-estudio" -name '*.java' -newer "$marca" -print -quit)" ]; then
+        return 0
+    fi
+    echo "Compilando Arquitecta (solo la primera vez o tras cambiar el codigo)..."
+    bash "$RAIZ/scripts/compilar.sh" || {
+        echo
+        echo "[ERROR] No se pudo compilar Arquitecta. Verifique que haya un JDK 17 o superior instalado."
+        exit 1
+    }
+}
+
+case "${1:-}" in
+    ayuda|-h|--help|--ayuda)
+        ayuda ;;
+    compilar)
+        bash "$RAIZ/scripts/compilar.sh" ;;
+    preparar)
+        actualizar ;;
+    pruebas|experimento|figuras)
+        actualizar
+        bash "$RAIZ/scripts/$1.sh" ;;
+    "")
+        actualizar
+        exec java -jar "$JAR" ;;
+    analizar)
+        shift
+        if [ $# -eq 0 ]; then
+            echo "Uso: ./arquitecta.sh analizar <carpeta-del-proyecto | clases | archivo.jar> [reglas.properties] [opciones]"
+            exit 1
+        fi
+        actualizar
+        exec java -jar "$JAR" "$@" ;;
+    *)
+        actualizar
+        if [ -e "$1" ]; then
+            exec java -jar "$JAR" --gui --proyecto "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+        fi
+        # Cualquier otra entrada (por ejemplo, --catalogo) se entrega tal cual
+        # a la linea de comandos del mecanismo.
+        exec java -jar "$JAR" "$@" ;;
+esac

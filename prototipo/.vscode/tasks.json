@@ -1,0 +1,45 @@
+{
+    // Tareas del lanzador (Terminal > Ejecutar tarea...). Cada una invoca
+    // arquitecta.bat en Windows y arquitecta.sh en macOS y Linux.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Arquitecta: preparar",
+            "detail": "Compila solo si el codigo cambio desde la ultima vez",
+            "type": "shell",
+            "command": "./arquitecta.sh preparar",
+            "windows": { "command": ".\\arquitecta.bat preparar" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arquitecta: compilar",
+            "type": "shell",
+            "command": "./arquitecta.sh compilar",
+            "windows": { "command": ".\\arquitecta.bat compilar" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arquitecta: pruebas",
+            "type": "shell",
+            "command": "./arquitecta.sh pruebas",
+            "windows": { "command": ".\\arquitecta.bat pruebas" },
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arquitecta: experimento",
+            "type": "shell",
+            "command": "./arquitecta.sh experimento",
+            "windows": { "command": ".\\arquitecta.bat experimento" },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arquitecta: figuras",
+            "type": "shell",
+            "command": "./arquitecta.sh figuras",
+            "windows": { "command": ".\\arquitecta.bat figuras" },
+            "problemMatcher": []
+        }
+    ]
+}

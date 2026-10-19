@@ -16,17 +16,17 @@ import java.awt.geom.RoundRectangle2D;
  * Botón plano y redondeado, dibujado por completo para que su aspecto no dependa
  * del aspecto del sistema operativo.
  */
-final class Boton extends JButton {
+public final class Boton extends JButton {
 
     private static final long serialVersionUID = 1L;
 
-    enum Estilo { PRIMARIO, SECUNDARIO, DISCRETO }
+    public enum Estilo { PRIMARIO, SECUNDARIO, DISCRETO }
 
     private final Estilo estilo;
     private boolean encima;
     private boolean pulsado;
 
-    Boton(String texto, Estilo estilo) {
+    public Boton(String texto, Estilo estilo) {
         super(texto);
         this.estilo = estilo;
         setFont(estilo == Estilo.PRIMARIO ? Tema.negrita(13.5f) : Tema.texto(13f));

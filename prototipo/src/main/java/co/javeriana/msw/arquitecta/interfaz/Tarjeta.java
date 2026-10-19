@@ -9,20 +9,20 @@ import java.awt.LayoutManager;
 import java.awt.geom.RoundRectangle2D;
 
 /** Panel con fondo blanco, esquinas redondeadas y un borde tenue. */
-class Tarjeta extends JPanel {
+public class Tarjeta extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
     private Color fondo = Tema.SUPERFICIE;
     private Color borde = Tema.BORDE;
 
-    Tarjeta(LayoutManager layout) {
+    public Tarjeta(LayoutManager layout) {
         super(layout);
         setOpaque(false);
         setBorder(new EmptyBorder(14, 16, 14, 16));
     }
 
-    void colores(Color fondo, Color borde) {
+    public void colores(Color fondo, Color borde) {
         this.fondo = fondo;
         this.borde = borde;
         repaint();

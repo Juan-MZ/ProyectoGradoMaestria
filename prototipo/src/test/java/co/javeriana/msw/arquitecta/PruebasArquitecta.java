@@ -59,6 +59,7 @@ public final class PruebasArquitecta {
         pruebasVisualizacion(v);
         pruebasHistorico(v);
         PruebasServicio.ejecutar(v);
+        co.javeriana.msw.arquitecta.asistente.PruebasAsistente.ejecutar(v);
 
         System.exit(v.resumen());
     }

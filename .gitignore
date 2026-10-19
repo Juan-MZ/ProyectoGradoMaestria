@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 #  Artefactos generados. Todo lo que aparece aquí puede reconstruirse:
 #  el documento con Maestria_PlantillaProyectoGrado/compilar.bat|.sh y el
-#  prototipo con prototipo/build.bat|.sh.
+#  prototipo con prototipo/arquitecta.bat|.sh compilar.
 # ---------------------------------------------------------------------------
 
 # --- LaTeX: archivos auxiliares -------------------------------------------
@@ -33,14 +33,9 @@ Maestria_PlantillaProyectoGrado/out/
 # --- Java: compilación y evidencia generada -------------------------------
 prototipo/out/
 prototipo/target/
+prototipo/caso-estudio/*/target/
 prototipo/resultados/
 *.class
-
-# Listas temporales que crean los scripts de compilación
-prototipo/_fuentes.txt
-prototipo/_core.txt
-prototipo/_caso.txt
-prototipo/_caso_alt.txt
 
 # --- Entorno local ---------------------------------------------------------
 .DS_Store

@@ -1,5 +1,6 @@
 package co.javeriana.msw.arquitecta;
 
+import co.javeriana.msw.arquitecta.asistente.VentanaAsistente;
 import co.javeriana.msw.arquitecta.interfaz.InterfazGrafica;
 import co.javeriana.msw.arquitecta.motor.EstadoArquitectonico;
 import co.javeriana.msw.arquitecta.servicio.Analisis;
@@ -135,7 +136,8 @@ public final class ArquitectaApp {
                     opciones.get("seleccion"), Path.of(opciones.get("captura")));
             return;
         }
-        InterfazGrafica.abrir(proyecto, reglas);
+        // La raiz de composicion decide que la aplicacion incluye el asistente de catalogo.
+        InterfazGrafica.abrir(proyecto, reglas, VentanaAsistente::abrir);
     }
 
     /**

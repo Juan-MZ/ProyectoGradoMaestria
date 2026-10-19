@@ -86,29 +86,45 @@ public class ConstructorGrafo {
      * todavía no se dispone de catálogo.
      */
     public static Map<String, Integer> contarPaquetes(Path ruta) {
-        ClassFileImporter importador = new ClassFileImporter()
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS);
-        JavaClasses clases;
-        if (Files.isRegularFile(ruta) && ruta.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar")) {
-            try (JarFile jar = new JarFile(ruta.toFile())) {
-                clases = importador.importJar(jar);
-                return contar(clases);
-            } catch (IOException e) {
-                throw new UncheckedIOException("No se pudo leer el archivo " + ruta, e);
-            }
-        }
-        return contar(importador.importPath(ruta));
-    }
-
-    private static Map<String, Integer> contar(JavaClasses clases) {
         Map<String, Integer> cuenta = new TreeMap<>();
-        for (JavaClass clase : clases) {
+        for (JavaClass clase : importar(ruta)) {
             String paquete = clase.getPackageName();
             if (paquete != null && !paquete.isEmpty()) {
                 cuenta.merge(paquete, 1, Integer::sum);
             }
         }
         return cuenta;
+    }
+
+    /**
+     * Nombres simples de las clases de primer nivel de cada paquete, en orden
+     * alfabético; se omiten las clases anidadas y anónimas. Los nombres suelen
+     * delatar el papel de un paquete ({@code *Controller}, {@code *Repository}) y
+     * sirven para proponer un catálogo a quien todavía no lo tiene.
+     */
+    public static Map<String, List<String>> nombresDeClases(Path ruta) {
+        Map<String, List<String>> nombres = new TreeMap<>();
+        for (JavaClass clase : importar(ruta)) {
+            String paquete = clase.getPackageName();
+            if (paquete != null && !paquete.isEmpty() && clase.isTopLevelClass()) {
+                nombres.computeIfAbsent(paquete, p -> new ArrayList<>()).add(clase.getSimpleName());
+            }
+        }
+        nombres.values().forEach(lista -> lista.sort(Comparator.naturalOrder()));
+        return nombres;
+    }
+
+    private static JavaClasses importar(Path ruta) {
+        ClassFileImporter importador = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS);
+        if (Files.isRegularFile(ruta) && ruta.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            try (JarFile jar = new JarFile(ruta.toFile())) {
+                return importador.importJar(jar);
+            } catch (IOException e) {
+                throw new UncheckedIOException("No se pudo leer el archivo " + ruta, e);
+            }
+        }
+        return importador.importPath(ruta);
     }
 
     /**

@@ -22,17 +22,22 @@ import java.util.stream.Stream;
  * interfaz gráfica.
  *
  * <p>A diferencia de las pruebas del núcleo, estas recorren la ruta real de
- * extracción sobre los escenarios compilados en {@code out/}: lo que se verifica
+ * extracción sobre los escenarios compilados del caso de estudio, cada uno en
+ * su {@code target/classes}: lo que se verifica
  * es que el usuario pueda señalar la carpeta de un proyecto tal como la deja su
  * herramienta de construcción y obtenga exactamente el mismo diagnóstico que el
  * experimento controlado.</p>
  */
 final class PruebasServicio {
 
-    private static final Path BASE = Path.of("out", "caso-estudio");
-    private static final Path C4 = Path.of("out", "caso-estudio-c4-combinado");
+    /** Carpetas de los escenarios, tal como se eligen en la interfaz. */
+    private static final Path BASE = Path.of("caso-estudio", "c0-base");
+    private static final Path C4 = Path.of("caso-estudio", "c4-combinado");
+    /** Sus directorios de clases, donde los deja la compilación. */
+    private static final Path CLASES_BASE = BASE.resolve(Path.of("target", "classes"));
+    private static final Path CLASES_C4 = C4.resolve(Path.of("target", "classes"));
     private static final Path NUCLEO = Path.of("out", "arquitecta-core");
-    private static final Path CATALOGO = Path.of("rules.properties");
+    private static final Path CATALOGO = Path.of("caso-estudio", "rules.properties");
     private static final double EPS = 0.001;
 
     private PruebasServicio() {
@@ -40,7 +45,7 @@ final class PruebasServicio {
 
     static void ejecutar(Verificador v) throws IOException {
         v.grupo("Servicio de análisis: selección del proyecto");
-        if (!Files.isDirectory(BASE) || !Files.isDirectory(C4)) {
+        if (!Files.isDirectory(CLASES_BASE) || !Files.isDirectory(CLASES_C4)) {
             v.comprueba("los escenarios compilados existen (ejecute build antes de las pruebas)", false);
             return;
         }
@@ -55,7 +60,7 @@ final class PruebasServicio {
 
     private static void resolucion(Verificador v, Path temporal) throws IOException {
         Path maven = temporal.resolve("proyecto-maven");
-        copiar(BASE, maven.resolve("target/classes"));
+        copiar(CLASES_BASE, maven.resolve("target/classes"));
         Files.createDirectories(maven.resolve("src/main/java"));
         ResolutorProyecto.Origen origenMaven = resolverSinError(maven);
         v.comprueba("un proyecto Maven se resuelve a target/classes",
@@ -64,14 +69,21 @@ final class PruebasServicio {
                 origenMaven != null && origenMaven.descripcion().startsWith("Proyecto Maven"));
 
         Path gradle = temporal.resolve("proyecto-gradle");
-        copiar(BASE, gradle.resolve("build/classes/java/main"));
+        copiar(CLASES_BASE, gradle.resolve("build/classes/java/main"));
         ResolutorProyecto.Origen origenGradle = resolverSinError(gradle);
         v.comprueba("un proyecto Gradle se resuelve a build/classes/java/main",
                 origenGradle != null && origenGradle.ruta().endsWith(Path.of("build", "classes", "java", "main")));
 
-        ResolutorProyecto.Origen directo = resolverSinError(BASE);
+        ResolutorProyecto.Origen directo = resolverSinError(CLASES_BASE);
         v.comprueba("una carpeta con clases se analiza tal cual",
-                directo != null && directo.ruta().equals(BASE.toAbsolutePath().normalize()));
+                directo != null && directo.ruta().equals(CLASES_BASE.toAbsolutePath().normalize()));
+
+        ResolutorProyecto.Origen escenario = resolverSinError(C4);
+        v.comprueba("la carpeta de un escenario se resuelve a su target/classes",
+                escenario != null && escenario.ruta().equals(CLASES_C4.toAbsolutePath().normalize()));
+        v.comprueba("el catálogo común del caso de estudio se sugiere desde la carpeta superior",
+                ResolutorProyecto.catalogoSugerido(C4)
+                        .map(p -> p.equals(CATALOGO.toAbsolutePath().normalize())).orElse(false));
 
         Path fuente = temporal.resolve("sin-compilar");
         Files.createDirectories(fuente.resolve("src/main/java/com/demo"));
@@ -105,18 +117,18 @@ final class PruebasServicio {
         v.igual("la CR coincide con la del experimento (C4)", 57.14, c4.resultado().conformidad(), 0.01);
         v.igual("se reportan los cuatro hallazgos inducidos", 4, c4.resultado().totalViolaciones());
         v.igual("el estado es No conforme", EstadoArquitectonico.NO_CONFORME, c4.resultado().estado());
-        v.igual("la etiqueta por defecto es el nombre de la carpeta", "caso-estudio-c4-combinado", c4.etiqueta());
+        v.igual("la etiqueta por defecto es el nombre de la carpeta", "c4-combinado", c4.etiqueta());
         v.igual("se dispone el grafo de los cinco paquetes", 5, c4.disposicion().nodos().size());
 
         Path maven = temporal.resolve("c4-maven");
-        copiar(C4, maven.resolve("target/classes"));
+        copiar(CLASES_C4, maven.resolve("target/classes"));
         ResultadoAnalisis desdeMaven = analizar(maven, CATALOGO);
         v.comprueba("analizar la carpeta del proyecto Maven da el mismo diagnóstico",
                 desdeMaven != null && Math.abs(desdeMaven.resultado().conformidad() - c4.resultado().conformidad()) < EPS
                         && desdeMaven.resultado().totalViolaciones() == 4);
 
         Path jar = temporal.resolve("c4.jar");
-        empaquetar(C4, jar);
+        empaquetar(CLASES_C4, jar);
         ResultadoAnalisis desdeJar = analizar(jar, CATALOGO);
         v.comprueba("analizar el .jar da el mismo diagnóstico que la carpeta",
                 desdeJar != null && Math.abs(desdeJar.resultado().conformidad() - c4.resultado().conformidad()) < EPS

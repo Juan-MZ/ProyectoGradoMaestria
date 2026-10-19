@@ -1,0 +1,38 @@
+{
+    // Configuraciones para ejecutar Arquitecta con F5. Requieren abrir la
+    // carpeta prototipo/ como espacio de trabajo, para que la extensión de
+    // Java importe el pom.xml.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Arquitecta: aplicación",
+            "request": "launch",
+            "mainClass": "co.javeriana.msw.arquitecta.ArquitectaApp",
+            "projectName": "arquitecta",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Arquitecta: preparar"
+        },
+        {
+            "type": "java",
+            "name": "Arquitecta: analizar C4 por consola",
+            "request": "launch",
+            "mainClass": "co.javeriana.msw.arquitecta.ArquitectaApp",
+            "projectName": "arquitecta",
+            "cwd": "${workspaceFolder}",
+            "args": ["caso-estudio/c4-combinado", "caso-estudio/rules.properties"],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Arquitecta: preparar"
+        },
+        {
+            "type": "java",
+            "name": "Arquitecta: pruebas",
+            "request": "launch",
+            "mainClass": "co.javeriana.msw.arquitecta.PruebasArquitecta",
+            "projectName": "arquitecta",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "Arquitecta: preparar"
+        }
+    ]
+}

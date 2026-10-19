@@ -77,6 +77,16 @@
 \include{format}
 \makeindex
 
+% Cuando un flotante no cabe en la página, el espacio sobrante queda al pie en
+% lugar de repartirse entre párrafos y títulos.
+\raggedbottom
+% Permite que una figura grande comparta página con el texto en lugar de quedar
+% sola en una página de flotantes.
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\bottomfraction}{0.6}
+\renewcommand{\textfraction}{0.12}
+\renewcommand{\floatpagefraction}{0.8}
+
 \begin{document}
 
 \maketitle

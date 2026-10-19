@@ -21,31 +21,31 @@ import java.util.stream.Collectors;
  * las salidas: rojo para lo crítico, ámbar para lo que requiere atención, verde
  * para lo conforme.</p>
  */
-final class Tema {
+public final class Tema {
 
-    static final Color FONDO = new Color(0xF3F5F9);
-    static final Color SUPERFICIE = Color.WHITE;
-    static final Color LATERAL = new Color(0xFAFBFD);
-    static final Color BORDE = new Color(0xDCE2EB);
-    static final Color BORDE_SUAVE = new Color(0xE8ECF2);
-    static final Color TEXTO = new Color(0x1F2D44);
-    static final Color TEXTO_SUAVE = new Color(0x5B6B82);
-    static final Color TEXTO_TENUE = new Color(0x8A97AA);
-    static final Color CABECERA = new Color(0x18263C);
-    static final Color CABECERA_2 = new Color(0x26406A);
-    static final Color PRIMARIO = new Color(0x2F5BA8);
-    static final Color PRIMARIO_HOVER = new Color(0x274E93);
-    static final Color PRIMARIO_SUAVE = new Color(0xE8EFFA);
-    static final Color BORDE_GRAFO = new Color(0x3B5C8F);
+    public static final Color FONDO = new Color(0xF3F5F9);
+    public static final Color SUPERFICIE = Color.WHITE;
+    public static final Color LATERAL = new Color(0xFAFBFD);
+    public static final Color BORDE = new Color(0xDCE2EB);
+    public static final Color BORDE_SUAVE = new Color(0xE8ECF2);
+    public static final Color TEXTO = new Color(0x1F2D44);
+    public static final Color TEXTO_SUAVE = new Color(0x5B6B82);
+    public static final Color TEXTO_TENUE = new Color(0x8A97AA);
+    public static final Color CABECERA = new Color(0x18263C);
+    public static final Color CABECERA_2 = new Color(0x26406A);
+    public static final Color PRIMARIO = new Color(0x2F5BA8);
+    public static final Color PRIMARIO_HOVER = new Color(0x274E93);
+    public static final Color PRIMARIO_SUAVE = new Color(0xE8EFFA);
+    public static final Color BORDE_GRAFO = new Color(0x3B5C8F);
 
-    static final Color EXITO = new Color(0x2E7D4F);
-    static final Color EXITO_FONDO = new Color(0xE3F3E9);
-    static final Color AVISO = new Color(0xB7791F);
-    static final Color AVISO_FONDO = new Color(0xFDF3DC);
-    static final Color ALERTA = new Color(0xC0392B);
-    static final Color ALERTA_FONDO = new Color(0xFBE4E2);
-    static final Color NUCLEO = new Color(0x8A94A6);
-    static final Color NUCLEO_FONDO = new Color(0xF4F5F7);
+    public static final Color EXITO = new Color(0x2E7D4F);
+    public static final Color EXITO_FONDO = new Color(0xE3F3E9);
+    public static final Color AVISO = new Color(0xB7791F);
+    public static final Color AVISO_FONDO = new Color(0xFDF3DC);
+    public static final Color ALERTA = new Color(0xC0392B);
+    public static final Color ALERTA_FONDO = new Color(0xFBE4E2);
+    public static final Color NUCLEO = new Color(0x8A94A6);
+    public static final Color NUCLEO_FONDO = new Color(0xF4F5F7);
 
     private static final String FAMILIA_TEXTO = elegir(
             List.of("Segoe UI", "SF Pro Text", "Helvetica Neue", "Inter", "Roboto", "Noto Sans", "DejaVu Sans"),
@@ -57,19 +57,19 @@ final class Tema {
     private Tema() {
     }
 
-    static Font texto(float tamano) {
+    public static Font texto(float tamano) {
         return new Font(FAMILIA_TEXTO, Font.PLAIN, 12).deriveFont(tamano);
     }
 
-    static Font negrita(float tamano) {
+    public static Font negrita(float tamano) {
         return new Font(FAMILIA_TEXTO, Font.BOLD, 12).deriveFont(tamano);
     }
 
-    static Font codigo(float tamano) {
+    public static Font codigo(float tamano) {
         return new Font(FAMILIA_CODIGO, Font.PLAIN, 12).deriveFont(tamano);
     }
 
-    static Color colorEstado(EstadoArquitectonico estado) {
+    public static Color colorEstado(EstadoArquitectonico estado) {
         return switch (estado) {
             case ACEPTABLE -> EXITO;
             case EN_OBSERVACION -> AVISO;
@@ -77,7 +77,7 @@ final class Tema {
         };
     }
 
-    static Color fondoEstado(EstadoArquitectonico estado) {
+    public static Color fondoEstado(EstadoArquitectonico estado) {
         return switch (estado) {
             case ACEPTABLE -> EXITO_FONDO;
             case EN_OBSERVACION -> AVISO_FONDO;
@@ -85,7 +85,7 @@ final class Tema {
         };
     }
 
-    static Color colorSeveridad(Violacion.Severidad severidad) {
+    public static Color colorSeveridad(Violacion.Severidad severidad) {
         return switch (severidad) {
             case CRITICA -> ALERTA;
             case MAYOR -> AVISO;
@@ -93,7 +93,7 @@ final class Tema {
         };
     }
 
-    static Color fondoSeveridad(Violacion.Severidad severidad) {
+    public static Color fondoSeveridad(Violacion.Severidad severidad) {
         return switch (severidad) {
             case CRITICA -> ALERTA_FONDO;
             case MAYOR -> AVISO_FONDO;
@@ -102,14 +102,14 @@ final class Tema {
     }
 
     /** Color de una barra de conformidad según su valor, con los mismos umbrales que la CR. */
-    static Color colorConformidad(double porcentaje) {
+    public static Color colorConformidad(double porcentaje) {
         if (porcentaje >= 85) {
             return EXITO;
         }
         return porcentaje >= 70 ? AVISO : ALERTA;
     }
 
-    static void suavizar(Graphics2D g) {
+    public static void suavizar(Graphics2D g) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
@@ -117,7 +117,7 @@ final class Tema {
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
     }
 
-    static Color conAlfa(Color c, float alfa) {
+    public static Color conAlfa(Color c, float alfa) {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.round(alfa * 255));
     }
 

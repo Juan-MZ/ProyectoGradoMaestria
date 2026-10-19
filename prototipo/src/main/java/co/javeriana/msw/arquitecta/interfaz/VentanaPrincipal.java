@@ -90,6 +90,10 @@ final class VentanaPrincipal extends JFrame {
 
     private Path proyecto;
     private Path catalogo;
+    /** El catálogo vigente lo propuso el proyecto, no el usuario: se reemplaza al cambiar de proyecto. */
+    private boolean catalogoDelProyecto;
+    /** Analizar en cuanto se confirme que el proyecto elegido puede analizarse. */
+    private boolean analizarAlDetectar;
     private boolean proyectoValido;
     private ResultadoAnalisis resultado;
 
@@ -105,6 +109,10 @@ final class VentanaPrincipal extends JFrame {
     private final Boton exportar = new Boton("Exportar evidencia…", Boton.Estilo.SECUNDARIO);
     private final Boton guardarSvg = new Boton("Guardar grafo SVG…", Boton.Estilo.SECUNDARIO);
     private final Boton quitarCatalogo = new Boton("Quitar", Boton.Estilo.DISCRETO);
+    private final Boton botonAsistente = new Boton("Definir con el asistente…", Boton.Estilo.SECUNDARIO);
+    private final JComponent filaAsistente = filaBotones(botonAsistente);
+    /** Asistente de catálogo, si la aplicación lo incluye. */
+    private AsistenteCatalogo asistente;
 
     private final CardLayout vistas = new CardLayout();
     private final JPanel centro = new JPanel(vistas);
@@ -190,6 +198,12 @@ final class VentanaPrincipal extends JFrame {
         examinarCatalogo.addActionListener(e -> elegirCatalogo());
         quitarCatalogo.addActionListener(e -> seleccionarCatalogo(null));
         tarjetaCatalogo.add(filaBotones(examinarCatalogo, quitarCatalogo));
+        botonAsistente.setToolTipText("Un modelo de lenguaje propone capas, dependencias permitidas, umbral y"
+                + " exenciones a partir de la estructura del proyecto; usted revisa y decide");
+        botonAsistente.addActionListener(e -> abrirAsistente());
+        filaAsistente.setBorder(new EmptyBorder(8, 0, 0, 0));
+        filaAsistente.setVisible(false);
+        tarjetaCatalogo.add(filaAsistente);
         lateral.add(tarjetaCatalogo);
         mostrarCatalogo();
         lateral.add(Box.createVerticalStrut(14));
@@ -282,6 +296,29 @@ final class VentanaPrincipal extends JFrame {
         arrastre.setText("También puede arrastrar una carpeta o un .jar a esta ventana.");
         arrastre.setAlignmentX(Component.CENTER_ALIGNMENT);
         bloque.add(arrastre);
+
+        List<Ejemplos.Caso> casos = Ejemplos.disponibles();
+        if (!casos.isEmpty()) {
+            bloque.add(Box.createVerticalStrut(30));
+            JLabel invitacion = etiqueta(Tema.negrita(12f), Tema.TEXTO_TENUE);
+            invitacion.setText("¿SIN UN PROYECTO A MANO? PRUEBE CON EL CASO DE ESTUDIO");
+            // Holgura lateral: con el ancho exacto, el texto se recorta al escalar.
+            invitacion.setBorder(new EmptyBorder(0, 12, 0, 12));
+            invitacion.setAlignmentX(Component.CENTER_ALIGNMENT);
+            bloque.add(invitacion);
+            bloque.add(Box.createVerticalStrut(8));
+            JPanel botones = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+            botones.setOpaque(false);
+            for (Ejemplos.Caso caso : casos) {
+                Boton b = new Boton(caso.nombre(), Boton.Estilo.SECUNDARIO);
+                b.setToolTipText(caso.descripcion());
+                b.addActionListener(e -> probarEjemplo(caso));
+                botones.add(b);
+            }
+            botones.setAlignmentX(Component.CENTER_ALIGNMENT);
+            botones.setMaximumSize(botones.getPreferredSize());
+            bloque.add(botones);
+        }
         vacio.add(bloque);
         return vacio;
     }
@@ -498,6 +535,35 @@ final class VentanaPrincipal extends JFrame {
         }
     }
 
+    /** Ofrece en la barra lateral el acceso al asistente de catálogo. */
+    void usarAsistente(AsistenteCatalogo asistente) {
+        this.asistente = asistente;
+        filaAsistente.setVisible(asistente != null);
+        actualizarControles();
+    }
+
+    private void abrirAsistente() {
+        if (asistente == null || proyecto == null) {
+            return;
+        }
+        asistente.abrir(this, proyecto, catalogo, ruta -> {
+            seleccionarCatalogo(ruta);
+            mostrarMensaje("Se adoptó el catálogo " + ruta.getFileName() + " definido con el asistente.");
+            if (proyectoValido) {
+                analizar();
+            }
+        });
+    }
+
+    /** Abre un escenario del caso de estudio, con su catálogo, y lo analiza. */
+    private void probarEjemplo(Ejemplos.Caso caso) {
+        Optional<Path> reglas = ResolutorProyecto.catalogoSugerido(caso.carpeta());
+        seleccionarCatalogo(reglas.orElse(null));
+        catalogoDelProyecto = true;
+        analizarAlDetectar = true;
+        seleccionarProyecto(caso.carpeta());
+    }
+
     /** Selecciona el proyecto y comprueba en segundo plano qué se analizará realmente. */
     void seleccionarProyecto(Path ruta) {
         proyecto = ruta.toAbsolutePath().normalize();
@@ -549,17 +615,23 @@ final class VentanaPrincipal extends JFrame {
     }
 
     private void aplicarDeteccion(ResolutorProyecto.Origen origen, Throwable error) {
+        boolean analizarAhora = analizarAlDetectar && origen != null;
+        analizarAlDetectar = false;
         if (origen != null) {
             proyectoValido = true;
             deteccion.mostrar("● " + origen.descripcion(), Tema.EXITO);
-            if (catalogo == null) {
+            String aviso = "";
+            // Un catálogo elegido por el usuario se respeta; uno que propuso el
+            // proyecto anterior se sustituye por el que traiga el nuevo, o se retira.
+            if (catalogo == null || catalogoDelProyecto) {
                 Optional<Path> sugerido = ResolutorProyecto.catalogoSugerido(proyecto);
+                seleccionarCatalogo(sugerido.orElse(null));
+                catalogoDelProyecto = sugerido.isPresent();
                 if (sugerido.isPresent()) {
-                    seleccionarCatalogo(sugerido.get());
-                    mostrarMensaje("Se cargó el catálogo de reglas que trae el proyecto: " + sugerido.get().getFileName());
+                    aviso = "  Se cargó el catálogo que trae el proyecto: " + sugerido.get().getFileName() + ".";
                 }
             }
-            mostrarMensaje("Proyecto listo para analizar.  Pulse «Analizar arquitectura» o F5.");
+            mostrarMensaje("Proyecto listo para analizar." + aviso + "  Pulse «Analizar arquitectura» o F5.");
         } else {
             proyectoValido = false;
             String texto = error == null ? "No se pudo examinar la carpeta." : error.getMessage();
@@ -567,9 +639,13 @@ final class VentanaPrincipal extends JFrame {
             mostrarMensaje("El proyecto seleccionado no puede analizarse todavía.");
         }
         actualizarControles();
+        if (analizarAhora) {
+            analizar();
+        }
     }
 
     void seleccionarCatalogo(Path ruta) {
+        catalogoDelProyecto = false;
         catalogo = ruta == null ? null : ruta.toAbsolutePath().normalize();
         guardarPreferencia("catalogo", catalogo == null ? "" : catalogo.toString());
         mostrarCatalogo();
@@ -854,6 +930,11 @@ final class VentanaPrincipal extends JFrame {
 
     private void actualizarControles() {
         analizar.setEnabled(proyecto != null);
+        botonAsistente.setEnabled(proyecto != null && proyectoValido);
+        botonAsistente.setToolTipText(proyecto != null && proyectoValido
+                ? "Un modelo de lenguaje propone capas, dependencias permitidas, umbral y exenciones a partir"
+                        + " de la estructura del proyecto; usted revisa y decide"
+                : "Seleccione primero un proyecto compilado");
         exportar.setEnabled(resultado != null);
         guardarSvg.setEnabled(resultado != null);
     }

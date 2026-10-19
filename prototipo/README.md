@@ -23,36 +23,81 @@ clasificación del estado arquitectónico.
 | `…arquitecta.motor`   | Agrega las verificaciones, calcula la CR y clasifica el estado por CR, por severidad y en su combinación.                                                                                                                                |
 | `…arquitecta.reporte` | Reporte textual con declaración de alcance, catálogo ejecutable y exportadores a JSON, CSV y DOT.                                                                                                                                        |
 | `…arquitecta.servicio` | Fachada del análisis que comparten la línea de comandos y la interfaz gráfica: reconoce la carpeta de un proyecto Maven, Gradle, IntelliJ o Eclipse (o un `.jar`), carga el catálogo o infiere una configuración mínima y ejecuta el pipeline completo. |
+| `…arquitecta.asistente` | Asistente opcional que, con un modelo de lenguaje (Claude, OpenAI o uno local con Ollama o LM Studio), propone el catálogo de reglas de un proyecto que no lo tiene. Se acopla a la interfaz sin que esta dependa de él. |
 | `…arquitecta.interfaz` | Interfaz gráfica de escritorio (Swing, incluida en el JDK): selección del proyecto, indicadores, grafo interactivo, hallazgos con su evidencia y exportación. Solo presenta: pide el análisis al servicio y dibuja su resultado. |
 
 La arquitectura interna es estrictamente acíclica y estratificada; el propio
 mecanismo la verifica (véase _Autoanálisis_, más abajo).
 
+## Estructura
+
+```
+prototipo/
+├── arquitecta.bat · arquitecta.sh   Punto de entrada único (doble clic: abre la aplicación)
+├── src/main/java/                   Código del mecanismo
+├── src/test/java/                   Batería de pruebas
+├── lib/                             ArchUnit y SLF4J (sin Maven ni red)
+├── caso-estudio/                    Los cinco escenarios del experimento y su catálogo
+│   ├── c0-base/ … c4-combinado/      Un proyecto por escenario (src/main/java)
+│   └── rules.properties             Catálogo de reglas común
+├── ejemplos/
+│   ├── autoanalisis/                Catálogo con que el prototipo se analiza a sí mismo
+│   ├── archunit/                    Catálogos para analizar ArchUnit 1.3.0
+│   ├── graficos/                    Grafos SVG generados por la herramienta
+│   └── interfaz/                    Capturas de la aplicación
+├── scripts/                         Guiones que invoca el lanzador
+├── pom.xml                          Compilación alternativa con Maven
+└── .vscode/                         Ejecución con F5 y tareas en VS Code
+```
+
+Lo generado no se versiona: `out/` (clases y `arquitecta.jar`), el
+`target/classes` de cada escenario y `resultados/` (evidencia del experimento).
+
 ## Requisitos
 
 - **JDK 17 o superior** (verificado con JDK 17 y JDK 26).
-- Maven es **opcional**: los scripts usan las dependencias ya empaquetadas en
-  `lib/`, por lo que no se requiere conexión a internet ni repositorio local.
+- Nada más: las dependencias ya están en `lib/`, de modo que no hace falta
+  Maven, repositorio de artefactos ni conexión a internet.
 
 ## Inicio rápido
 
+**Doble clic en `arquitecta.bat`** (o `./arquitecta.sh` en macOS y Linux): la
+primera vez compila el prototipo y el caso de estudio, y abre la aplicación. En
+su pantalla de inicio, los botones **C0 … C4** analizan cada escenario del caso de
+estudio con un clic. Desde entonces solo recompila cuando el código cambia.
+
+El mismo lanzador reúne todo lo demás:
+
 ```bat
-arquitecta.bat   REM abre la interfaz grafica (compila antes si hace falta)
-build.bat        REM compila nucleo, pruebas y los cinco escenarios
-test.bat         REM ejecuta la bateria de pruebas (190 comprobaciones)
-experimento.bat  REM ejecuta el experimento completo y escribe resultados\
-figuras.bat      REM regenera los grafos de la monografia y de esta guia
+arquitecta                         REM abre la aplicacion
+arquitecta C:\ruta\al\proyecto      REM la abre con ese proyecto (carpeta o .jar)
+arquitecta analizar <proyecto> [reglas] [opciones]   REM analisis por consola
+arquitecta compilar                REM compila nucleo, pruebas, arquitecta.jar y escenarios
+arquitecta pruebas                 REM bateria de pruebas (234 comprobaciones)
+arquitecta experimento             REM experimento completo; evidencia en resultados\
+arquitecta figuras                 REM regenera los grafos y capturas de la monografia
+arquitecta ayuda
 ```
 
-En macOS o Linux, los equivalentes son `./arquitecta.sh`, `./build.sh`,
-`./test.sh`, `./experimento.sh` y `./figuras.sh`.
+En macOS o Linux se usa igual, como `./arquitecta.sh <subcomando>`; desde
+PowerShell, como `.\arquitecta <subcomando>`.
+
+La compilación produce además **`out/arquitecta.jar`**, un único archivo con las
+dependencias dentro: basta con copiarlo a otro equipo con Java 17 para usar la
+herramienta (`java -jar arquitecta.jar`, o doble clic, abre la aplicación).
+
+**En VS Code**, abra la carpeta `prototipo/` (no la del repositorio): la
+extensión de Java importa el `pom.xml` y quedan disponibles las configuraciones
+de ejecución _Arquitecta: aplicación_, _analizar C4 por consola_ y _pruebas_
+(F5), y las tareas _compilar_, _pruebas_, _experimento_ y _figuras_
+(_Terminal → Ejecutar tarea…_). Abrir una carpeta superior hace que la extensión
+trate los archivos como sueltos y no encuentre la clase principal.
 
 Para ver el grafo de cualquier sistema basta con una línea; el resultado se abre
 en el navegador, sin instalar nada:
 
 ```bat
-java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     mi-sistema.jar mis-reglas.properties --svg grafo.svg
+arquitecta analizar mi-sistema.jar mis-reglas.properties --svg grafo.svg
 ```
 
 ## Interfaz gráfica
@@ -73,8 +118,8 @@ El flujo sigue tres pasos, en la barra lateral:
    generado. Si la carpeta solo contiene fuentes `.java`, lo indica y pide
    compilar primero, en lugar de devolver un análisis vacío.
 2. **Catálogo de reglas.** Si el proyecto trae su catálogo (`rules.properties`,
-   `arquitecta.properties`, `reglas.properties` o `.arquitecta.properties`), se
-   carga solo. Si no, se aplica una **configuración mínima**: se infiere la raíz
+   `arquitecta.properties`, `reglas.properties` o `.arquitecta.properties`, en su
+   carpeta o en la que la contiene), se carga solo. Si no, se aplica una **configuración mínima**: se infiere la raíz
    de paquetes y se evalúan ciclos y concentración; la estratificación no puede
    verificarse sin capas declaradas, y la interfaz lo advierte.
 3. **Clasificación.** _Extensión y gravedad_ (recomendado, modo
@@ -98,16 +143,68 @@ TikZ y DOT) en la carpeta elegida, y _Guardar SVG…_ solo la imagen del grafo.
 Atajos: `Ctrl+O` abre un proyecto y `F5` repite el análisis.
 
 La interfaz también se puede abrir con un proyecto ya cargado
-(`arquitecta.bat C:\ruta\al\proyecto`) y, para documentación, dibujarse sin
+(`arquitecta C:\ruta\al\proyecto`) y, para documentación, dibujarse sin
 ventana: `--gui --proyecto <ruta> [--reglas <archivo>] --captura salida.png`
-(`figuras.bat` genera así las capturas de `ejemplos/interfaz/`).
+(`arquitecta figuras` genera así las capturas de `ejemplos/interfaz/`).
+
+## Asistente de catálogo (IA)
+
+Un proyecto que no tiene catálogo solo puede evaluarse con la configuración
+mínima, que no verifica las capas. El asistente ayuda a redactarlo: en la barra
+lateral, **Definir con el asistente…** abre una ventana que lee la estructura del
+proyecto, se la presenta a un modelo de lenguaje y conversa con usted hasta
+acordar el catálogo.
+
+![Asistente de catálogo proponiendo el catálogo del escenario C4](ejemplos/interfaz/interfaz-asistente.png)
+
+- **Lo que propone** son los parámetros de las tres _Fitness Functions_ —capas y
+  sus paquetes, dependencias permitidas, umbral de concentración y exenciones—,
+  con la justificación de cada decisión, las dependencias actuales que considera
+  **deriva probable** y las **preguntas** que no puede responder sin usted. No
+  crea ni modifica reglas: esas son las de la herramienta.
+- **No legitima la deriva.** Está instruido para declarar la arquitectura
+  _prevista_: una dependencia que existe pero contradice la estratificación no se
+  permite, sino que se señala.
+- **Usted decide.** La propuesta aparece en un editor donde puede corregirla a
+  mano; se valida con el mismo cargador que un catálogo escrito a mano, y
+  **Previsualizar** muestra el diagnóstico que produciría sobre su código.
+  **Guardar y usar…** la escribe (por defecto como `arquitecta.properties` en la
+  carpeta del proyecto, donde la aplicación la encontrará sola) y analiza.
+- **Se le puede responder.** Cada mensaje viaja con el catálogo tal como está en
+  el editor y con el resultado de la última previsualización, para que el
+  asistente parta de sus cambios e interprete los hallazgos.
+
+**Modelos.** En la misma ventana se elige el proveedor y se configura su API:
+
+| Proveedor | Dirección por defecto | Clave |
+| --- | --- | --- |
+| Anthropic · Claude | `https://api.anthropic.com` (modelo `claude-opus-5-5`) | `ANTHROPIC_API_KEY` o la indicada |
+| OpenAI | `https://api.openai.com/v1` | `OPENAI_API_KEY` o la indicada |
+| Ollama (local) | `http://localhost:11434/v1` | no requiere |
+| LM Studio (local) | `http://localhost:1234/v1` | no requiere |
+| Otro compatible con OpenAI | la que se indique | opcional |
+
+_Probar conexión_ comprueba la dirección y la clave y lista los modelos
+disponibles. La configuración se conserva en `~/.arquitecta/asistente.properties`
+(en su carpeta de usuario, nunca en la del proyecto); la clave, solo si marca
+_Recordar la clave en este equipo_.
+
+**Qué sale del equipo.** Solo el _perfil estructural_: nombres de paquetes,
+número de clases, hasta ocho nombres de clase por paquete y las dependencias entre
+paquetes. Nunca el código fuente. _Ver el perfil que se envía_ muestra el texto
+exacto antes de enviarlo. Con Ollama o LM Studio no sale nada del equipo.
+
+El asistente no añade dependencias: usa el cliente HTTP del propio JDK. Sus
+pruebas no consultan ningún modelo real, sino un servidor local que imita las API.
 
 ## Uso manual
 
 ```bat
-java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     <proyecto | directorio-de-clases | archivo.jar> [archivo-config] [opciones]
+arquitecta analizar <proyecto | directorio-de-clases | archivo.jar> [archivo-config] [opciones]
 ```
+
+Equivale a `java -jar out\arquitecta.jar <...>`, que es lo que hay que usar con
+el `.jar` copiado a otro equipo.
 
 El sistema puede indicarse como un directorio de clases compiladas, como la
 carpeta raíz de un proyecto Maven, Gradle, IntelliJ o Eclipse, o directamente como
@@ -165,14 +262,15 @@ figuras de grafos de la monografía las genera la herramienta, no se dibujaron a
 mano— y como **DOT**, que fija las filas para que tampoco Graphviz pueda invertir
 las capas.
 
-`figuras.bat` / `figuras.sh` regenera todas las figuras: las TikZ en
+`arquitecta figuras` regenera todas las figuras: las TikZ en
 `../Maestria_PlantillaProyectoGrado/figuras/` y las SVG en `ejemplos/graficos/`.
 
 ## Configuración
 
 Todo el conocimiento sobre qué es admisible vive en un archivo `.properties`; el
-motor no contiene ninguna regla codificada. Véase `rules.properties` para el caso
-de estudio y `rules-arquitecta.properties` para el autoanálisis.
+motor no contiene ninguna regla codificada. Véase `caso-estudio/rules.properties` para
+el caso de estudio y `ejemplos/autoanalisis/rules-arquitecta.properties` para el
+autoanálisis.
 
 ```properties
 raiz=com.caso
@@ -251,22 +349,25 @@ conserva para poder comparar ambos criterios.
 
 ## Escenarios del experimento
 
-`caso-estudio/` contiene la implementación de referencia: un pequeño sistema por
-capas (`presentacion`, `negocio`, `persistencia`) con un dominio compartido
-(`com.caso.dominio`). Los cuatro escenarios restantes introducen derivas
-deliberadas, los tres primeros de forma **aislada** para poder medir la
+`caso-estudio/c0-base/` contiene la implementación de referencia: un pequeño
+sistema por capas (`presentacion`, `negocio`, `persistencia`) con un dominio
+compartido (`com.caso.dominio`). Los cuatro escenarios restantes introducen
+derivas deliberadas, los tres primeros de forma **aislada** para poder medir la
 sensibilidad de cada regla por separado:
 
-| Escenario                       | Deriva inducida                                                                                                                            |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `caso-estudio-c1-capas`         | Salto de capa `presentacion → persistencia`: el controlador accede al repositorio sin pasar por el servicio. No cierra ciclos.             |
-| `caso-estudio-c2-ciclo`         | Ciclo `com.caso.negocio ↔ com.caso.negocio.calculo`, contenido dentro de una misma capa, de modo que la estratificación permanece intacta. |
-| `caso-estudio-c3-concentracion` | Paquete `com.caso.util` con `Ce = 4`, sin capa asignada y sin ser destino de nadie: no rompe capas ni cierra ciclos.                       |
-| `caso-estudio-c4-combinado`     | Las tres derivas simultáneas: ruptura de capas, ciclo entre tres paquetes y componente dios.                                               |
+| Escenario (`caso-estudio/…`) | Deriva inducida                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `c1-capas`                   | Salto de capa `presentacion → persistencia`: el controlador accede al repositorio sin pasar por el servicio. No cierra ciclos.             |
+| `c2-ciclo`                   | Ciclo `com.caso.negocio ↔ com.caso.negocio.calculo`, contenido dentro de una misma capa, de modo que la estratificación permanece intacta. |
+| `c3-concentracion`           | Paquete `com.caso.util` con `Ce = 4`, sin capa asignada y sin ser destino de nadie: no rompe capas ni cierra ciclos.                       |
+| `c4-combinado`               | Las tres derivas simultáneas: ruptura de capas, ciclo entre tres paquetes y componente dios.                                               |
+
+Cada escenario tiene la estructura de un proyecto Maven y se compila en su propio
+`target/classes`, de modo que su carpeta se elige tal cual en la aplicación.
 
 ## Resultados verificados
 
-Salida de `experimento.bat` (idéntica a la comprobada por la batería de pruebas):
+Salida de `arquitecta experimento` (idéntica a la comprobada por la batería de pruebas):
 
 | Escenario          | Paquetes | Dependencias | Verificaciones | Incumpl. |       CR | Estado (modo `cr`) | Estado (modo `cr+severidad`) |
 | ------------------ | -------: | -----------: | -------------: | -------: | -------: | ------------------ | ---------------------------- |
@@ -286,11 +387,11 @@ la severidad corrige esa lectura sin alterar el cálculo de la CR.
 El mecanismo se aplica sobre su propio código compilado:
 
 ```bat
-java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     out\arquitecta-core rules-arquitecta.properties --etiqueta Arquitecta-autoanalisis
+arquitecta analizar out\arquitecta-core ejemplos\autoanalisis\rules-arquitecta.properties ^
+     --etiqueta Arquitecta-autoanalisis
 ```
 
-Resultado: 8 paquetes, 21 dependencias, 33 verificaciones, 0 incumplimientos →
+Resultado: 9 paquetes, 26 dependencias, 40 verificaciones, 0 incumplimientos →
 **CR 100 % · Aceptable**. La arquitectura interna del prototipo satisface las
 mismas reglas que exige a los sistemas que evalúa.
 
@@ -303,8 +404,8 @@ módulos que ensamblan por definición del patrón (raíz de composición y fach
 no por deterioro. Declararlo permite mantener el umbral
 estricto en lugar de relajarlo para todo el sistema, que es lo que ocultaría
 concentraciones reales en los demás paquetes. Bajándolo a 3 aparecen el módulo de
-reporte y la interfaz (`Ce = 4` cada uno), que dependen de los cuatro módulos que
-deben representar: el caso
+reporte, la interfaz y el asistente (`Ce = 4` cada uno), que dependen de los cuatro
+módulos con que trabajan: el caso
 ilustra que el umbral no es universal y que cada sistema obliga a decidir dónde
 está su techo razonable.
 
@@ -316,8 +417,7 @@ library`. El análisis completo tarda **1,2 segundos** y se hace directamente
 sobre el `.jar`; las configuraciones están en `ejemplos/archunit/`:
 
 ```bat
-java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     lib\archunit-1.3.0.jar ejemplos\archunit\rules-archunit.properties --svg archunit.svg
+arquitecta analizar lib\archunit-1.3.0.jar ejemplos\archunit\rules-archunit.properties --svg archunit.svg
 ```
 
 ![Grafo de ArchUnit 1.3.0 dibujado por la herramienta](ejemplos/graficos/archunit.svg)
@@ -348,7 +448,7 @@ ruido, no silenciar los hallazgos.
 
 ## Evidencia generada
 
-`experimento.bat` escribe en `resultados/`:
+`arquitecta experimento` escribe en `resultados/`:
 
 ```
 resultados/
@@ -369,11 +469,12 @@ procesarse además con Graphviz si se prefiere.
 
 ## Pruebas
 
-`test.bat` ejecuta 190 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+`arquitecta pruebas` ejecuta 234 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
 carga de configuración, las tres reglas, el motor, las exenciones, los cinco
 escenarios, los exportadores, la disposición gráfica, la comparación entre
-corridas y el servicio de análisis (reconocimiento de proyectos Maven y Gradle,
-paridad entre carpeta y `.jar`, configuración mínima), incluidos los casos
+corridas, el servicio de análisis (reconocimiento de proyectos Maven y Gradle,
+paridad entre carpeta y `.jar`, configuración mínima) y el asistente de catálogo
+(contra un servidor local que imita las API de los modelos), incluidos los casos
 límite (grafo vacío, umbrales en su frontera exacta, configuraciones inválidas,
 exenciones que no cuelgan de la raíz). La batería se construyó **sin dependencias
 externas**, en coherencia con el requisito de ligereza del propio mecanismo, y
@@ -388,7 +489,7 @@ mvn -q clean package
 Genera `target/arquitecta.jar` con las dependencias empaquetadas
 (`maven-shade-plugin`). Ejecutado sin argumentos (`java -jar target/arquitecta.jar`,
 o con doble clic) abre la interfaz gráfica. La batería de pruebas se compila en la fase
-`test-compile`, pero se ejecuta mediante `test.bat` / `test.sh`, no por
+`test-compile`, pero se ejecuta mediante `arquitecta pruebas`, no por
 _surefire_, porque deliberadamente no depende de un marco de pruebas externo.
 
 ## Notas

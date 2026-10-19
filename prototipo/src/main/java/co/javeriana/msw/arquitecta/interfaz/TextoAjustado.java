@@ -13,13 +13,13 @@ import java.awt.Font;
  * texto; un área de texto con ajuste de línea y un ancho conocido lo parte
  * siempre por palabras y crece en altura lo que haga falta.</p>
  */
-final class TextoAjustado extends JTextArea {
+public final class TextoAjustado extends JTextArea {
 
     private static final long serialVersionUID = 1L;
 
     private final int ancho;
 
-    TextoAjustado(String texto, Font fuente, Color color, int ancho) {
+    public TextoAjustado(String texto, Font fuente, Color color, int ancho) {
         super(texto);
         this.ancho = ancho;
         setFont(fuente);
@@ -34,7 +34,7 @@ final class TextoAjustado extends JTextArea {
         setAlignmentX(Component.LEFT_ALIGNMENT);
     }
 
-    void mostrar(String texto, Color color) {
+    public void mostrar(String texto, Color color) {
         setText(texto);
         setForeground(color);
         revalidate();

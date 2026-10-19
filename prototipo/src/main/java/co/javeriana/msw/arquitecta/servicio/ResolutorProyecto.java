@@ -86,20 +86,30 @@ public final class ResolutorProyecto {
 
     /**
      * Catálogo de reglas que el proyecto trae consigo, si lo hay: un archivo con
-     * alguno de los nombres habituales en la carpeta del proyecto.
+     * alguno de los nombres habituales en la carpeta del proyecto o, en su
+     * defecto, en la carpeta que la contiene. Lo segundo cubre el caso de varios
+     * módulos ---o varias versiones de un mismo sistema--- que comparten un único
+     * catálogo declarado en su carpeta común.
      */
     public static Optional<Path> catalogoSugerido(Path seleccion) {
         if (seleccion == null) {
             return Optional.empty();
         }
-        Path carpeta = Files.isRegularFile(seleccion) ? seleccion.toAbsolutePath().getParent() : seleccion;
-        if (carpeta == null) {
-            return Optional.empty();
+        Path absoluta = seleccion.toAbsolutePath().normalize();
+        Path carpeta = Files.isRegularFile(absoluta) ? absoluta.getParent() : absoluta;
+        List<Path> lugares = new ArrayList<>();
+        if (carpeta != null) {
+            lugares.add(carpeta);
+            if (carpeta.getParent() != null) {
+                lugares.add(carpeta.getParent());
+            }
         }
-        for (String nombre : CATALOGOS) {
-            Path candidato = carpeta.resolve(nombre);
-            if (Files.isRegularFile(candidato)) {
-                return Optional.of(candidato);
+        for (Path lugar : lugares) {
+            for (String nombre : CATALOGOS) {
+                Path candidato = lugar.resolve(nombre);
+                if (Files.isRegularFile(candidato)) {
+                    return Optional.of(candidato);
+                }
             }
         }
         return Optional.empty();

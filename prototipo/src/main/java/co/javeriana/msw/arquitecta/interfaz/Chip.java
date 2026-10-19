@@ -10,7 +10,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
 
 /** Etiqueta en forma de píldora, con un punto de color: estados y severidades. */
-final class Chip extends JComponent {
+public final class Chip extends JComponent {
 
     private static final long serialVersionUID = 1L;
 
@@ -18,12 +18,12 @@ final class Chip extends JComponent {
     private Color color = Tema.TEXTO_SUAVE;
     private Color fondo = Tema.BORDE_SUAVE;
 
-    Chip(float tamano) {
+    public Chip(float tamano) {
         setFont(Tema.negrita(tamano));
         setOpaque(false);
     }
 
-    void mostrar(String texto, Color color, Color fondo) {
+    public void mostrar(String texto, Color color, Color fondo) {
         this.texto = texto == null ? "" : texto;
         this.color = color;
         this.fondo = fondo;

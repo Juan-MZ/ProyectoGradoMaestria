@@ -5,58 +5,56 @@ Este anexo reúne la información necesaria para reproducir íntegramente el exp
 \section{Entorno y dependencias}
 El prototipo se implementó con nivel de lenguaje Java~17 y se verificó sobre JDK~17 y JDK~26. La única dependencia externa es \textit{ArchUnit} en su versión 1.3.0, empleada exclusivamente para importar el \textit{bytecode} y resolver las dependencias entre clases; el resto de la lógica —el algoritmo de detección de ciclos, el motor de conformidad y los exportadores— no depende de bibliotecas de terceros.
 
-La biblioteca se distribuye junto al repositorio, de modo que la compilación y la ejecución no requieren Maven, repositorio de artefactos ni conexión a internet. Esta decisión responde al requisito de ligereza (RNF2) y, de paso, hace que el experimento siga siendo reproducible aunque los repositorios remotos cambien.
+La biblioteca se distribuye junto al repositorio, de modo que la compilación y la ejecución no requieren Maven, repositorio de artefactos ni conexión a internet. Esta decisión responde al requisito de ligereza (RNF2) y, de paso, hace que el experimento siga siendo reproducible aunque los repositorios remotos cambien. Todas las operaciones se invocan mediante un único lanzador, \texttt{arquitecta.bat} en Windows o \texttt{./arquitecta.sh} en macOS y Linux, que compila el prototipo la primera vez y cada vez que su código cambia.
 
 \section{Estructura del repositorio}
 \begin{verbatim}
 prototipo/
-  src/main/java/          nucleo, servicio de analisis e interfaz grafica
-  src/test/java/          bateria de pruebas (190 comprobaciones)
-  lib/                    ArchUnit 1.3.0 y slf4j-api
-  caso-estudio/                        escenario C0 (linea base)
-  caso-estudio-c1-capas/               escenario C1 (ruptura de capas)
-  caso-estudio-c2-ciclo/               escenario C2 (ciclo de dependencia)
-  caso-estudio-c3-concentracion/       escenario C3 (componente dios)
-  caso-estudio-c4-combinado/           escenario C4 (las tres derivas)
-  ejemplos/archunit/          configuraciones de la seccion 4.6
-  ejemplos/graficos/          grafos en SVG generados por figuras
-  ejemplos/interfaz/          capturas de la interfaz grafica
-  rules.properties            catalogo de reglas del caso de estudio
-  rules-arquitecta.properties catalogo para el autoanalisis
-  arquitecta.bat / .sh        interfaz grafica
-  build.bat / build.sh        compilacion
-  test.bat  / test.sh         bateria de pruebas (190 comprobaciones)
-  experimento.bat / .sh       experimento completo
-  figuras.bat / .sh           figuras y capturas de este documento
+  arquitecta.bat / .sh        lanzador unico (aplicacion y tareas)
+  src/main/java/              nucleo, servicio, interfaz y asistente
+  src/test/java/              bateria de pruebas (234 comprobaciones)
+  lib/                        ArchUnit 1.3.0 y slf4j-api
+  caso-estudio/
+    c0-base/                  escenario C0 (linea base)
+    c1-capas/                 escenario C1 (ruptura de capas)
+    c2-ciclo/                 escenario C2 (ciclo de dependencia)
+    c3-concentracion/         escenario C3 (componente dios)
+    c4-combinado/             escenario C4 (las tres derivas)
+    rules.properties          catalogo de reglas del caso de estudio
+  ejemplos/
+    autoanalisis/             catalogo para el autoanalisis
+    archunit/                 configuraciones de la seccion 4.6
+    graficos/                 grafos en SVG generados por la herramienta
+    interfaz/                 capturas de la interfaz grafica
+  scripts/                    guiones que invoca el lanzador
 \end{verbatim}
+
+\noindent Cada escenario tiene la estructura de un proyecto Maven: su código está en \texttt{src/main/java} y la compilación deja sus clases en \texttt{target/classes}, de modo que la carpeta del escenario puede indicarse tal cual, desde la línea de comandos o desde la interfaz gráfica.
 
 \section{Pasos para reproducir el experimento}
 \begin{enumerate}
-    \item \textbf{Compilar.} Ejecutar \texttt{build.bat} en Windows o \texttt{./build.sh} en macOS o Linux. El guion compila el núcleo, la batería de pruebas y los cinco escenarios en el directorio \texttt{out/}.
-    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{test.bat} o \texttt{./test.sh}. La batería debe reportar 190 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
-    \item \textbf{Ejecutar el experimento.} Ejecutar \texttt{experimento.bat} o \texttt{./experimento.sh}. El guion imprime el catálogo de reglas, recorre los cinco escenarios bajo los dos modos de clasificación y deposita la evidencia en \texttt{resultados/}.
+    \item \textbf{Compilar.} Ejecutar \texttt{arquitecta compilar} (\texttt{./arquitecta.sh compilar} en macOS o Linux). El guion compila el núcleo y la batería de pruebas en \texttt{out/}, empaqueta la herramienta en \texttt{out/arquitecta.jar} y compila cada escenario en su \texttt{target/classes}. El paso es opcional: los siguientes compilan por su cuenta si hace falta.
+    \item \textbf{Verificar el núcleo.} Ejecutar \texttt{arquitecta pruebas}. La batería debe reportar 234 comprobaciones superadas y terminar con código de salida cero; cualquier fallo detiene la reproducción y señala el caso concreto que discrepa.
+    \item \textbf{Ejecutar el experimento.} Ejecutar \texttt{arquitecta experimento}. El guion imprime el catálogo de reglas, recorre los cinco escenarios bajo los dos modos de clasificación y deposita la evidencia en \texttt{resultados/}.
     \item \textbf{Contrastar.} Comparar el archivo \texttt{resultados/modo-cr/resumen.csv} con la tabla~\ref{tab:resultados} y el archivo \texttt{resultados/modo-cr-severidad/resumen.csv} con la tabla~\ref{tab:refinamiento}.
 \end{enumerate}
 
 Para reproducir el autoanálisis descrito en el capítulo de desarrollo basta con dirigir el mecanismo hacia su propio directorio de clases compiladas:
 
 \begin{verbatim}
-java -cp "out\arquitecta-core;lib\*" ^
-     co.javeriana.msw.arquitecta.ArquitectaApp ^
-     out\arquitecta-core rules-arquitecta.properties
+arquitecta analizar out\arquitecta-core ^
+     ejemplos\autoanalisis\rules-arquitecta.properties
 \end{verbatim}
 
 \section{Figuras de grafos y sistema externo}
-Las figuras de grafos de este documento se regeneran con \texttt{figuras.bat} o \texttt{./figuras.sh}, que escribe las versiones TikZ en el directorio \texttt{figuras/} de la monografía y las SVG en \texttt{ejemplos/graficos/} del prototipo. Para obtener solo el dibujo de un sistema cualquiera basta con indicar las opciones \texttt{-{}-svg} o \texttt{-{}-tikz}:
+Las figuras de grafos de este documento se regeneran con \texttt{arquitecta figuras}, que escribe las versiones TikZ en el directorio \texttt{figuras/} de la monografía y las SVG en \texttt{ejemplos/graficos/} del prototipo. Para obtener solo el dibujo de un sistema cualquiera basta con indicar las opciones \texttt{-{}-svg} o \texttt{-{}-tikz}:
 
 \begin{verbatim}
-java -cp "out\arquitecta-core;lib\*" ^
-     co.javeriana.msw.arquitecta.ArquitectaApp ^
-     lib\archunit-1.3.0.jar ejemplos\archunit\rules-archunit.properties ^
-     --svg archunit.svg
+arquitecta analizar lib\archunit-1.3.0.jar ^
+     ejemplos\archunit\rules-archunit.properties --svg archunit.svg
 \end{verbatim}
 
-\noindent El mismo análisis puede hacerse desde la interfaz gráfica, que se abre con \texttt{arquitecta.bat} o \texttt{./arquitecta.sh} ---compilando antes el prototipo si hace falta--- y permite elegir el \texttt{.jar} y el catálogo con un selector de archivos. El ejemplo reproduce además el análisis de la sección~\ref{sec:archunit}: el mecanismo admite directamente el archivo \texttt{.jar}, y el directorio \texttt{ejemplos/archunit/} contiene las configuraciones con y sin exenciones cuyos resultados recoge la tabla~\ref{tab:archunit}.
+\noindent El mismo análisis puede hacerse desde la interfaz gráfica, que se abre ejecutando el lanzador sin argumentos ---o con doble clic sobre él--- y permite elegir el \texttt{.jar} y el catálogo con un selector de archivos; su pantalla de inicio ofrece, además, los cinco escenarios del caso de estudio para analizarlos con un clic. El ejemplo reproduce además el análisis de la sección~\ref{sec:archunit}: el mecanismo admite directamente el archivo \texttt{.jar}, y el directorio \texttt{ejemplos/archunit/} contiene las configuraciones con y sin exenciones cuyos resultados recoge la tabla~\ref{tab:archunit}.
 
 \section{Evidencia generada}
 Cada ejecución con la opción \texttt{-{}-salida} produce cuatro artefactos por escenario y una fila en el resumen comparativo:

@@ -12,7 +12,7 @@ import java.awt.Rectangle;
 import java.awt.geom.RoundRectangle2D;
 
 /** Barra de desplazamiento fina y redondeada, sin flechas, coherente con el resto de la interfaz. */
-final class BarraDesplazamiento extends BasicScrollBarUI {
+public final class BarraDesplazamiento extends BasicScrollBarUI {
 
     private static final int GROSOR = 10;
     private final Color fondo;
@@ -22,7 +22,7 @@ final class BarraDesplazamiento extends BasicScrollBarUI {
     }
 
     /** Aplica la barra a un panel desplazable, con el color de fondo de su contenido. */
-    static JScrollPane aplicar(JScrollPane desplazable, Color fondo) {
+    public static JScrollPane aplicar(JScrollPane desplazable, Color fondo) {
         desplazable.getVerticalScrollBar().setUI(new BarraDesplazamiento(fondo));
         desplazable.getHorizontalScrollBar().setUI(new BarraDesplazamiento(fondo));
         desplazable.getVerticalScrollBar().setPreferredSize(new Dimension(GROSOR, 0));
