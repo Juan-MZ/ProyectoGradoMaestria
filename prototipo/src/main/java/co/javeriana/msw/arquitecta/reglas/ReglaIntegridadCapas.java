@@ -17,6 +17,9 @@ import co.javeriana.msw.arquitecta.grafo.GrafoDependencias;
  */
 public class ReglaIntegridadCapas implements Regla {
 
+    /** Nombre de la regla, con el que se identifican sus hallazgos. */
+    public static final String NOMBRE = "Integridad de capas";
+
     private final ConfiguracionReglas config;
 
     public ReglaIntegridadCapas(ConfiguracionReglas config) {
@@ -25,7 +28,7 @@ public class ReglaIntegridadCapas implements Regla {
 
     @Override
     public String nombre() {
-        return "Integridad de capas";
+        return NOMBRE;
     }
 
     @Override

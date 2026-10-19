@@ -17,8 +17,12 @@ import co.javeriana.msw.arquitecta.reglas.ReglaConcentracion;
 import co.javeriana.msw.arquitecta.reglas.ReglaIntegridadCapas;
 import co.javeriana.msw.arquitecta.reglas.ResultadoRegla;
 import co.javeriana.msw.arquitecta.reglas.Violacion;
+import co.javeriana.msw.arquitecta.reporte.DisposicionGrafo;
 import co.javeriana.msw.arquitecta.reporte.ExportadorCsv;
+import co.javeriana.msw.arquitecta.reporte.ExportadorDot;
 import co.javeriana.msw.arquitecta.reporte.ExportadorJson;
+import co.javeriana.msw.arquitecta.reporte.ExportadorSvg;
+import co.javeriana.msw.arquitecta.reporte.ExportadorTikz;
 import co.javeriana.msw.arquitecta.reporte.Historico;
 
 import java.io.IOException;
@@ -52,6 +56,7 @@ public final class PruebasArquitecta {
         pruebasExenciones(v);
         pruebasEscenarios(v);
         pruebasExportadores(v);
+        pruebasVisualizacion(v);
         pruebasHistorico(v);
 
         System.exit(v.resumen());
@@ -473,6 +478,149 @@ public final class PruebasArquitecta {
         return new Resultado(0.0, EstadoArquitectonico.NO_CONFORME, Violacion.Severidad.MAYOR,
                 EstadoArquitectonico.EN_OBSERVACION, EstadoArquitectonico.NO_CONFORME,
                 ModoClasificacion.CR_SEVERIDAD, List.of(regla), 1, 1, 85.0, 70.0);
+    }
+
+    // ---------------------------------------------------------- visualizacion
+
+    private static void pruebasVisualizacion(Verificador v) throws Exception {
+        v.grupo("Visualizacion del grafo");
+
+        ConfiguracionReglas config = configPorDefecto();
+        GrafoDependencias c4 = escenarioCombinado();
+        Resultado resultado = new MotorConformidad().evaluar(c4, reglas(config));
+        DisposicionGrafo d = DisposicionGrafo.calcular(c4, config, resultado);
+
+        v.igual("todos los paquetes quedan colocados", c4.nodos().size(), d.nodos().size());
+        v.igual("todas las dependencias quedan dibujadas", c4.cantidadAristas(), d.aristas().size());
+
+        double yPres = nodo(d, "com.caso.presentacion").y();
+        double yNeg = nodo(d, "com.caso.negocio").y();
+        double yPer = nodo(d, "com.caso.persistencia").y();
+        v.comprueba("la capa superior se dibuja arriba", yPres < yNeg && yNeg < yPer);
+
+        ConfiguracionReglas invertida = cargarSinIO(
+                "raiz=com.caso\n"
+                + "capas=persistencia,negocio,presentacion\n"
+                + "capa.presentacion=com.caso.presentacion\n"
+                + "capa.negocio=com.caso.negocio\n"
+                + "capa.persistencia=com.caso.persistencia\n"
+                + "permitido.presentacion=negocio\n"
+                + "permitido.negocio=persistencia\n"
+                + "permitido.persistencia=\n");
+        DisposicionGrafo di = DisposicionGrafo.calcular(c4, invertida,
+                new MotorConformidad().evaluar(c4, reglas(invertida)));
+        v.comprueba("el orden se deduce de la matriz y no del orden de declaracion",
+                nodo(di, "com.caso.presentacion").y() < nodo(di, "com.caso.persistencia").y());
+
+        DisposicionGrafo.Nodo util = nodo(d, "com.caso.util");
+        DisposicionGrafo.Nodo dominio = nodo(d, "com.caso.dominio");
+        v.comprueba("los paquetes sin capa van a la columna lateral", util.lateral() && dominio.lateral());
+        double bordeCapas = d.nodos().stream().filter(n -> !n.lateral())
+                .mapToDouble(DisposicionGrafo.Nodo::derecha).max().orElse(0);
+        v.comprueba("la columna lateral queda a la derecha de las capas",
+                util.x() > bordeCapas && dominio.x() > bordeCapas);
+        v.comprueba("la columna lateral no superpone sus paquetes",
+                Math.abs(util.y() - dominio.y()) >= DisposicionGrafo.ALTO_NODO);
+
+        v.comprueba("ningun par de paquetes de una fila se superpone", sinSolapamientos(d));
+
+        v.igual("las dos aristas que violan capas se clasifican como tales", 2L,
+                d.aristas().stream().filter(a -> a.tipo() == DisposicionGrafo.TipoArista.VIOLA_CAPAS).count());
+        v.igual("el paquete concentrador se marca", DisposicionGrafo.EstadoNodo.CONCENTRACION, util.estado());
+        v.igual("los paquetes del ciclo se marcan", DisposicionGrafo.EstadoNodo.CICLO,
+                nodo(d, "com.caso.negocio").estado());
+        v.comprueba("una dependencia que remonta las capas se reconoce como ascendente",
+                d.aristas().stream().anyMatch(a -> a.ascendente()
+                        && a.origen().paquete().equals("com.caso.persistencia")
+                        && a.destino().paquete().equals("com.caso.presentacion")));
+
+        v.comprueba("las flechas que llegan a un mismo lado no comparten punto de llegada",
+                puertosDistintos(d, "com.caso.dominio"));
+
+        DisposicionGrafo c2 = DisposicionGrafo.calcular(escenarioCiclo(), config,
+                new MotorConformidad().evaluar(escenarioCiclo(), reglas(config)));
+        v.igual("los paquetes de un ciclo dentro de una capa comparten fila",
+                nodo(c2, "com.caso.negocio").fila(), nodo(c2, "com.caso.negocio.calculo").fila());
+
+        ConfiguracionReglas sinCapas = cargarSinIO("raiz=com.caso\n");
+        DisposicionGrafo plano = DisposicionGrafo.calcular(c4, sinCapas,
+                new MotorConformidad().evaluar(c4, reglas(sinCapas)));
+        v.comprueba("sin capas declaradas no hay columna lateral", !plano.tieneColumnaLateral());
+        v.comprueba("sin capas declaradas quien depende queda por encima",
+                nodo(plano, "com.caso.util").y() < nodo(plano, "com.caso.dominio").y());
+
+        GrafoDependencias hub = new GrafoDependencias();
+        for (int i = 0; i < 20; i++) {
+            hub.agregarArista("com.caso.m" + i, "com.caso.base");
+        }
+        DisposicionGrafo dh = DisposicionGrafo.calcular(hub, sinCapas,
+                new MotorConformidad().evaluar(hub, reglas(sinCapas)));
+        v.comprueba("un paquete muy referenciado se ensancha para repartir sus flechas",
+                nodo(dh, "com.caso.base").ancho() > nodo(dh, "com.caso.m1").ancho());
+
+        String svg = ExportadorSvg.exportar(d, resultado, "C4");
+        String svgOtra = ExportadorSvg.exportar(DisposicionGrafo.calcular(c4, config, resultado), resultado, "C4");
+        v.comprueba("el dibujo es determinista", svg.equals(svgOtra));
+        v.comprueba("el SVG es XML bien formado", xmlValido(svg));
+        v.comprueba("el SVG rotula cada paquete",
+                svg.contains(">presentacion<") && svg.contains(">util<") && svg.contains(">dominio<"));
+        v.comprueba("el SVG incluye la leyenda", svg.contains("Viola la integridad de capas"));
+
+        String tikz = ExportadorTikz.exportar(d, "C4");
+        v.comprueba("el TikZ abre y cierra su entorno",
+                tikz.contains("\\begin{tikzpicture}") && tikz.contains("\\end{tikzpicture}"));
+        v.igual("las llaves del TikZ estan balanceadas", contar(tikz, '{'), contar(tikz, '}'));
+        v.igual("los guiones bajos se escapan para LaTeX", "cycle\\_detection",
+                ExportadorTikz.latex("cycle_detection"));
+
+        String dot = ExportadorDot.exportar(d, "C4");
+        v.comprueba("el DOT fija las filas", dot.contains("rank=same"));
+        v.comprueba("el DOT impide que una violacion invierta las capas", dot.contains("constraint=false"));
+    }
+
+    private static DisposicionGrafo.Nodo nodo(DisposicionGrafo d, String paquete) {
+        return d.nodos().stream().filter(n -> n.paquete().equals(paquete)).findFirst().orElseThrow();
+    }
+
+    private static boolean sinSolapamientos(DisposicionGrafo d) {
+        List<DisposicionGrafo.Nodo> nodos = d.nodos();
+        for (int i = 0; i < nodos.size(); i++) {
+            for (int j = i + 1; j < nodos.size(); j++) {
+                DisposicionGrafo.Nodo a = nodos.get(i);
+                DisposicionGrafo.Nodo b = nodos.get(j);
+                boolean enX = a.x() < b.derecha() && b.x() < a.derecha();
+                boolean enY = a.y() < b.abajo() && b.y() < a.abajo();
+                if (enX && enY) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean puertosDistintos(DisposicionGrafo d, String paquete) {
+        java.util.Set<String> puntos = new java.util.HashSet<>();
+        for (DisposicionGrafo.Arista a : d.aristas()) {
+            if (a.destino().paquete().equals(paquete)) {
+                String punto = String.format(java.util.Locale.ROOT, "%.1f,%.1f", a.trayecto().x1(), a.trayecto().y1());
+                if (!puntos.add(punto)) {
+                    return false;
+                }
+            }
+        }
+        return puntos.size() > 1;
+    }
+
+    private static boolean xmlValido(String xml) {
+        try {
+            javax.xml.parsers.DocumentBuilderFactory fabrica = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            fabrica.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            fabrica.newDocumentBuilder().parse(new java.io.ByteArrayInputStream(
+                    xml.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ------------------------------------------------------------- historico

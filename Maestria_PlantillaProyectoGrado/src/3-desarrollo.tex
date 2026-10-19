@@ -44,6 +44,7 @@ La definición del mecanismo se apoyó en un conjunto de requisitos funcionales 
     \item \textbf{RF4.} Medir la concentración de dependencias salientes de cada paquete y reportar como violación aquella que supere un umbral configurable.
     \item \textbf{RF5.} Agregar los resultados de las verificaciones en una Tasa de Conformidad y clasificar el estado arquitectónico del sistema, emitiendo un reporte legible.
     \item \textbf{RF6.} Acompañar cada hallazgo de la evidencia estructural que lo origina, hasta el nivel de la referencia concreta entre clases, y declarar en el reporte el alcance del diagnóstico emitido.
+    \item \textbf{RF7.} Representar gráficamente el grafo de dependencias, ordenado según la estratificación declarada y con los hallazgos resaltados, en un formato que pueda consultarse sin instalar herramientas adicionales.
 \end{itemize}
 
 \textbf{Requisitos no funcionales:}
@@ -212,7 +213,7 @@ Conviene subrayar qué clase de mecanismo es este. No se trata de una vía para 
 
 En el paquete de grafo, \texttt{GrafoDependencias} representa el grafo dirigido, descarta los autobucles y conserva la evidencia de cada arista; \texttt{ConstructorGrafo} lo puebla a partir del \textit{bytecode} mediante \textit{ArchUnit}, restringiendo el análisis al paquete raíz para que las bibliotecas de terceros no contaminen el diagnóstico; \texttt{Tarjan} calcula los componentes fuertemente conexos; y \texttt{BuscadorCiclos} reconstruye, dentro de cada componente, el recorrido concreto que cierra el ciclo. En el paquete de reglas se definieron la interfaz \texttt{Regla} y sus tres implementaciones, \texttt{ReglaIntegridadCapas}, \texttt{ReglaCiclos} y \texttt{ReglaConcentracion}, que materializan las \textit{Fitness Functions} del catálogo y satisfacen los requisitos RF2, RF3 y RF4. Cada hallazgo se modela mediante la clase \texttt{Violacion}, que distingue la \textit{ubicación} ---los paquetes implicados, que responden a la pregunta «dónde»--- de la \textit{evidencia} ---las referencias entre clases y los valores medidos, que responden a «por qué»---, y le asocia una severidad.
 
-El motor de validación, implementado en \texttt{MotorConformidad}, aplica la ecuación~\ref{eq:cr} y clasifica el resultado. Los estados posibles se codificaron en el enumerado \texttt{EstadoArquitectonico}, declarado de mejor a peor para que el orden natural permita adoptar el veredicto más restrictivo cuando dos criterios discrepan. El resultado agregado se encapsula en la clase \texttt{Resultado}, que conserva por separado el estado deducido de la CR y el deducido de la severidad, de modo que la procedencia de la clasificación sea siempre auditable. Finalmente, el paquete de reporte convierte ese resultado en un texto estructurado y en tres formatos verificables ---JSON, CSV y DOT---, y \texttt{ArquitectaApp} orquesta el proceso desde la línea de comandos.
+El motor de validación, implementado en \texttt{MotorConformidad}, aplica la ecuación~\ref{eq:cr} y clasifica el resultado. Los estados posibles se codificaron en el enumerado \texttt{EstadoArquitectonico}, declarado de mejor a peor para que el orden natural permita adoptar el veredicto más restrictivo cuando dos criterios discrepan. El resultado agregado se encapsula en la clase \texttt{Resultado}, que conserva por separado el estado deducido de la CR y el deducido de la severidad, de modo que la procedencia de la clasificación sea siempre auditable. Finalmente, el paquete de reporte convierte ese resultado en un texto estructurado, en dos formatos verificables por otras herramientas ---JSON y CSV--- y en una representación gráfica del grafo que se describe en la sección~\ref{sec:visualizacion}; \texttt{ArquitectaApp} orquesta el proceso desde la línea de comandos. El sistema a analizar puede indicarse como un directorio de clases compiladas o directamente como un archivo \texttt{.jar}, que es como suele distribuirse. Si el análisis no encuentra ninguna clase bajo la raíz declarada, el mecanismo termina con un error en lugar de emitir un diagnóstico: un grafo vacío obtendría una CR del $100\%$ y sería clasificado como aceptable, de modo que apuntar por descuido al directorio de fuentes en lugar del de clases produciría un falso negativo silencioso.
 
 El procedimiento de agregación y clasificación se formaliza en el algoritmo~\ref{alg:conformidad}. Su diseño responde a un principio de transparencia: la Tasa de Conformidad no se calcula como una cifra opaca, sino como el cociente explícito entre las verificaciones superadas y el total, de modo que cualquier resultado pueda reconstruirse a partir de las evidencias individuales que lo sustentan.
 
@@ -240,10 +241,31 @@ El procedimiento de agregación y clasificación se formaliza en el algoritmo~\r
 \end{algorithmic}
 \end{algorithm}
 
+\section{Representación gráfica del grafo}
+\label{sec:visualizacion}
+Un diagnóstico de conformidad se comprende mucho mejor cuando puede verse. Una lista de violaciones dice qué falla; un dibujo del grafo muestra además dónde está cada fallo respecto de la arquitectura que se pretendía, y permite advertir patrones ---un paquete del que todo depende, una capa que concentra los ciclos--- que ninguna tabla hace evidentes. El mecanismo dibuja por ello el grafo que extrae, y lo hace sin delegar en herramientas externas.
+
+La decisión de no delegar tiene una razón que va más allá de la ligereza. Los algoritmos genéricos de dibujo de grafos dirigidos, como el que implementa Graphviz \citep{Gansner1993}, colocan los nodos según el sentido de las aristas: un nodo se sitúa por encima de aquellos de los que depende. Aplicado a una arquitectura con deriva, ese criterio produce un resultado engañoso, porque precisamente las violaciones ---dependencias que remontan la estratificación--- empujan a las capas inferiores hacia arriba y pueden invertir el orden que el dibujo debería mostrar. En un grafo de conformidad, el orden vertical no debe deducirse de las aristas sino de la arquitectura declarada; y cualquier arista que lo contradiga debe dibujarse como lo que es.
+
+El procedimiento sigue el esquema clásico del dibujo de grafos jerárquicos \citep{Sugiyama1981}, adaptado al dominio en cuatro pasos:
+
+\begin{enumerate}
+    \item \textbf{Asignación de bandas.} Cada capa declarada ocupa una banda horizontal. Su posición se deduce de la matriz de dependencias permitidas y no del orden en que las capas se escribieron en la configuración: una capa que puede depender de otras se sitúa por encima de ellas. En el caso de \textit{ArchUnit}, cuyas capas se declararon de abajo arriba, el dibujo las muestra igualmente en el orden correcto.
+    \item \textbf{Asignación de filas.} Dentro de cada banda, los paquetes se distribuyen en filas según el camino más largo sobre la condensación del subgrafo de la banda, de modo que también las dependencias internas apunten hacia abajo. Los paquetes de un mismo ciclo comparten fila, y las filas demasiado anchas se parten para conservar la legibilidad.
+    \item \textbf{Reducción de cruces.} Cada fila se reordena según el baricentro horizontal de sus vecinos, alternando barridos descendentes y ascendentes.
+    \item \textbf{Columna lateral.} Los paquetes sin capa ---un dominio compartido, un núcleo de anotaciones--- no pertenecen a la estratificación y se colocan en una columna aparte, a la altura media de sus vecinos.
+\end{enumerate}
+
+El trazado de las aristas codifica su significado. Las que descienden van del borde inferior del origen al superior del destino; las que remontan la estratificación rodean los nodos por fuera, de modo que se distinguen a simple vista; las que unen paquetes de una misma fila se dibujan como arcos, por arriba en un sentido y por abajo en el otro, para que una dependencia mutua no se superponga consigo misma. Los extremos de las aristas que entran o salen por un mismo lado de un nodo se reparten a lo largo de ese lado, y los paquetes de los que dependen muchos otros se ensanchan en proporción, de modo que las puntas de flecha no se amontonan y el tamaño mismo del recuadro delata a los concentradores. El color y el trazo completan la lectura: rojo continuo para las violaciones de capas, rojo discontinuo para las aristas de un ciclo, ámbar para la concentración excesiva y gris atenuado para lo que concierne a un núcleo compartido exento.
+
+La misma disposición se emite en tres formatos. El \textbf{SVG} es una imagen autocontenida que cualquier navegador abre sin instalar nada; cada paquete incluye un texto emergente con su nombre completo, su capa, sus acoplamientos y su estado, de modo que el dibujo puede mantenerse compacto sin perder información. El \textbf{TikZ} es la misma figura expresada como código \LaTeX{}, lista para incluirse en un documento. El \textbf{DOT} se conserva por interoperabilidad con Graphviz, pero fija las filas calculadas y declara las aristas ascendentes como aristas que no restringen la posición, de modo que tampoco Graphviz pueda invertir las capas.
+
+El formato TikZ merece un comentario adicional, porque afecta a este mismo documento. Las figuras de grafos que aparecen en él ---las de los escenarios de evaluación y la del sistema externo analizado en el capítulo siguiente--- no se dibujaron a mano: las generó el propio mecanismo a partir del grafo que extrajo. Una figura dibujada a mano puede discrepar del resultado real sin que nada lo delate; una generada por el mecanismo es, por construcción, una representación fiel de lo que este calculó, y puede regenerarse cada vez que el sistema cambia.
+
 \section{Verificación del prototipo}
 La construcción se acompañó de dos actividades de verificación que conviene distinguir de la evaluación experimental: aquí no se juzga si el mecanismo es útil, sino si hace correctamente lo que dice hacer.
 
-La primera fue una batería de pruebas sobre el núcleo lógico, ejecutada sobre grafos construidos a mano y, por tanto, independiente de la extracción por \textit{bytecode}. Separar ambas etapas evita confundir un defecto propio con un comportamiento de la biblioteca externa, y permite ejercitar casos límite que un caso de estudio real difícilmente ofrece: grafos vacíos, umbrales evaluados en su frontera exacta, autobucles, configuraciones inválidas y resultados internamente incoherentes. La batería reúne \textbf{136 comprobaciones} sobre el grafo, el algoritmo de Tarjan, la carga de configuración, las tres reglas, el motor, las exenciones, los cinco escenarios, los exportadores y la comparación entre corridas; todas se superan. Se construyó sin marcos de prueba externos, en coherencia con la misma restricción de ligereza que se impuso al mecanismo.
+La primera fue una batería de pruebas sobre el núcleo lógico, ejecutada sobre grafos construidos a mano y, por tanto, independiente de la extracción por \textit{bytecode}. Separar ambas etapas evita confundir un defecto propio con un comportamiento de la biblioteca externa, y permite ejercitar casos límite que un caso de estudio real difícilmente ofrece: grafos vacíos, umbrales evaluados en su frontera exacta, autobucles, configuraciones inválidas y resultados internamente incoherentes. La batería reúne \textbf{162 comprobaciones} sobre el grafo, el algoritmo de Tarjan, la carga de configuración, las tres reglas, el motor, las exenciones, los cinco escenarios, los exportadores, la disposición gráfica y la comparación entre corridas; todas se superan. Las que conciernen al dibujo verifican propiedades que una inspección visual podría pasar por alto: que el orden de las bandas se deduzca de la matriz y no del orden de declaración, que ningún par de paquetes se superponga, que las flechas que llegan a un mismo lado no compartan punto de llegada, que el SVG sea XML bien formado y que dos ejecuciones produzcan exactamente el mismo dibujo. Se construyó sin marcos de prueba externos, en coherencia con la misma restricción de ligereza que se impuso al mecanismo.
 
 La segunda consistió en aplicar el instrumento sobre sí mismo. Si el prototipo predica una arquitectura estratificada y acíclica, resulta razonable exigirle que la practique. Con una configuración que declara sus seis paquetes como capas y prohíbe toda dependencia ascendente, el análisis arrojó \textbf{24 verificaciones, cero incumplimientos y una CR del $100\%$}. La comprobación no sustituye a la evaluación experimental ---el sistema analizado es el propio artefacto, con las limitaciones de objetividad que ello supone---, pero sí ofrece una garantía adicional de que la arquitectura interna descrita en la figura~\ref{fig:modulos} es la realmente implementada y no una aspiración documental.
 
@@ -256,19 +278,8 @@ La versión \textbf{C0} constituye la implementación de referencia y respeta la
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=13mm and 24mm]
-  \node[paquete] (pre) {\texttt{presentacion}};
-  \node[paquete, below=of pre] (neg) {\texttt{negocio}};
-  \node[paquete, below=of neg] (per) {\texttt{persistencia}};
-  \node[paquete, right=of neg] (dom) {\texttt{dominio}};
-
-  \draw[dep] (pre) -- (neg);
-  \draw[dep] (neg) -- (per);
-  \draw[dep] (pre) -- (dom);
-  \draw[dep] (neg) -- (dom);
-  \draw[dep] (per) -- (dom);
-\end{tikzpicture}
-\caption{Grafo de dependencias de la implementación de referencia (C0): 4 paquetes y 5 dependencias, sin violaciones.}
+\adjustbox{max width=\linewidth}{\input{figuras/c0-base.tikz}}
+\caption{Grafo de dependencias de la implementación de referencia (C0), dibujado por el propio mecanismo: 4 paquetes y 5 dependencias, sin violaciones. Cada banda corresponde a una capa declarada; el dominio compartido, que no pertenece a ninguna, ocupa la columna lateral.}
 \label{fig:grafo-base}
 \end{figure}
 
@@ -276,38 +287,22 @@ Las cuatro versiones restantes introducen derivas deliberadas. Las tres primeras
 
 \begin{itemize}
     \item \textbf{C1 — Ruptura de capas.} El controlador de presentación accede directamente al repositorio de persistencia, saltándose la capa de negocio. La dependencia \texttt{presentacion} $\rightarrow$ \texttt{persistencia} no figura en la matriz de adyacencias y, al no invertir el sentido del flujo, no cierra ningún ciclo.
-    \item \textbf{C2 — Ciclo de dependencia.} Un subpaquete de cálculo dentro de la capa de negocio y su paquete padre se referencian mutuamente. Como ambos pertenecen a la misma capa, la estratificación permanece intacta y solo se activa FF2.
+    \item \textbf{C2 — Ciclo de dependencia.} Un subpaquete de cálculo dentro de la capa de negocio y su paquete padre se referencian mutuamente. Como ambos pertenecen a la misma capa, la estratificación permanece intacta y solo se activa FF2. Su grafo se muestra en la figura~\ref{fig:grafo-ciclo}.
     \item \textbf{C3 — Concentración excesiva.} Se agrega un paquete \texttt{com.caso.util} que depende de los cuatro paquetes restantes. Al no estar asignado a ninguna capa no vulnera FF1, y al no ser destino de ninguna dependencia tampoco cierra ciclos.
     \item \textbf{C4 — Escenario combinado.} Reúne las tres derivas: la persistencia pasa a depender del negocio y de la presentación, se forma un ciclo entre los tres paquetes de capa y reaparece el componente dios. Su grafo se muestra en la figura~\ref{fig:grafo-alterado}.
 \end{itemize}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=15mm and 26mm]
-  \node[infractor] (pre) {\texttt{presentacion}};
-  \node[infractor, below=of pre] (neg) {\texttt{negocio}};
-  \node[infractor, below=of neg] (per) {\texttt{persistencia}};
-  \node[paquete, right=of neg] (dom) {\texttt{dominio}};
-  \node[concentrado, left=of neg] (uti) {\texttt{util}};
+\adjustbox{max width=\linewidth}{\input{figuras/c2-ciclo.tikz}}
+\caption{Grafo del escenario C2, dibujado por el propio mecanismo. El ciclo queda contenido en la capa de negocio: ambos paquetes comparten fila y su dependencia mutua se traza como dos arcos, uno por encima y otro por debajo. Ninguna arista remonta la estratificación.}
+\label{fig:grafo-ciclo}
+\end{figure}
 
-  % Dependencias conformes de la línea base
-  \draw[dep] (pre) -- (neg);
-  \draw[dep] (neg) -- (per);
-  \draw[dep] (pre) -- (dom);
-  \draw[dep] (neg) -- (dom);
-  \draw[dep] (per) -- (dom);
-
-  % Derivas 1 y 2: la persistencia depende de las capas superiores
-  \draw[depmala] (per.east) .. controls +(2.2,0.4) and +(2.2,-0.4) .. (pre.east);
-  \draw[depmala] (per.north east) .. controls +(1.1,0.4) and +(1.1,-0.4) .. (neg.south east);
-
-  % Deriva 3: el componente dios depende de todos los demás paquetes
-  \draw[dep] (uti) -- (neg);
-  \draw[dep] (uti) -- (pre);
-  \draw[dep] (uti) -- (per);
-  \draw[dep] (uti.north) .. controls +(0,2.4) and +(0,2.4) .. (dom.north);
-\end{tikzpicture}
-\caption{Grafo de dependencias del escenario combinado (C4): 5 paquetes y 11 dependencias. En rojo, las aristas que violan la integridad de capas y cierran el ciclo; en ámbar, el paquete que concentra dependencias salientes.}
+\begin{figure}[H]
+\centering
+\adjustbox{max width=\linewidth}{\input{figuras/c4-combinado.tikz}}
+\caption{Grafo del escenario combinado (C4), dibujado por el propio mecanismo: 5 paquetes y 11 dependencias. Las dos dependencias que la persistencia dirige hacia capas superiores violan la estratificación y rodean los nodos por fuera; el ciclo que cierran se marca en los tres paquetes de capa, y el paquete que concentra dependencias salientes aparece en ámbar en la columna lateral.}
 \label{fig:grafo-alterado}
 \end{figure}
 
@@ -350,13 +345,15 @@ RF5 & \texttt{MotorConformidad}, \texttt{GeneradorReporte} & Tabla comparativa d
 \midrule
 RF6 & \texttt{Violacion}, evidencia por arista, sección de alcance del reporte & Hallazgos con método y línea de origen; declaración de reglas, umbrales y exclusiones en todo reporte. \\
 \midrule
+RF7 & \texttt{DisposicionGrafo}, \texttt{ExportadorSvg}, \texttt{ExportadorTikz} & Figuras~\ref{fig:grafo-base}, \ref{fig:grafo-ciclo} y~\ref{fig:grafo-alterado}, generadas por el mecanismo; SVG por escenario consultable en cualquier navegador. \\
+\midrule
 RNF1 & \texttt{CargadorConfiguracion}, \texttt{Exenciones} & Los cinco escenarios, el autoanálisis y la aplicación a un sistema externo se ejecutan con el mismo binario y configuraciones distintas; el reporte enumera las exenciones aplicadas. \\
 \midrule
 RNF2 & Ausencia de dependencias más allá de \textit{ArchUnit} & Compilación y ejecución con un JDK, sin Maven ni red; batería de pruebas sin marco externo. \\
 \midrule
 RNF3 & \texttt{GeneradorReporte} & Reporte con conformidad local por regla, evidencia por hallazgo y declaración de alcance. \\
 \midrule
-RNF4 & Exportadores JSON, CSV y DOT & Ejecuciones repetidas con resultados idénticos; evidencia versionable y verificable por terceros. \\
+RNF4 & Exportadores JSON, CSV, SVG, TikZ y DOT & Ejecuciones repetidas con resultados idénticos; evidencia versionable y verificable por terceros. \\
 \bottomrule
 \end{tabularx}
 \end{table}

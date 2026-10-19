@@ -24,6 +24,9 @@ import java.util.List;
  */
 public class ReglaCiclos implements Regla {
 
+    /** Nombre de la regla, con el que se identifican sus hallazgos. */
+    public static final String NOMBRE = "Ciclos de dependencia";
+
     private final Exenciones exentos;
 
     public ReglaCiclos() {
@@ -36,7 +39,7 @@ public class ReglaCiclos implements Regla {
 
     @Override
     public String nombre() {
-        return "Ciclos de dependencia";
+        return NOMBRE;
     }
 
     @Override

@@ -221,7 +221,7 @@ Este contraste cumple una doble función. Por un lado, demuestra que el experime
 
 \section{Aplicación a un sistema externo}
 \label{sec:archunit}
-Todo lo anterior se obtuvo sobre escenarios construidos para el experimento. Cabe entonces una pregunta que el diseño controlado no puede responder por sí mismo: ¿qué ocurre cuando el mecanismo se enfrenta a código que nadie preparó para él? Para responderla se aplicó el instrumento sobre \textit{ArchUnit} en su versión 1.3.0, una biblioteca de uso extendido cuyo código no fue escrito por el autor ni con este trabajo en mente.
+Todo lo anterior se obtuvo sobre escenarios construidos para el experimento. Cabe entonces una pregunta que el diseño controlado no puede responder por sí mismo: ¿qué ocurre cuando el mecanismo se enfrenta a código que nadie preparó para él? Para responderla se aplicó el instrumento sobre \textit{ArchUnit} en su versión 1.3.0, una biblioteca de uso extendido cuyo código no fue escrito por el autor ni con este trabajo en mente. El análisis se realizó directamente sobre el archivo \texttt{.jar} con que la biblioteca se distribuye, sin extraerlo, y las configuraciones empleadas se conservan en el repositorio para que el ejercicio pueda reproducirse.
 
 Conviene delimitar el estatus de este ejercicio antes de exponer sus resultados. \textbf{No constituye un segundo caso de estudio ni forma parte del experimento controlado}, cuyo alcance ---un único sistema--- permanece tal como el anteproyecto lo aprobó. Es una demostración de aplicabilidad, del mismo tipo que el autoanálisis del capítulo anterior: muestra que el mecanismo opera sobre código real y a qué se enfrenta al hacerlo, sin pretender que de ello se siga una validación externa.
 
@@ -260,6 +260,15 @@ De estos números se desprenden tres lecturas, y las tres importan por razones d
 \paragraph{Sin exenciones, casi la mitad del grafo era código ajeno.} \textit{ArchUnit} empaqueta Guava y ASM bajo su propio prefijo, de modo que la restricción a la raíz ---pensada para dejar fuera a las bibliotecas de terceros--- no los excluye. Peor aún, esos paquetes entran en el grafo incluso cuando sus clases no se importan, porque basta con que alguien las referencie para que aparezca la arista. El efecto es cuantificable: declarar las exenciones elimina \textbf{9 de los 14} hallazgos de concentración, es decir, cerca de dos tercios eran ruido, y reduce el ciclo mayor de siete paquetes a cuatro, porque el paquete de anotaciones al que todo el sistema referencia actuaba como puente entre módulos que entre sí no se alcanzan. La Tasa de Conformidad asciende en consecuencia $4{,}10$ puntos porcentuales y cruza el umbral de aceptación.
 
 \paragraph{Los hallazgos reales sobreviven.} Los tres ciclos permanecen tras las exenciones, y el veredicto final sigue siendo \textit{no conforme} por su severidad. Esta es, probablemente, la observación más importante del ejercicio: el mecanismo de exenciones retira ruido sin silenciar hallazgos, que es la única forma en que una excepción puede ser legítima. Si las exenciones hubieran hecho desaparecer también los ciclos, habría motivos para sospechar que el instrumento se había convertido en un complaciente.
+
+La figura~\ref{fig:archunit} muestra el grafo resultante tal como lo dibujó el mecanismo. Ofrece una lectura que los números no transmiten: las cuatro capas aparecen en el orden correcto aunque la configuración las declaró de abajo arriba, los tres ciclos se concentran en las capas \texttt{core} y \texttt{lang} ---no en la de reglas predefinidas---, y el paquete \texttt{base}, del que dependen casi todos los demás, se reconoce de inmediato por su anchura. El dibujo es denso porque el sistema lo es: ciento siete dependencias entre veintidós paquetes no admiten una representación despejada, y la figura no lo disimula.
+
+\begin{sidewaysfigure}
+\centering
+\adjustbox{max totalsize={\linewidth}{0.8\textwidth}}{\input{figuras/archunit.tikz}}
+\caption{Grafo de dependencias de \textit{ArchUnit} 1.3.0 con las exenciones declaradas, dibujado por el propio mecanismo a partir del archivo \texttt{.jar}. Las bandas siguen la estratificación hipotética \texttt{library} $\rightarrow$ \texttt{lang} $\rightarrow$ \texttt{core} $\rightarrow$ \texttt{base}; el núcleo de anotaciones exento ocupa la columna lateral y sus dependencias se dibujan atenuadas.}
+\label{fig:archunit}
+\end{sidewaysfigure}
 
 Queda por señalar qué \emph{no} establece este ejercicio. Se trata de un solo sistema, analizado por el propio autor, bajo una arquitectura supuesta y sin contraste con el criterio de quienes lo desarrollaron. Sirve para mostrar que el mecanismo opera sobre código real, a qué velocidad y con qué clase de dificultades; no sustituye la validación externa sobre repositorios industriales que el capítulo de conclusiones plantea como línea prioritaria de trabajo.
 

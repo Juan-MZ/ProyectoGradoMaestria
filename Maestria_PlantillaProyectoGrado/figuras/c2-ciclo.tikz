@@ -1,0 +1,54 @@
+% Figura generada por Arquitecta a partir del grafo extraido del codigo.
+% Escenario: C2-ciclo
+% No editar a mano: regenerar con el prototipo (figuras.bat / figuras.sh).
+% Requiere \usepackage{tikz} y \usetikzlibrary{arrows.meta}.
+\begin{tikzpicture}[x=0.75pt, y=-0.75pt, line cap=round, line join=round]
+\definecolor{arqBorde}{HTML}{3B5C8F}
+\definecolor{arqTexto}{HTML}{1F2D44}
+\definecolor{arqTenue}{HTML}{6B7A90}
+\definecolor{arqPanel}{HTML}{C5CEDC}
+\definecolor{arqBandaA}{HTML}{F3F6FB}
+\definecolor{arqBandaB}{HTML}{E9EEF6}
+\definecolor{arqAlerta}{HTML}{C0392B}
+\definecolor{arqFondoAlerta}{HTML}{FBE4E2}
+\definecolor{arqAviso}{HTML}{B7791F}
+\definecolor{arqFondoAviso}{HTML}{FDF3DC}
+\definecolor{arqNucleo}{HTML}{8A94A6}
+\definecolor{arqFondoNucleo}{HTML}{F4F5F7}
+\definecolor{arqArista}{HTML}{7F93B5}
+\definecolor{arqAristaNucleo}{HTML}{C9CED6}
+\fill[arqBandaA, rounded corners=4.5pt] (16.0,76.0) rectangle (410.4,152.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,89.0) {CAPA PRESENTACION};
+\fill[arqBandaB, rounded corners=4.5pt] (16.0,164.0) rectangle (410.4,240.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,177.0) {CAPA NEGOCIO};
+\fill[arqBandaA, rounded corners=4.5pt] (16.0,252.0) rectangle (410.4,328.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,265.0) {CAPA PERSISTENCIA};
+\draw[arqPanel, dash pattern=on 3.5pt off 3pt, rounded corners=4.5pt] (432.4,76.0) rectangle (550.8,240.0);
+\node[anchor=west, inner sep=0, text=arqTenue, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (442.4,89.0) {SIN CAPA};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (145.8,224.0) .. controls (145.8,262.0) and (314.4,207.2) .. (452.4,207.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (116.6,224.0) .. controls (116.6,250.1) and (213.2,255.9) .. (213.2,282.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (334.4,209.0) .. controls (393.4,209.0) and (393.4,210.8) .. (452.4,210.8);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (270.4,297.0) .. controls (361.4,297.0) and (361.4,214.4) .. (452.4,214.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (270.4,121.0) .. controls (361.4,121.0) and (361.4,203.6) .. (452.4,203.6);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (213.2,136.0) .. controls (213.2,162.1) and (121.5,167.9) .. (121.5,194.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (140.9,194.0) .. controls (140.9,166.0) and (266.4,166.0) .. (266.4,194.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (266.4,224.0) .. controls (266.4,252.8) and (131.2,252.8) .. (131.2,224.0);
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (452.4,194.0) rectangle (530.8,224.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (491.6,209.0) {dominio};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (92.0,194.0) rectangle (170.4,224.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (131.2,209.0) {negocio};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (198.4,194.0) rectangle (334.4,224.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (266.4,209.0) {negocio.calculo};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (156.0,282.0) rectangle (270.4,312.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (213.2,297.0) {persistencia};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (156.0,106.0) rectangle (270.4,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (213.2,121.0) {presentacion};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=2pt] (24.0,335.0) rectangle (46.0,349.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (52.0,342.0) {Paquete};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=2pt] (101.8,335.0) rectangle (123.8,349.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (129.8,342.0) {En un ciclo};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (24.0,362.0) -- (48.0,362.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (56.0,362.0) {Dependencia};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (127.4,362.0) -- (151.4,362.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (159.4,362.0) {Dependencia en ciclo};
+\end{tikzpicture}

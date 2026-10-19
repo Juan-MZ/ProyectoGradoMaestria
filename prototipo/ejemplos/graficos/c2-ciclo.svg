@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="571" height="394" viewBox="0 0 571 394" role="img" aria-labelledby="titulo">
+  <title id="titulo">C2-ciclo — Tasa de Conformidad 83,33 % · No conforme · 5 paquetes · 8 dependencias</title>
+  <defs>
+    <marker id="punta-nucleo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C9CED6"/></marker>
+    <marker id="punta-normal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7F93B5"/></marker>
+    <marker id="punta-ciclo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker>
+    <marker id="punta-viola_capas" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker>
+  </defs>
+  <rect width="571" height="394" fill="#FFFFFF"/>
+  <text x="24" y="32" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="17" font-weight="600" fill="#1F2D44">C2-ciclo</text>
+  <text x="24" y="54" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#B03A2E">Tasa de Conformidad 83,33 % · No conforme · 5 paquetes · 8 dependencias</text>
+  <rect x="16.0" y="76.0" width="394.4" height="76.0" rx="6" fill="#F3F6FB"/>
+  <text x="26.0" y="93.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="0.6" fill="#3B5C8F">CAPA PRESENTACION</text>
+  <rect x="16.0" y="164.0" width="394.4" height="76.0" rx="6" fill="#E9EEF6"/>
+  <text x="26.0" y="181.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="0.6" fill="#3B5C8F">CAPA NEGOCIO</text>
+  <rect x="16.0" y="252.0" width="394.4" height="76.0" rx="6" fill="#F3F6FB"/>
+  <text x="26.0" y="269.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="0.6" fill="#3B5C8F">CAPA PERSISTENCIA</text>
+  <rect x="432.4" y="76.0" width="118.4" height="164.0" rx="6" fill="none" stroke="#C5CEDC" stroke-dasharray="5 4"/>
+  <text x="442.4" y="93.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="0.6" fill="#6B7A90">SIN CAPA</text>
+  <g fill="none">
+    <path d="M145.8,224.0 C145.8,262.0 314.4,207.2 452.4,207.2" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.negocio → com.caso.dominio</title></path>
+    <path d="M116.6,224.0 C116.6,250.1 213.2,255.9 213.2,282.0" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.negocio → com.caso.persistencia</title></path>
+    <path d="M334.4,209.0 C393.4,209.0 393.4,210.8 452.4,210.8" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.negocio.calculo → com.caso.dominio</title></path>
+    <path d="M270.4,297.0 C361.4,297.0 361.4,214.4 452.4,214.4" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.persistencia → com.caso.dominio</title></path>
+    <path d="M270.4,121.0 C361.4,121.0 361.4,203.6 452.4,203.6" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.presentacion → com.caso.dominio</title></path>
+    <path d="M213.2,136.0 C213.2,162.1 121.5,167.9 121.5,194.0" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"><title>com.caso.presentacion → com.caso.negocio</title></path>
+    <path d="M140.9,194.0 C140.9,166.0 266.4,166.0 266.4,194.0" stroke="#C0392B" marker-end="url(#punta-ciclo)" stroke-width="1.7" stroke-dasharray="6 4"><title>com.caso.negocio → com.caso.negocio.calculo (forma parte de un ciclo)</title></path>
+    <path d="M266.4,224.0 C266.4,252.8 131.2,252.8 131.2,224.0" stroke="#C0392B" marker-end="url(#punta-ciclo)" stroke-width="1.7" stroke-dasharray="6 4"><title>com.caso.negocio.calculo → com.caso.negocio (forma parte de un ciclo)</title></path>
+  </g>
+  <g>
+    <title>com.caso.dominio
+Capa: sin capa
+Ce = 0 · Ca = 4
+Estado: Paquete</title>
+    <rect x="452.4" y="194.0" width="78.4" height="30.0" rx="6" fill="#FFFFFF" stroke="#3B5C8F" stroke-width="1.3"/>
+    <text x="491.6" y="209.0" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#1F2D44">dominio</text>
+  </g>
+  <g>
+    <title>com.caso.negocio
+Capa: negocio
+Ce = 3 · Ca = 2
+Estado: En un ciclo</title>
+    <rect x="92.0" y="194.0" width="78.4" height="30.0" rx="6" fill="#FBE4E2" stroke="#C0392B" stroke-width="1.8"/>
+    <text x="131.2" y="209.0" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#1F2D44">negocio</text>
+  </g>
+  <g>
+    <title>com.caso.negocio.calculo
+Capa: negocio
+Ce = 2 · Ca = 1
+Estado: En un ciclo</title>
+    <rect x="198.4" y="194.0" width="136.0" height="30.0" rx="6" fill="#FBE4E2" stroke="#C0392B" stroke-width="1.8"/>
+    <text x="266.4" y="209.0" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#1F2D44">negocio.calculo</text>
+  </g>
+  <g>
+    <title>com.caso.persistencia
+Capa: persistencia
+Ce = 1 · Ca = 1
+Estado: Paquete</title>
+    <rect x="156.0" y="282.0" width="114.4" height="30.0" rx="6" fill="#FFFFFF" stroke="#3B5C8F" stroke-width="1.3"/>
+    <text x="213.2" y="297.0" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#1F2D44">persistencia</text>
+  </g>
+  <g>
+    <title>com.caso.presentacion
+Capa: presentacion
+Ce = 2 · Ca = 0
+Estado: Paquete</title>
+    <rect x="156.0" y="106.0" width="114.4" height="30.0" rx="6" fill="#FFFFFF" stroke="#3B5C8F" stroke-width="1.3"/>
+    <text x="213.2" y="121.0" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="12" fill="#1F2D44">presentacion</text>
+  </g>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#3A4658">
+    <rect x="24.0" y="335.0" width="22" height="14" rx="3" fill="#FFFFFF" stroke="#3B5C8F" stroke-width="1.3"/>
+    <text x="52.0" y="346.0">Paquete</text>
+    <rect x="108.8" y="335.0" width="22" height="14" rx="3" fill="#FBE4E2" stroke="#C0392B" stroke-width="1.8"/>
+    <text x="136.8" y="346.0">En un ciclo</text>
+    <path d="M24.0,364.0 L48.0,364.0" fill="none" stroke="#7F93B5" marker-end="url(#punta-normal)" stroke-width="1.3"/>
+    <text x="56.0" y="368.0">Dependencia</text>
+    <path d="M138.4,364.0 L162.4,364.0" fill="none" stroke="#C0392B" marker-end="url(#punta-ciclo)" stroke-width="1.7" stroke-dasharray="6 4"/>
+    <text x="170.4" y="368.0">Dependencia en ciclo</text>
+  </g>
+</svg>

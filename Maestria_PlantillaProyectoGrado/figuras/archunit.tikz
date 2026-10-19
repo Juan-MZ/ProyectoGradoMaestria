@@ -1,0 +1,197 @@
+% Figura generada por Arquitecta a partir del grafo extraido del codigo.
+% Escenario: ArchUnit-1.3.0
+% No editar a mano: regenerar con el prototipo (figuras.bat / figuras.sh).
+% Requiere \usepackage{tikz} y \usetikzlibrary{arrows.meta}.
+\begin{tikzpicture}[x=0.75pt, y=-0.75pt, line cap=round, line join=round]
+\definecolor{arqBorde}{HTML}{3B5C8F}
+\definecolor{arqTexto}{HTML}{1F2D44}
+\definecolor{arqTenue}{HTML}{6B7A90}
+\definecolor{arqPanel}{HTML}{C5CEDC}
+\definecolor{arqBandaA}{HTML}{F3F6FB}
+\definecolor{arqBandaB}{HTML}{E9EEF6}
+\definecolor{arqAlerta}{HTML}{C0392B}
+\definecolor{arqFondoAlerta}{HTML}{FBE4E2}
+\definecolor{arqAviso}{HTML}{B7791F}
+\definecolor{arqFondoAviso}{HTML}{FDF3DC}
+\definecolor{arqNucleo}{HTML}{8A94A6}
+\definecolor{arqFondoNucleo}{HTML}{F4F5F7}
+\definecolor{arqArista}{HTML}{7F93B5}
+\definecolor{arqAristaNucleo}{HTML}{C9CED6}
+\fill[arqBandaA, rounded corners=4.5pt] (16.0,76.0) rectangle (1017.6,416.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,89.0) {CAPA LIBRARY};
+\fill[arqBandaB, rounded corners=4.5pt] (16.0,428.0) rectangle (1017.6,680.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,441.0) {CAPA LANG};
+\fill[arqBandaA, rounded corners=4.5pt] (16.0,692.0) rectangle (1017.6,856.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,705.0) {CAPA CORE};
+\fill[arqBandaB, rounded corners=4.5pt] (16.0,868.0) rectangle (1017.6,944.0);
+\node[anchor=west, inner sep=0, text=arqBorde, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (26.0,881.0) {CAPA BASE};
+\draw[arqPanel, dash pattern=on 3.5pt off 3pt, rounded corners=4.5pt] (1039.6,76.0) rectangle (1246.6,491.4);
+\node[anchor=west, inner sep=0, text=arqTenue, font=\sffamily\bfseries\fontsize{7}{8}\selectfont] at (1049.6,89.0) {SIN CAPA};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (1059.6,468.7) .. controls (828.2,468.7) and (828.2,916.0) .. (596.8,916.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (1059.6,465.7) .. controls (967.6,465.7) and (967.6,734.0) .. (875.6,734.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (596.8,910.0) .. controls (828.2,910.0) and (828.2,467.9) .. (1059.6,467.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (552.8,825.0) .. controls (806.2,825.0) and (806.2,467.2) .. (1059.6,467.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (478.4,752.0) .. controls (478.4,790.0) and (798.1,463.4) .. (1059.6,463.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (301.1,752.0) .. controls (301.1,790.0) and (718.3,464.2) .. (1059.6,464.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (627.1,752.0) .. controls (627.1,790.0) and (865.0,464.9) .. (1059.6,464.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (875.6,740.0) .. controls (967.6,740.0) and (967.6,466.4) .. (1059.6,466.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (546.7,664.0) .. controls (546.7,702.0) and (828.8,461.2) .. (1059.6,461.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (418.1,664.0) .. controls (418.1,702.0) and (770.9,461.9) .. (1059.6,461.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (722.2,649.0) .. controls (890.9,649.0) and (890.9,462.7) .. (1059.6,462.7);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (570.4,473.0) .. controls (815.0,473.0) and (815.0,459.7) .. (1059.6,459.7);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (602.8,561.0) .. controls (831.2,561.0) and (831.2,460.4) .. (1059.6,460.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (568.3,136.0) .. controls (568.3,174.0) and (838.5,452.2) .. (1059.6,452.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (613.6,385.0) .. controls (836.6,385.0) and (836.6,458.9) .. (1059.6,458.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (717.2,297.0) .. controls (888.4,297.0) and (888.4,457.4) .. (1059.6,457.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (761.0,136.0) .. controls (761.0,174.0) and (925.2,452.9) .. (1059.6,452.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (434.7,136.0) .. controls (434.7,174.0) and (778.4,453.7) .. (1059.6,453.7);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (941.6,121.0) .. controls (1000.6,121.0) and (1000.6,454.4) .. (1059.6,454.4);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (194.8,136.0) .. controls (194.8,174.0) and (670.4,455.2) .. (1059.6,455.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (423.1,312.0) .. controls (423.1,350.0) and (773.2,458.2) .. (1059.6,458.2);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (717.2,209.0) .. controls (888.4,209.0) and (888.4,455.9) .. (1059.6,455.9);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (469.0,224.0) .. controls (469.0,262.0) and (793.8,456.7) .. (1059.6,456.7);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (516.8,840.0) .. controls (516.8,866.1) and (502.8,871.9) .. (502.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (414.4,752.0) .. controls (414.4,817.7) and (495.8,832.3) .. (495.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (430.4,752.0) .. controls (430.4,778.1) and (503.8,783.9) .. (503.8,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (234.6,752.0) .. controls (234.6,817.7) and (460.8,832.3) .. (460.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (593.2,752.0) .. controls (593.2,817.7) and (544.8,832.3) .. (544.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (610.1,752.0) .. controls (610.1,778.1) and (523.3,783.9) .. (523.3,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (807.7,752.0) .. controls (807.7,817.7) and (572.8,832.3) .. (572.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (520.4,664.0) .. controls (520.4,769.3) and (530.8,792.7) .. (530.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (529.2,664.0) .. controls (529.2,729.7) and (516.8,744.3) .. (516.8,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (511.7,664.0) .. controls (511.7,690.1) and (438.4,695.9) .. (438.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (494.2,664.0) .. controls (494.2,690.1) and (289.0,695.9) .. (289.0,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (379.4,664.0) .. controls (379.4,769.3) and (474.8,792.7) .. (474.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (360.1,664.0) .. controls (360.1,690.1) and (403.4,695.9) .. (403.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (340.7,664.0) .. controls (340.7,690.1) and (213.4,695.9) .. (213.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (657.8,664.0) .. controls (657.8,769.3) and (558.8,792.7) .. (558.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (630.6,664.0) .. controls (630.6,690.1) and (473.4,695.9) .. (473.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (523.0,488.0) .. controls (523.0,672.5) and (509.8,713.5) .. (509.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (510.6,488.0) .. controls (510.6,593.3) and (424.4,616.7) .. (424.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (485.7,488.0) .. controls (485.7,593.3) and (273.9,616.7) .. (273.9,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (547.9,488.0) .. controls (547.9,553.7) and (504.5,568.3) .. (504.5,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (498.1,488.0) .. controls (498.1,553.7) and (367.8,568.3) .. (367.8,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (535.5,488.0) .. controls (535.5,514.1) and (491.5,519.9) .. (491.5,546.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (516.8,576.0) .. controls (516.8,720.9) and (516.8,753.1) .. (516.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (478.8,576.0) .. controls (478.8,641.7) and (431.4,656.3) .. (431.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (554.8,576.0) .. controls (554.8,602.1) and (510.9,607.9) .. (510.9,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (542.4,136.0) .. controls (542.4,478.9) and (537.8,555.1) .. (537.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (535.9,136.0) .. controls (535.9,399.7) and (445.4,458.3) .. (445.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (522.9,136.0) .. controls (522.9,399.7) and (304.1,458.3) .. (304.1,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (561.8,136.0) .. controls (561.8,360.1) and (517.2,409.9) .. (517.2,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (529.4,136.0) .. controls (529.4,360.1) and (414.2,409.9) .. (414.2,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (548.8,136.0) .. controls (548.8,280.9) and (495.0,313.1) .. (495.0,458.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (555.3,136.0) .. controls (555.3,320.5) and (516.8,361.5) .. (516.8,546.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (487.9,400.0) .. controls (487.9,624.1) and (523.8,673.9) .. (523.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (545.7,400.0) .. controls (545.7,584.5) and (510.3,625.5) .. (510.3,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (577.1,312.0) .. controls (577.1,536.1) and (529.8,585.9) .. (529.8,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (533.8,312.0) .. controls (533.8,496.5) and (459.4,537.5) .. (459.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (663.8,312.0) .. controls (663.8,456.9) and (523.6,489.1) .. (523.6,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (620.5,312.0) .. controls (620.5,338.1) and (516.8,343.9) .. (516.8,370.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (678.1,136.0) .. controls (678.1,478.9) and (565.8,555.1) .. (565.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (691.9,136.0) .. controls (691.9,439.3) and (536.3,506.7) .. (536.3,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (664.3,136.0) .. controls (664.3,399.7) and (480.4,458.3) .. (480.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (636.6,136.0) .. controls (636.6,399.7) and (319.3,458.3) .. (319.3,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (733.3,136.0) .. controls (733.3,360.1) and (542.7,409.9) .. (542.7,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (705.7,136.0) .. controls (705.7,280.9) and (538.6,313.1) .. (538.6,458.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (719.5,136.0) .. controls (719.5,320.5) and (567.5,361.5) .. (567.5,546.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (747.2,136.0) .. controls (747.2,201.7) and (634.9,216.3) .. (634.9,282.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (333.5,136.0) .. controls (333.5,478.9) and (467.8,555.1) .. (467.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (299.7,136.0) .. controls (299.7,399.7) and (198.3,458.3) .. (198.3,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (367.2,136.0) .. controls (367.2,320.5) and (466.1,361.5) .. (466.1,546.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (877.2,136.0) .. controls (877.2,478.9) and (579.8,555.1) .. (579.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (850.0,136.0) .. controls (850.0,399.7) and (487.4,458.3) .. (487.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (904.4,136.0) .. controls (904.4,360.1) and (549.0,409.9) .. (549.0,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (171.6,136.0) .. controls (171.6,478.9) and (453.8,555.1) .. (453.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (148.4,136.0) .. controls (148.4,399.7) and (389.4,458.3) .. (389.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (125.2,136.0) .. controls (125.2,399.7) and (183.1,458.3) .. (183.1,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (384.4,312.0) .. controls (384.4,575.7) and (481.8,634.3) .. (481.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (403.7,312.0) .. controls (403.7,536.1) and (497.3,585.9) .. (497.3,810.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (365.1,312.0) .. controls (365.1,496.5) and (410.4,537.5) .. (410.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (345.7,312.0) .. controls (345.7,496.5) and (228.5,537.5) .. (228.5,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (603.2,224.0) .. controls (603.2,527.3) and (551.8,594.7) .. (551.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (582.4,224.0) .. controls (582.4,448.1) and (466.4,497.9) .. (466.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (665.6,224.0) .. controls (665.6,408.5) and (529.9,449.5) .. (529.9,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (624.0,224.0) .. controls (624.0,329.3) and (516.8,352.7) .. (516.8,458.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (644.8,224.0) .. controls (644.8,368.9) and (542.1,401.1) .. (542.1,546.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (686.4,224.0) .. controls (686.4,250.1) and (562.7,255.9) .. (562.7,282.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (561.6,224.0) .. controls (561.6,250.1) and (384.4,255.9) .. (384.4,282.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (421.5,224.0) .. controls (421.5,527.3) and (488.8,594.7) .. (488.8,898.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (397.7,224.0) .. controls (397.7,448.1) and (417.4,497.9) .. (417.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (350.2,224.0) .. controls (350.2,448.1) and (243.6,497.9) .. (243.6,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (445.3,224.0) .. controls (445.3,408.5) and (498.1,449.5) .. (498.1,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (373.9,224.0) .. controls (373.9,408.5) and (344.6,449.5) .. (344.6,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (398.4,752.0) .. controls (398.4,782.0) and (201.3,782.0) .. (201.3,752.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (452.4,722.0) .. controls (452.4,694.1) and (576.3,694.1) .. (576.3,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (258.8,722.0) .. controls (258.8,693.0) and (396.4,693.0) .. (396.4,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (576.3,752.0) .. controls (576.3,780.4) and (446.4,780.4) .. (446.4,752.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (559.3,752.0) .. controls (559.3,782.0) and (267.8,782.0) .. (267.8,752.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (610.1,722.0) .. controls (610.1,692.0) and (778.8,692.0) .. (778.8,722.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (749.9,752.0) .. controls (749.9,782.0) and (462.4,782.0) .. (462.4,752.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (502.9,664.0) .. controls (502.9,690.3) and (398.7,690.3) .. (398.7,664.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (536.3,634.0) .. controls (536.3,606.3) and (657.8,606.3) .. (657.8,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (391.0,634.0) .. controls (391.0,607.9) and (491.8,607.9) .. (491.8,634.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (685.0,664.0) .. controls (685.0,693.8) and (537.9,693.8) .. (537.9,664.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (650.4,136.0) .. controls (650.4,166.0) and (400.9,166.0) .. (400.9,136.0);
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (367.2,106.0) .. controls (367.2,76.0) and (698.8,76.0) .. (698.8,106.0);
+\draw[fill=arqFondoNucleo, draw=arqNucleo, line width=0.95pt, dash pattern=on 3pt off 2.25pt, rounded corners=4.5pt] (1059.6,445.4) rectangle (1226.6,475.4);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (1143.1,460.4) {archunit};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (436.8,898.0) rectangle (596.8,928.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (516.8,913.0) {base};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (480.8,810.0) rectangle (552.8,840.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (516.8,825.0) {core};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (372.4,722.0) rectangle (504.4,752.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (438.4,737.0) {core.domain};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (158.0,722.0) rectangle (344.4,752.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (251.2,737.0) {core.domain.properties};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (532.4,722.0) rectangle (654.0,752.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (593.2,737.0) {core.importer};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (682.0,722.0) rectangle (875.6,752.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (778.8,737.0) {core.importer.resolvers};
+\draw[fill=arqFondoAlerta, draw=arqAviso, line width=1.95pt, rounded corners=4.5pt] (475.4,634.0) rectangle (565.4,664.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (520.4,649.0) {lang};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (311.4,634.0) rectangle (447.4,664.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (379.4,649.0) {lang.conditions};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (593.4,634.0) rectangle (722.2,664.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (657.8,649.0) {lang.extension};
+\draw[fill=arqFondoAviso, draw=arqAviso, line width=1.35pt, rounded corners=4.5pt] (463.2,458.0) rectangle (570.4,488.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (516.8,473.0) {lang.syntax};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (430.8,546.0) rectangle (602.8,576.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (516.8,561.0) {lang.syntax.elements};
+\draw[fill=arqFondoAviso, draw=arqAviso, line width=1.35pt, rounded corners=4.5pt] (506.4,106.0) rectangle (584.8,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (545.6,121.0) {library};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (420.0,370.0) rectangle (613.6,400.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (516.8,385.0) {library.cycle\_detection};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (480.4,282.0) rectangle (717.2,312.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (598.8,297.0) {library.cycle\_detection.rules};
+\draw[fill=arqFondoAlerta, draw=arqAviso, line width=1.95pt, rounded corners=4.5pt] (612.8,106.0) rectangle (784.8,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (698.8,121.0) {library.dependencies};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=4.5pt] (256.0,106.0) rectangle (478.4,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (367.2,121.0) {library.dependencies.syntax};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (812.8,106.0) rectangle (941.6,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (877.2,121.0) {library.freeze};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (92.0,106.0) rectangle (228.0,136.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (160.0,121.0) {library.metrics};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (316.4,282.0) rectangle (452.4,312.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (384.4,297.0) {library.modules};
+\draw[fill=arqFondoAviso, draw=arqAviso, line width=1.35pt, rounded corners=4.5pt] (530.8,194.0) rectangle (717.2,224.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (624.0,209.0) {library.modules.syntax};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=4.5pt] (316.4,194.0) rectangle (502.8,224.0);
+\node[inner sep=0, text=arqTexto, font=\ttfamily\fontsize{9}{10}\selectfont] at (409.6,209.0) {library.plantuml.rules};
+\draw[fill=white, draw=arqBorde, line width=0.95pt, rounded corners=2pt] (24.0,951.0) rectangle (46.0,965.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (52.0,958.0) {Paquete};
+\draw[fill=arqFondoAlerta, draw=arqAlerta, line width=1.35pt, rounded corners=2pt] (101.8,951.0) rectangle (123.8,965.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (129.8,958.0) {En un ciclo};
+\draw[fill=arqFondoAviso, draw=arqAviso, line width=1.35pt, rounded corners=2pt] (201.2,951.0) rectangle (223.2,965.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (229.2,958.0) {Concentración excesiva};
+\draw[fill=arqFondoAlerta, draw=arqAviso, line width=1.95pt, rounded corners=2pt] (360.0,951.0) rectangle (382.0,965.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (388.0,958.0) {Ciclo y concentración};
+\draw[fill=arqFondoNucleo, draw=arqNucleo, line width=0.95pt, dash pattern=on 3pt off 2.25pt, rounded corners=2pt] (513.4,951.0) rectangle (535.4,965.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (541.4,958.0) {Núcleo compartido (exento)};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAristaNucleo, line width=0.75pt] (24.0,978.0) -- (48.0,978.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (56.0,978.0) {Hacia núcleo compartido};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqArista, line width=0.95pt] (192.2,978.0) -- (216.2,978.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (224.2,978.0) {Dependencia};
+\draw[-{Stealth[length=4.5pt, width=4pt]}, draw=arqAlerta, line width=1.25pt, dash pattern=on 4.5pt off 3pt] (295.6,978.0) -- (319.6,978.0);
+\node[anchor=west, inner sep=0, text=arqTexto, font=\sffamily\fontsize{7.5}{9}\selectfont] at (327.6,978.0) {Dependencia en ciclo};
+\end{tikzpicture}

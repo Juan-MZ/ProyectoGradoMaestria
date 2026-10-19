@@ -6,7 +6,7 @@ Functions* y análisis estático de grafos de dependencia.**
 [![Documento: CC BY-NC-ND 4.0](https://img.shields.io/badge/documento-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![Código: Apache 2.0](https://img.shields.io/badge/c%C3%B3digo-Apache%202.0-blue.svg)](LICENSE-CODE)
 [![Java 17+](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://adoptium.net/)
-[![Pruebas: 136](https://img.shields.io/badge/pruebas-136%20superadas-brightgreen.svg)](prototipo/src/test/java)
+[![Pruebas: 162](https://img.shields.io/badge/pruebas-162%20superadas-brightgreen.svg)](prototipo/src/test/java)
 
 Trabajo de grado para optar al título de **Magíster en Ingeniería de Software**
 de la Pontificia Universidad Javeriana Cali.
@@ -51,6 +51,16 @@ declaradas. Funciona en tres pasos:
 Cada hallazgo llega acompañado de la evidencia que lo origina, hasta el método y
 la línea de código concretos, y todo reporte declara explícitamente qué reglas se
 aplicaron y qué quedó fuera del diagnóstico.
+
+## Así se ve
+
+![Grafo del escenario combinado, dibujado por la herramienta](prototipo/ejemplos/graficos/c4-combinado.svg)
+
+La herramienta dibuja el grafo que extrae, ordenado según la estratificación
+declarada y con los hallazgos resaltados: en rojo las dependencias que violan las
+capas y los paquetes atrapados en un ciclo, en ámbar el que concentra
+dependencias. El SVG se abre en cualquier navegador sin instalar nada, y las
+figuras de grafos de la monografía las genera la propia herramienta en TikZ.
 
 ## Resultados
 
@@ -108,7 +118,7 @@ mismas reglas que el instrumento exige a los sistemas que evalúa.
 │
 └── prototipo/                         Arquitecta: el mecanismo construido
     ├── src/main/java/                 Núcleo (config, grafo, reglas, motor, reporte)
-    ├── src/test/java/                 Batería de 136 comprobaciones
+    ├── src/test/java/                 Batería de 162 comprobaciones
     ├── caso-estudio*/                 Los cinco escenarios del experimento
     ├── lib/                           ArchUnit y SLF4J (ver TERCEROS.md)
     ├── rules.properties               Catálogo de reglas del caso de estudio
@@ -143,7 +153,8 @@ Requiere **JDK 17 o superior**. Maven es opcional: las dependencias están en
 ```bash
 cd prototipo
 ./build.sh         # compila núcleo, pruebas y los cinco escenarios
-./test.sh          # 136 comprobaciones sobre el núcleo lógico
+./test.sh          # 162 comprobaciones sobre el núcleo lógico
+./figuras.sh       # regenera los grafos de la monografía
 ./experimento.sh   # experimento completo; evidencia en resultados/
 ```
 
@@ -185,7 +196,7 @@ clasificacion.modo=cr+severidad
 
 `experimento.sh` recorre los cinco escenarios bajo los dos criterios de
 clasificación y escribe en `resultados/` un reporte legible, la evidencia
-completa en JSON, el grafo en formato DOT —con las aristas infractoras
+completa en JSON, el grafo dibujado en SVG, TikZ y DOT —con las aristas infractoras
 resaltadas— y los hallazgos tabulados en CSV. El archivo `resumen.csv` de cada
 modo reproduce directamente las tablas del capítulo de evaluación.
 

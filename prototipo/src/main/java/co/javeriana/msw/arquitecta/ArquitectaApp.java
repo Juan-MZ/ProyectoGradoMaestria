@@ -14,9 +14,12 @@ import co.javeriana.msw.arquitecta.reglas.ReglaCiclos;
 import co.javeriana.msw.arquitecta.reglas.ReglaConcentracion;
 import co.javeriana.msw.arquitecta.reglas.ReglaIntegridadCapas;
 import co.javeriana.msw.arquitecta.reporte.CatalogoReglas;
+import co.javeriana.msw.arquitecta.reporte.DisposicionGrafo;
 import co.javeriana.msw.arquitecta.reporte.ExportadorCsv;
 import co.javeriana.msw.arquitecta.reporte.ExportadorDot;
 import co.javeriana.msw.arquitecta.reporte.ExportadorJson;
+import co.javeriana.msw.arquitecta.reporte.ExportadorSvg;
+import co.javeriana.msw.arquitecta.reporte.ExportadorTikz;
 import co.javeriana.msw.arquitecta.reporte.GeneradorReporte;
 import co.javeriana.msw.arquitecta.reporte.Historico;
 
@@ -35,10 +38,12 @@ import java.util.OptionalDouble;
  * Punto de entrada de la línea de comandos.
  *
  * <pre>
- * arquitecta &lt;directorio-clases&gt; &lt;archivo-config&gt; [opciones]
+ * arquitecta &lt;directorio-clases|archivo.jar&gt; &lt;archivo-config&gt; [opciones]
  *
  *   --etiqueta &lt;nombre&gt;    nombre del escenario en el reporte y en los archivos
- *   --salida &lt;directorio&gt;  escribe reporte, JSON, CSV y DOT en ese directorio
+ *   --salida &lt;directorio&gt;  escribe reporte, JSON, CSV, grafo (SVG, TikZ y DOT) en ese directorio
+ *   --svg &lt;archivo&gt;        dibuja el grafo como imagen SVG, que se abre en cualquier navegador
+ *   --tikz &lt;archivo&gt;       dibuja el grafo como figura TikZ, lista para incluirse en LaTeX
  *   --historico &lt;csv&gt;      compara con la última corrida registrada para la misma
  *                          etiqueta; si se omite y hay --salida, se usa su resumen.csv
  *   --modo cr|cr+severidad sobrescribe el modo de clasificación del archivo de configuración
@@ -50,6 +55,8 @@ public final class ArquitectaApp {
 
     private static final PrintStream SALIDA =
             new PrintStream(System.out, true, StandardCharsets.UTF_8);
+    private static final PrintStream ERRORES =
+            new PrintStream(System.err, true, StandardCharsets.UTF_8);
 
     public static void main(String[] args) throws Exception {
         Map<String, String> opciones = new LinkedHashMap<>();
@@ -62,7 +69,7 @@ public final class ArquitectaApp {
         Path archivoConfig = Path.of(posicionales.size() > 1 ? posicionales.get(1) : "rules.properties");
 
         if (!Files.isRegularFile(archivoConfig)) {
-            System.err.println("No se encontró el archivo de configuración: " + archivoConfig);
+            ERRORES.println("No se encontró el archivo de configuración: " + archivoConfig);
             System.exit(1);
         }
 
@@ -70,7 +77,7 @@ public final class ArquitectaApp {
         try {
             config = CargadorConfiguracion.cargar(archivoConfig);
         } catch (IllegalArgumentException e) {
-            System.err.println("Configuración inválida: " + e.getMessage());
+            ERRORES.println("Configuración inválida: " + e.getMessage());
             System.exit(1);
             return;
         }
@@ -86,8 +93,10 @@ public final class ArquitectaApp {
             return;
         }
 
-        if (!Files.isDirectory(directorioClases)) {
-            System.err.println("No se encontró el directorio de clases: " + directorioClases);
+        boolean esJar = Files.isRegularFile(directorioClases)
+                && directorioClases.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar");
+        if (!Files.isDirectory(directorioClases) && !esJar) {
+            ERRORES.println("No se encontró el directorio de clases ni un archivo .jar: " + directorioClases);
             System.exit(1);
         }
 
@@ -97,7 +106,16 @@ public final class ArquitectaApp {
         String etiqueta = opciones.getOrDefault("etiqueta", directorioClases.getFileName().toString());
 
         GrafoDependencias grafo = new ConstructorGrafo(config.raiz(), config.exclusiones())
-                .desdeDirectorio(directorioClases);
+                .desdeRuta(directorioClases);
+        if (grafo.nodos().isEmpty()) {
+            // Un grafo vacío no es un sistema conforme: es un análisis que no encontró
+            // nada que analizar. Declararlo aceptable sería un falso negativo silencioso.
+            ERRORES.println("No se encontraron clases bajo la raíz '" + config.raiz() + "' en "
+                    + directorioClases.toAbsolutePath().normalize() + ".");
+            ERRORES.println("Compruebe que la ruta contiene clases compiladas (.class) o un .jar,"
+                    + " y no el código fuente, y que la propiedad 'raiz' coincide con sus paquetes.");
+            System.exit(1);
+        }
         Resultado resultado = new MotorConformidad(
                 config.umbralAceptable(), config.umbralObservacion(), modo).evaluar(grafo, reglas);
 
@@ -109,9 +127,20 @@ public final class ArquitectaApp {
         String reporte = GeneradorReporte.generar(resultado, grafo, reglas, config, etiqueta, crAnterior);
         SALIDA.println(reporte);
 
+        DisposicionGrafo disposicion = DisposicionGrafo.calcular(grafo, config, resultado);
         if (opciones.containsKey("salida")) {
             escribirEvidencia(Path.of(opciones.get("salida")), etiqueta, reporte,
-                    resultado, grafo, config);
+                    resultado, grafo, config, disposicion);
+        }
+        if (opciones.containsKey("svg")) {
+            Path destino = escribirFigura(Path.of(opciones.get("svg")),
+                    ExportadorSvg.exportar(disposicion, resultado, etiqueta));
+            SALIDA.println("Grafo (SVG) escrito en  : " + destino);
+        }
+        if (opciones.containsKey("tikz")) {
+            Path destino = escribirFigura(Path.of(opciones.get("tikz")),
+                    ExportadorTikz.exportar(disposicion, etiqueta));
+            SALIDA.println("Grafo (TikZ) escrito en : " + destino);
         }
 
         String fallarSi = opciones.get("fallar-si");
@@ -137,7 +166,8 @@ public final class ArquitectaApp {
     }
 
     private static void escribirEvidencia(Path directorio, String etiqueta, String reporte,
-            Resultado resultado, GrafoDependencias grafo, ConfiguracionReglas config) throws Exception {
+            Resultado resultado, GrafoDependencias grafo, ConfiguracionReglas config,
+            DisposicionGrafo disposicion) throws Exception {
 
         Files.createDirectories(directorio);
         String base = etiqueta.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._-]+", "-");
@@ -145,8 +175,12 @@ public final class ArquitectaApp {
         escribir(directorio.resolve(base + ".txt"), reporte);
         escribir(directorio.resolve(base + ".json"),
                 ExportadorJson.exportar(resultado, grafo, config, etiqueta));
+        escribir(directorio.resolve(base + ".svg"),
+                ExportadorSvg.exportar(disposicion, resultado, etiqueta));
+        escribir(directorio.resolve(base + ".tikz"),
+                ExportadorTikz.exportar(disposicion, etiqueta));
         escribir(directorio.resolve(base + ".dot"),
-                ExportadorDot.exportar(grafo, config, resultado, etiqueta));
+                ExportadorDot.exportar(disposicion, etiqueta));
         escribir(directorio.resolve(base + "-hallazgos.csv"),
                 ExportadorCsv.CABECERA_HALLAZGOS + "\n" + ExportadorCsv.filasHallazgos(resultado, etiqueta));
 
@@ -162,6 +196,16 @@ public final class ArquitectaApp {
 
     private static void escribir(Path destino, String contenido) throws Exception {
         Files.writeString(destino, contenido, StandardCharsets.UTF_8);
+    }
+
+    /** Escribe una figura en la ruta pedida, creando los directorios intermedios si faltan. */
+    private static Path escribirFigura(Path destino, String contenido) throws Exception {
+        Path absoluta = destino.toAbsolutePath().normalize();
+        if (absoluta.getParent() != null) {
+            Files.createDirectories(absoluta.getParent());
+        }
+        escribir(absoluta, contenido);
+        return absoluta;
     }
 
     private static boolean alcanza(EstadoArquitectonico estado, String minimo) {
@@ -187,7 +231,7 @@ public final class ArquitectaApp {
                 continue;
             }
             if (i + 1 >= args.length) {
-                System.err.println("La opción --" + nombre + " requiere un valor.");
+                ERRORES.println("La opción --" + nombre + " requiere un valor.");
                 return false;
             }
             opciones.put(nombre, args[++i]);

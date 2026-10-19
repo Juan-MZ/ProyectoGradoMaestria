@@ -21,6 +21,9 @@ import java.util.List;
  */
 public class ReglaConcentracion implements Regla {
 
+    /** Nombre de la regla, con el que se identifican sus hallazgos. */
+    public static final String NOMBRE = "Concentración de dependencias salientes";
+
     private final int umbral;
     private final Exenciones exentos;
 
@@ -42,7 +45,7 @@ public class ReglaConcentracion implements Regla {
 
     @Override
     public String nombre() {
-        return "Concentración de dependencias salientes";
+        return NOMBRE;
     }
 
     @Override

@@ -6,8 +6,13 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
+import java.util.jar.JarFile;
 
 /**
  * Construye el grafo de dependencias a partir del código compilado mediante
@@ -48,11 +53,27 @@ public class ConstructorGrafo {
         this.exclusiones = List.copyOf(exclusiones);
     }
 
+    /**
+     * Construye el grafo a partir de un directorio de clases compiladas o de un
+     * archivo {@code .jar}. Admitir el empaquetado directamente evita tener que
+     * extraerlo antes de analizarlo, que es como suele distribuirse un sistema.
+     */
+    public GrafoDependencias desdeRuta(Path ruta) {
+        ClassFileImporter importador = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS);
+        if (Files.isRegularFile(ruta) && ruta.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            try (JarFile jar = new JarFile(ruta.toFile())) {
+                return desdeClases(importador.importJar(jar));
+            } catch (IOException e) {
+                throw new UncheckedIOException("No se pudo leer el archivo " + ruta, e);
+            }
+        }
+        return desdeClases(importador.importPath(ruta));
+    }
+
+    /** Equivalente a {@link #desdeRuta(Path)}; se conserva por compatibilidad. */
     public GrafoDependencias desdeDirectorio(Path directorioClases) {
-        JavaClasses clases = new ClassFileImporter()
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-                .importPath(directorioClases);
-        return desdeClases(clases);
+        return desdeRuta(directorioClases);
     }
 
     public GrafoDependencias desdeClases(JavaClasses clases) {

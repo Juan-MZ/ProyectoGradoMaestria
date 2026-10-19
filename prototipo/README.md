@@ -36,28 +36,85 @@ mecanismo la verifica (véase _Autoanálisis_, más abajo).
 
 ```bat
 build.bat        REM compila nucleo, pruebas y los cinco escenarios
-test.bat         REM ejecuta la bateria de pruebas (96 comprobaciones)
+test.bat         REM ejecuta la bateria de pruebas (162 comprobaciones)
 experimento.bat  REM ejecuta el experimento completo y escribe resultados\
+figuras.bat      REM regenera los grafos de la monografia y de esta guia
 ```
 
-En macOS o Linux, los equivalentes son `./build.sh`, `./test.sh` y
-`./experimento.sh`.
+En macOS o Linux, los equivalentes son `./build.sh`, `./test.sh`,
+`./experimento.sh` y `./figuras.sh`.
+
+Para ver el grafo de cualquier sistema basta con una línea; el resultado se abre
+en el navegador, sin instalar nada:
+
+```bat
+java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
+     mi-sistema.jar mis-reglas.properties --svg grafo.svg
+```
 
 ## Uso manual
 
 ```bat
 java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
-     <directorio-de-clases> <archivo-config> [opciones]
+     <directorio-de-clases | archivo.jar> <archivo-config> [opciones]
 ```
+
+El sistema puede indicarse como un directorio de clases compiladas o
+directamente como el `.jar` con que se distribuye. Si no se encuentra ninguna
+clase bajo la raíz declarada, el mecanismo termina con un error: un grafo vacío
+obtendría una CR del 100 % y se declararía aceptable, de modo que apuntar por
+descuido al directorio de fuentes produciría un falso negativo silencioso.
 
 | Opción                    | Efecto                                                                                                                            |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `--etiqueta <nombre>`     | Nombra el escenario en el reporte y en los archivos de evidencia.                                                                 |
-| `--salida <directorio>`   | Escribe reporte (`.txt`), evidencia estructurada (`.json`), grafo (`.dot`), hallazgos (`.csv`) y agrega una fila a `resumen.csv`. |
+| `--salida <directorio>`   | Escribe reporte (`.txt`), evidencia estructurada (`.json`), hallazgos (`.csv`), el grafo dibujado (`.svg`, `.tikz`, `.dot`) y agrega una fila a `resumen.csv`. |
+| `--svg <archivo>`         | Dibuja el grafo como imagen SVG, que se abre en cualquier navegador.                                                              |
+| `--tikz <archivo>`        | Dibuja el grafo como figura TikZ, lista para `\input` en un documento LaTeX.                                                       |
 | `--historico <csv>`       | Compara con la última corrida registrada para la misma etiqueta y reporta la variación. Si se omite y hay `--salida`, usa el `resumen.csv` de ese directorio. |
 | `--modo cr\|cr+severidad` | Sobrescribe el modo de clasificación declarado en la configuración.                                                               |
 | `--fallar-si <estado>`    | Devuelve código de salida 2 si el veredicto alcanza esa gravedad (afordancia para uso futuro en integración continua).            |
 | `--catalogo`              | Imprime el catálogo de _Fitness Functions_ derivado de la implementación vigente y termina.                                       |
+
+## Visualización del grafo
+
+![Grafo del escenario combinado C4](ejemplos/graficos/c4-combinado.svg)
+
+El mecanismo dibuja el grafo que extrae, sin depender de Graphviz ni de ninguna
+otra herramienta. Lo hace con un algoritmo propio de disposición por capas, por
+una razón concreta: los algoritmos genéricos colocan los nodos según el sentido
+de las aristas, y justo las violaciones —que remontan la estratificación— pueden
+invertir el orden de las capas. Aquí el orden vertical lo dicta la arquitectura
+declarada.
+
+- **Bandas por capa**, ordenadas según la matriz de dependencias permitidas, no
+  según el orden en que se declararon.
+- **Filas** dentro de cada banda por camino más largo, de modo que también las
+  dependencias internas apunten hacia abajo; los paquetes de un ciclo comparten fila.
+- **Reducción de cruces** por baricentro.
+- **Columna lateral** para los paquetes sin capa.
+
+El trazado codifica el significado: las dependencias que remontan las capas
+rodean los nodos por fuera; las de una misma fila se dibujan como arcos, por
+arriba en un sentido y por abajo en el otro; las flechas que llegan a un mismo
+lado se reparten a lo largo de él, y los paquetes muy referenciados se ensanchan.
+
+| Elemento | Significado |
+| --- | --- |
+| Arista roja continua | Viola la integridad de capas |
+| Arista roja discontinua | Forma parte de un ciclo |
+| Recuadro rojo | Paquete en un ciclo |
+| Recuadro ámbar | Concentración excesiva de dependencias salientes |
+| Recuadro gris discontinuo | Núcleo compartido exento |
+
+Cada paquete del SVG tiene un texto emergente con su nombre completo, su capa,
+su `Ce`, su `Ca` y su estado. La misma disposición se emite como **TikZ** —las
+figuras de grafos de la monografía las genera la herramienta, no se dibujaron a
+mano— y como **DOT**, que fija las filas para que tampoco Graphviz pueda invertir
+las capas.
+
+`figuras.bat` / `figuras.sh` regenera todas las figuras: las TikZ en
+`../Maestria_PlantillaProyectoGrado/figuras/` y las SVG en `ejemplos/graficos/`.
 
 ## Configuración
 
@@ -198,7 +255,18 @@ está su techo razonable.
 
 El mecanismo se aplicó sobre una biblioteca de terceros —923 clases propias en 22
 paquetes— declarando como hipótesis la estratificación `base ← core ← lang ←
-library`. El análisis completo tarda **1,2 segundos**.
+library`. El análisis completo tarda **1,2 segundos** y se hace directamente
+sobre el `.jar`; las configuraciones están en `ejemplos/archunit/`:
+
+```bat
+java -cp "out\arquitecta-core;lib\*" co.javeriana.msw.arquitecta.ArquitectaApp ^
+     lib\archunit-1.3.0.jar ejemplos\archunit\rules-archunit.properties --svg archunit.svg
+```
+
+![Grafo de ArchUnit 1.3.0 dibujado por la herramienta](ejemplos/graficos/archunit.svg)
+
+Las capas aparecen en el orden correcto aunque la configuración las declara de
+abajo arriba, porque el orden se deduce de la matriz de dependencias permitidas.
 
 |                          | Sin exenciones | Con exenciones declaradas |
 | ------------------------ | -------------: | ------------------------: |
@@ -232,19 +300,22 @@ resultados/
 │  ├─ resumen.csv               una fila por escenario
 │  ├─ c1-capas.txt              reporte legible
 │  ├─ c1-capas.json             evidencia estructurada y completa
-│  ├─ c1-capas.dot              grafo con violaciones resaltadas
+│  ├─ c1-capas.svg              grafo dibujado (abrir en el navegador)
+│  ├─ c1-capas.tikz             el mismo grafo como figura LaTeX
+│  ├─ c1-capas.dot              el mismo grafo para Graphviz
 │  └─ c1-capas-hallazgos.csv    una fila por hallazgo
 └─ modo-cr-severidad/           idem, con la clasificación refinada
 ```
 
-Los archivos `.dot` pueden renderizarse con Graphviz:
-`dot -Tpng resultados/modo-cr/c4-combinado.dot -o c4.png`.
+Los `.svg` se abren directamente en cualquier navegador. Los `.dot` pueden
+procesarse además con Graphviz si se prefiere.
 
 ## Pruebas
 
-`test.bat` ejecuta 136 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
+`test.bat` ejecuta 162 comprobaciones sobre el grafo, el algoritmo de Tarjan, la
 carga de configuración, las tres reglas, el motor, las exenciones, los cinco
-escenarios, los exportadores y la comparación entre corridas, incluidos los casos
+escenarios, los exportadores, la disposición gráfica y la comparación entre
+corridas, incluidos los casos
 límite (grafo vacío, umbrales en su frontera exacta, configuraciones inválidas,
 exenciones que no cuelgan de la raíz). La batería se construyó **sin dependencias
 externas**, en coherencia con el requisito de ligereza del propio mecanismo, y
