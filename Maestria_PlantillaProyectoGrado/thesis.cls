@@ -281,45 +281,44 @@ C\'odigo: \authorBCOD
   \let\footnotesize\small
   \let\footnoterule\relax
   \let \footnote \thanks
-  \null\vfil
-  \vskip 60\p@
+% La portada se ajusta a una sola página: sin espacio fijo arriba y con un
+% relleno flexible que lleva los datos generales al pie, sea cual sea el
+% largo del título.
 
-% Logo 
+% Logo
 \begin{center}
 \includegraphics[width=6cm]{./img/pujlogo.png}
 \end{center}
 
 \begin{center}%
-{\LARGE 
-\vskip 3em
+{\LARGE
+\vskip 2em
 \textbf{\titulovar} \par}%
 
 % Datos estudiante
 {\Large
- \vskip 3em
+ \vskip 2.5em
 \begin{tabular}[t]{c}%
     \authorA\\
-    \authorB\\\\
+    \authorB
 \end{tabular}
 }
 {\large
-\vskip 1em
+\vskip 1.5em
 Proyecto de grado entregado para obtener el título de \\
 \textbf{   Magister en Ingeniería de Software}}
 \par
 {\small
-\vskip 3em
+\vskip 2.5em
  \lineskip .75em%
   \begin{tabular}[t]{c}%
-Dirigida por\\       
-    \director           
+Dirigida por\\
+    \director
 \end{tabular}}%
-  \vskip 1.5em%
-\vspace{1cm}
 
 \end{center}\par
   \@thanks
-  \vfil\null
+  \vfill
 
 % Datos generales
 {\small
