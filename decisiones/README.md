@@ -39,6 +39,7 @@ versiones. Una decisión no se reescribe: se sustituye por otra ADR.
 | [0024](0024-contraste-explicito-de-la-hipotesis-y-evaluacion-de.md) | Contraste explícito de la hipótesis y evaluación de utilidad con usuarios | Aceptada | 2026-10-19 |
 | [0025](0025-reemplazar-la-literatura-gris-por-fuentes-arbitradas-en.md) | Reemplazar la literatura gris por fuentes arbitradas en afirmaciones centrales | Aceptada | 2026-10-19 |
 | [0026](0026-registro-honesto-del-cronograma-y-de-las-revisiones-con.md) | Registro honesto del cronograma y de las revisiones con el director | Aceptada | 2026-10-19 |
+| [0027](0027-estudio-de-caso-sobre-un-sistema-real-con-juicio-experto.md) | Estudio de caso sobre un sistema real, contrastado con el juicio de un experto | Propuesta | 2026-10-23 |
 
 ## Desviaciones respecto del anteproyecto
 

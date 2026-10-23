@@ -1,6 +1,6 @@
 # ADR-0026. Registro honesto del cronograma y de las revisiones con el director
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada; actualizada tras la primera revisión con el director
 - **Fecha:** 2026-10-19
 
 ## Contexto
@@ -17,6 +17,21 @@ versiones y la evidencia de cada corrida, y que la validación con el director s
 concentra en la revisión del documento. Los agradecimientos que mencionaban
 «observaciones» del director se mantienen comentados hasta que esas revisiones
 existan.
+
+**Actualización (octubre de 2026).** Se realizó la primera revisión con el
+director, con el artefacto ya construido. Sus observaciones, que se registran en
+el capítulo 1:
+
+1. Los objetivos específicos se consideran atendidos.
+2. El experimento sobre el caso construido por el autor es una demostración
+   controlada; falta un **estudio de caso sobre un sistema real** cuyo estado
+   arquitectónico el autor conozca, para contrastar la herramienta con el juicio
+   de un experto (ver ADR-0027).
+3. Verificar que todas las referencias sean reales y estén bien atribuidas, y
+   pasar el documento por la revisión de originalidad de la universidad.
+4. Preparar una presentación visual que parta del problema (por qué → qué →
+   cómo) y anticipar las preguntas más difíciles, incluido el papel de la IA en
+   el desarrollo.
 
 ## Alternativas consideradas
 
